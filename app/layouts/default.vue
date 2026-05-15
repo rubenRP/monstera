@@ -1,0 +1,84 @@
+<script setup lang="ts">
+const route = useRoute()
+
+const nav = [
+  { to: '/', label: 'Hoy', icon: 'i-lucide-home' },
+  { to: '/plants', label: 'Plantas', icon: 'i-lucide-leaf' },
+  { to: '/sites', label: 'Sitios', icon: 'i-lucide-map-pin' },
+  { to: '/settings', label: 'Ajustes', icon: 'i-lucide-settings' }
+]
+
+function isActive(path: string) {
+  if (path === '/') return route.path === '/'
+  return route.path.startsWith(path)
+}
+</script>
+
+<template>
+  <div class="min-h-screen flex flex-col md:flex-row pb-20 md:pb-0">
+    <!-- Nav lateral escritorio -->
+    <aside class="hidden md:flex md:flex-col md:w-56 md:border-r md:border-default md:min-h-screen md:p-4 md:sticky md:top-0">
+      <NuxtLink to="/" class="flex items-center gap-2 font-bold text-lg text-primary mb-8 px-2">
+        <UIcon name="i-lucide-sprout" class="w-6 h-6" />
+        Monstera
+      </NuxtLink>
+      <nav class="flex flex-col gap-1" aria-label="Navegación principal">
+        <NuxtLink
+          v-for="item in nav"
+          :key="item.to"
+          :to="item.to"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
+          :class="isActive(item.to) ? 'bg-primary/10 text-primary' : 'text-muted hover:bg-elevated'"
+        >
+          <UIcon :name="item.icon" class="w-5 h-5" />
+          {{ item.label }}
+        </NuxtLink>
+      </nav>
+      <div class="mt-auto pt-4 px-2">
+        <NuxtLink to="/calendar" class="text-sm text-muted hover:text-primary flex items-center gap-2">
+          <UIcon name="i-lucide-calendar" class="w-4 h-4" />
+          Calendario
+        </NuxtLink>
+      </div>
+    </aside>
+
+    <div class="flex-1 flex flex-col min-w-0">
+      <header class="sticky top-0 z-40 border-b border-default bg-default/80 backdrop-blur px-4 py-3 md:hidden">
+        <div class="max-w-lg mx-auto flex items-center justify-between">
+          <NuxtLink to="/" class="flex items-center gap-2 font-bold text-lg text-primary">
+            <UIcon name="i-lucide-sprout" class="w-6 h-6" />
+            Monstera
+          </NuxtLink>
+          <UColorModeButton />
+        </div>
+      </header>
+
+      <header class="hidden md:flex border-b border-default px-6 py-3 items-center justify-end">
+        <UColorModeButton />
+      </header>
+
+      <main class="flex-1 px-4 py-4 md:px-6 max-w-lg md:max-w-2xl w-full mx-auto">
+        <slot />
+      </main>
+    </div>
+
+    <!-- Bottom nav móvil -->
+    <nav
+      class="fixed bottom-0 inset-x-0 z-40 border-t border-default bg-default/95 backdrop-blur md:hidden"
+      aria-label="Navegación principal"
+    >
+      <div class="flex justify-around py-2">
+        <NuxtLink
+          v-for="item in nav"
+          :key="item.to"
+          :to="item.to"
+          class="flex flex-col items-center gap-0.5 px-3 py-1 text-xs rounded-lg transition-colors min-w-[4rem]"
+          :class="isActive(item.to) ? 'text-primary' : 'text-muted'"
+        >
+          <UIcon :name="item.icon" class="w-5 h-5" />
+          {{ item.label }}
+        </NuxtLink>
+      </div>
+    </nav>
+  </div>
+</template>
