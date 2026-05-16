@@ -14,6 +14,7 @@ export type SubstrateType
 export type HealthStatus = 'healthy' | 'fair' | 'sick' | 'critical'
 export type CareTaskType = 'water' | 'fertilize'
 export type CareTaskStatus = 'pending' | 'done' | 'skipped'
+export type CareTaskSkipReason = 'soil_wet'
 
 export interface Site {
   id: string
@@ -39,6 +40,7 @@ export interface Plant {
   health_status: HealthStatus
   health_status_note: string | null
   health_status_updated_at: string | null
+  watering_base_interval_days: number
   watering_interval_days: number
   fertilizing_interval_days: number
   last_watered_at: string | null
@@ -67,6 +69,7 @@ export interface CareTask {
   due_at: string
   completed_at: string | null
   status: CareTaskStatus
+  skip_reason: CareTaskSkipReason | null
   created_at: string
   plant?: Pick<Plant, 'id' | 'name' | 'photo_path' | 'health_status' | 'site_id'> & {
     site?: Pick<Site, 'id' | 'name'> | null

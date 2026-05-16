@@ -1,3 +1,5 @@
+import { getSpeciesSearchAliases } from '../../constants/speciesAliases'
+
 export interface PerenualSpeciesListItem {
   id: number
   common_name?: string
@@ -11,8 +13,11 @@ export function buildPerenualSearchQueries(speciesQuery: string): string[] {
   const queries = new Set<string>()
 
   if (normalized) queries.add(normalized)
-  if (words.length > 1) queries.add(words[0])
+  if (words.length > 1) queries.add(words[0]!)
   if (words.length > 2) queries.add(words.slice(0, 2).join(' '))
+  for (const alias of getSpeciesSearchAliases(normalized)) {
+    queries.add(alias)
+  }
 
   return [...queries]
 }
@@ -51,6 +56,17 @@ export function pickBestPerenualMatch(
     .filter(({ score }) => score > 0)
     .sort((a, b) => b.score - a.score)
 
-  if (scored.length) return scored[0].item
+  if (scored.length) return scored[0]!.item
+
+  const qWords = speciesQuery.trim().toLowerCase().split(/\s+/).filter(Boolean)
+  if (qWords.length >= 2 && items.length) {
+    const genusMatch = items.find((item) => {
+      const genus = (item.genus ?? '').toLowerCase()
+      const scientific = (item.scientific_name ?? []).join(' ').toLowerCase()
+      return genus === qWords[0] || scientific.startsWith(`${qWords[0]} `)
+    })
+    if (genusMatch) return genusMatch
+  }
+
   return items[0] ?? null
 }

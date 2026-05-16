@@ -1,6 +1,6 @@
 import type { HealthStatus, Plant } from '#shared/types/database'
 import { HEALTH_STATUS_ORDER } from '#shared/constants/plants'
-import { generateCareTasks } from '#shared/utils/care/generateTasks'
+import { generateFertilizeTasks } from '#shared/utils/care/generateTasks'
 import type { PlantFormInput } from '#shared/utils/plants/schemas'
 
 const PLANT_SELECT = '*, site:sites(*)'
@@ -8,6 +8,7 @@ const PLANT_SELECT = '*, site:sites(*)'
 export function usePlants() {
   const supabase = useSupabaseClient()
   const user = useSupabaseUser()
+  const { rescheduleWatering } = useAdaptiveWatering()
 
   async function fetchPlants(filterStatus?: HealthStatus | 'all') {
     let query = supabase
@@ -105,6 +106,7 @@ export function usePlants() {
       .delete()
       .eq('plant_id', id)
       .eq('status', 'pending')
+      .eq('type', 'fertilize')
 
     await regenerateTasks(id, plant as Plant)
     return plant as Plant
@@ -131,35 +133,37 @@ export function usePlants() {
     const uid = user.value?.id
     if (!uid) return
 
-    const tasks = generateCareTasks(
-      plant.watering_interval_days,
+    const fertTasks = generateFertilizeTasks(
       plant.fertilizing_interval_days,
-      plant.last_watered_at ? new Date(plant.last_watered_at) : null,
       plant.last_fertilized_at ? new Date(plant.last_fertilized_at) : null
     )
 
-    if (!tasks.length) return
+    if (fertTasks.length) {
+      const { error } = await supabase.from('care_tasks').insert(
+        fertTasks.map(t => ({
+          plant_id: plantId,
+          user_id: uid,
+          type: t.type,
+          due_at: t.due_at,
+          status: 'pending' as const
+        }))
+      )
+      if (error) throw error
+    }
 
-    const { error } = await supabase.from('care_tasks').insert(
-      tasks.map(t => ({
-        plant_id: plantId,
-        user_id: uid,
-        type: t.type,
-        due_at: t.due_at,
-        status: 'pending' as const
-      }))
-    )
-    if (error) throw error
+    await rescheduleWatering(plantId)
   }
 
   function sanitizePlantPayload(form: PlantFormInput) {
+    const base = form.watering_base_interval_days
     return {
       name: form.name,
       species: form.species || null,
       notes: form.notes ?? '',
       health_status: form.health_status,
       health_status_note: form.health_status_note || null,
-      watering_interval_days: form.watering_interval_days,
+      watering_base_interval_days: base,
+      watering_interval_days: base,
       fertilizing_interval_days: form.fertilizing_interval_days,
       site_id: form.site_id || null,
       window_distance_cm: form.window_distance_cm ?? null,

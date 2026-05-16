@@ -8,28 +8,15 @@ export interface TaskToInsert {
 /** Must cover max fertilizing_interval_days (365) so at least one task is generated. */
 const HORIZON_DAYS = 365
 
-export function generateCareTasks(
-  wateringIntervalDays: number,
+/** Fertilize tasks only; water uses a single pending task via adaptive scheduling. */
+export function generateFertilizeTasks(
   fertilizingIntervalDays: number,
-  lastWateredAt: Date | null,
   lastFertilizedAt: Date | null,
   fromDate: Date = new Date()
 ): TaskToInsert[] {
   const tasks: TaskToInsert[] = []
   const end = new Date(fromDate)
   end.setDate(end.getDate() + HORIZON_DAYS)
-
-  let waterCursor = lastWateredAt
-    ? new Date(lastWateredAt)
-    : new Date(fromDate)
-  waterCursor.setDate(waterCursor.getDate() + wateringIntervalDays)
-  while (waterCursor <= end) {
-    if (waterCursor >= fromDate) {
-      tasks.push({ type: 'water', due_at: waterCursor.toISOString() })
-    }
-    waterCursor = new Date(waterCursor)
-    waterCursor.setDate(waterCursor.getDate() + wateringIntervalDays)
-  }
 
   let fertCursor = lastFertilizedAt
     ? new Date(lastFertilizedAt)
@@ -44,6 +31,17 @@ export function generateCareTasks(
   }
 
   return tasks.sort((a, b) => new Date(a.due_at).getTime() - new Date(b.due_at).getTime())
+}
+
+/** @deprecated Use generateFertilizeTasks for new code; water is scheduled adaptively. */
+export function generateCareTasks(
+  _wateringIntervalDays: number,
+  fertilizingIntervalDays: number,
+  _lastWateredAt: Date | null,
+  lastFertilizedAt: Date | null,
+  fromDate: Date = new Date()
+): TaskToInsert[] {
+  return generateFertilizeTasks(fertilizingIntervalDays, lastFertilizedAt, fromDate)
 }
 
 export function nextTaskDue(

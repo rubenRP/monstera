@@ -16,7 +16,7 @@ export const plantFormSchema = z.object({
   notes: z.string().optional().default(''),
   health_status: healthStatusSchema.default('healthy'),
   health_status_note: z.string().optional().nullable(),
-  watering_interval_days: z.coerce.number().int().min(1).max(90).default(7),
+  watering_base_interval_days: z.coerce.number().int().min(1).max(90).default(7),
   fertilizing_interval_days: z.coerce.number().int().min(1).max(365).default(30),
   site_id: z.string().uuid().optional().nullable(),
   window_distance_cm: z.coerce.number().int().min(0).max(500).optional().nullable(),
@@ -64,7 +64,9 @@ export const recommendResponseSchema = z.object({
   }),
   seasonalTips: z.array(z.string()),
   riskFlags: z.array(z.string()),
-  environmentNotes: z.string()
+  environmentNotes: z.string(),
+  suggestedWateringIntervalDays: z.number().int().min(1).max(90).optional(),
+  suggestedWateringIntervalRationale: z.string().optional()
 })
 
 export type DiagnosisResponse = z.infer<typeof diagnosisResponseSchema>

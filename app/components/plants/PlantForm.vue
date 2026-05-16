@@ -20,7 +20,8 @@ const form = reactive<PlantFormInput>({
   notes: props.initial?.notes ?? '',
   health_status: (props.initial?.health_status ?? 'healthy') as HealthStatus,
   health_status_note: props.initial?.health_status_note ?? '',
-  watering_interval_days: props.initial?.watering_interval_days ?? 7,
+  watering_base_interval_days: props.initial?.watering_base_interval_days
+    ?? props.initial?.watering_interval_days ?? 7,
   fertilizing_interval_days: props.initial?.fertilizing_interval_days ?? 30,
   site_id: props.initial?.site_id ?? null,
   window_distance_cm: props.initial?.window_distance_cm ?? null,
@@ -111,12 +112,16 @@ function handleSubmit() {
     </div>
 
     <div class="grid grid-cols-2 gap-4">
-      <UFormField :label="t('plants.waterEvery')">
+      <UFormField :label="t('plants.waterBaseEvery')">
         <UInput
-          v-model.number="form.watering_interval_days"
+          v-model.number="form.watering_base_interval_days"
           type="number"
           min="1"
+          max="90"
         />
+        <template #hint>
+          {{ t('plants.waterBaseHint') }}
+        </template>
       </UFormField>
       <UFormField :label="t('plants.fertilizeEvery')">
         <UInput

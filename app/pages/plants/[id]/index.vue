@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { TabsItem } from '@nuxt/ui'
-import type { HealthStatus } from '#shared/types/database'
+import type { CareTask, HealthStatus } from '#shared/types/database'
 import { getHealthColor } from '#shared/constants/plants'
 
 const { t } = useI18n()
@@ -9,8 +9,11 @@ const { healthLabel } = usePlantEnumLabels()
 const route = useRoute()
 const id = route.params.id as string
 const { fetchPlant, updateHealthStatus, deletePlant } = usePlants()
-const { fetchPlantPendingTasks, completeTask } = useCareTasks()
+const { fetchPlantPendingTasks, completeTask, skipTask } = useCareTasks()
 const toast = useToast()
+
+const skipWaterModalOpen = ref(false)
+const taskToSkip = ref<CareTask | null>(null)
 
 const plant = ref<Awaited<ReturnType<typeof fetchPlant>> | null>(null)
 const { url: photoUrl } = usePlantPhoto(computed(() => plant.value?.photo_path))
@@ -21,9 +24,7 @@ const healthStatus = ref<HealthStatus>('healthy')
 const healthNote = ref('')
 const activeTab = ref('mi-planta')
 
-const speciesTabRef = ref<{ load: (refresh?: boolean) => Promise<void> } | null>(null)
 const historyTabRef = ref<{ load: () => Promise<void> } | null>(null)
-const speciesTabVisited = ref(false)
 const historyTabVisited = ref(false)
 
 const tabItems = computed<TabsItem[]>(() => [
@@ -33,10 +34,6 @@ const tabItems = computed<TabsItem[]>(() => [
 ])
 
 watch(activeTab, (tab) => {
-  if (tab === 'variedad' && !speciesTabVisited.value) {
-    speciesTabVisited.value = true
-    nextTick(() => speciesTabRef.value?.load())
-  }
   if (tab === 'historial' && !historyTabVisited.value) {
     historyTabVisited.value = true
     nextTick(() => historyTabRef.value?.load())
@@ -74,6 +71,45 @@ async function onCompleteTask(taskId: string) {
     await completeTask(task)
     pendingTasks.value = await fetchPlantPendingTasks(id)
     plant.value = await fetchPlant(id)
+    historyTabVisited.value = false
+    if (activeTab.value === 'historial') {
+      nextTick(() => historyTabRef.value?.load())
+    }
+  } finally {
+    actingTaskId.value = null
+  }
+}
+
+function onSkipClick(task: CareTask) {
+  if (task.type === 'water') {
+    taskToSkip.value = task
+    skipWaterModalOpen.value = true
+    return
+  }
+  void confirmSkip(task, false)
+}
+
+function onSkipWaterConfirm(soilStillWet: boolean) {
+  const task = taskToSkip.value
+  if (!task) return
+  void confirmSkip(task, soilStillWet)
+}
+
+async function confirmSkip(task: CareTask, soilStillWet: boolean) {
+  skipWaterModalOpen.value = false
+  taskToSkip.value = null
+  actingTaskId.value = task.id
+  try {
+    const newInterval = await skipTask(task, { soilStillWet })
+    pendingTasks.value = await fetchPlantPendingTasks(id)
+    plant.value = await fetchPlant(id)
+    if (soilStillWet && newInterval) {
+      toast.add({
+        title: t('home.wateringPlanUpdated'),
+        description: t('home.nextWaterIn', { days: newInterval }),
+        color: 'success'
+      })
+    }
     historyTabVisited.value = false
     if (activeTab.value === 'historial') {
       nextTick(() => historyTabRef.value?.load())
@@ -179,12 +215,12 @@ async function onDelete() {
           :acting-task-id="actingTaskId"
           @save-health="saveHealth"
           @complete-task="onCompleteTask"
+          @skip-task="onSkipClick"
         />
       </template>
 
       <template #variedad>
         <PlantsDetailPlantSpeciesTab
-          ref="speciesTabRef"
           :plant-id="id"
           :species="plant.species"
         />
@@ -197,5 +233,11 @@ async function onDelete() {
         />
       </template>
     </UTabs>
+
+    <CareSkipWaterModal
+      v-model:open="skipWaterModalOpen"
+      v-model:task="taskToSkip"
+      @confirm="onSkipWaterConfirm"
+    />
   </div>
 </template>

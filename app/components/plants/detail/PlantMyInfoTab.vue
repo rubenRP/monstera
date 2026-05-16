@@ -24,9 +24,25 @@ const healthNote = defineModel<string>('healthNote', { required: true })
 const emit = defineEmits<{
   saveHealth: []
   completeTask: [taskId: string]
+  skipTask: [task: CareTask]
 }>()
 
 const { taskLabel, taskIcon, overdueDays, overdueLabel } = useCareTasks()
+const { fetchHomeLat, computeScheduleForPlant, countRecentWetSkips } = useAdaptiveWatering()
+
+const wateringSchedule = ref<ReturnType<typeof computeScheduleForPlant> | null>(null)
+
+async function loadWateringSchedule() {
+  const homeLat = await fetchHomeLat()
+  const wetCount = await countRecentWetSkips(props.plant.id)
+  wateringSchedule.value = computeScheduleForPlant(props.plant, homeLat, {
+    recentWetSkipCount: wetCount
+  })
+}
+
+watch(() => props.plant, () => {
+  void loadWateringSchedule()
+}, { immediate: true, deep: true })
 
 const empty = computed(() => t('common.notIndicated'))
 
@@ -127,7 +143,13 @@ const plantRows = computed((): InfoRow[] => [
       : empty.value
   },
   {
-    label: t('plants.fieldWaterEvery'),
+    label: t('plants.fieldWaterBase'),
+    value: t('plants.intervalDays', {
+      count: props.plant.watering_base_interval_days ?? props.plant.watering_interval_days
+    })
+  },
+  {
+    label: t('plants.fieldWaterEffective'),
     value: t('plants.intervalDays', { count: props.plant.watering_interval_days })
   },
   {
@@ -195,6 +217,13 @@ const plantRows = computed((): InfoRow[] => [
       </div>
     </PlantsDetailPlantInfoSection>
 
+    <PlantsDetailWateringScheduleCard
+      v-if="wateringSchedule"
+      :plant="plant"
+      :factors="wateringSchedule.factors"
+      :effective-days="wateringSchedule.effectiveIntervalDays"
+    />
+
     <UCard v-if="plant.notes?.trim()">
       <template #header>
         <span class="font-medium">{{ t('plants.notes') }}</span>
@@ -235,13 +264,25 @@ const plantRows = computed((): InfoRow[] => [
             </p>
           </div>
         </div>
-        <UButton
-          size="sm"
-          :loading="actingTaskId === task.id"
-          @click="emit('completeTask', task.id)"
-        >
-          {{ t('common.done') }}
-        </UButton>
+        <div class="flex gap-1 shrink-0">
+          <UButton
+            size="sm"
+            :loading="actingTaskId === task.id"
+            @click="emit('completeTask', task.id)"
+          >
+            {{ t('common.done') }}
+          </UButton>
+          <UButton
+            v-if="task.type === 'water'"
+            size="sm"
+            variant="soft"
+            color="neutral"
+            :disabled="actingTaskId === task.id"
+            @click="emit('skipTask', task)"
+          >
+            {{ t('common.skip') }}
+          </UButton>
+        </div>
       </div>
     </div>
   </div>

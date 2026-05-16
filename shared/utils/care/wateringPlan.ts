@@ -1,11 +1,10 @@
-const MAX_WATERING_INTERVAL_DAYS = 90
+import { computeNextWateringDue } from './adaptiveWatering'
 
-export function bumpWateringInterval(currentDays: number): number {
-  return Math.min(currentDays + 1, MAX_WATERING_INTERVAL_DAYS)
-}
-
-export function scheduleWateringFromToday(intervalDays: number, fromDate: Date = new Date()): string {
-  const due = new Date(fromDate)
-  due.setDate(due.getDate() + intervalDays)
-  return due.toISOString()
+/** Schedule next water from today (used after skip). */
+export function scheduleWateringFromToday(
+  intervalDays: number,
+  wetDelayDays = 0,
+  fromDate: Date = new Date()
+): string {
+  return computeNextWateringDue(intervalDays, wetDelayDays, null, fromDate, true)
 }

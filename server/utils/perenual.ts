@@ -1,6 +1,7 @@
 import { API_ERROR_CODES } from '#shared/utils/i18n/apiErrors'
+import { throwApiError } from './apiError'
 import type { AppLocale } from '#shared/utils/i18n/locale'
-import { mapPerenualProfile } from '#shared/utils/species/mapPerenualProfile'
+import { mapPerenualListItem, mapPerenualProfile } from '#shared/utils/species/mapPerenualProfile'
 import {
   buildPerenualSearchQueries,
   pickBestPerenualMatch,
@@ -18,17 +19,41 @@ interface CareGuideListResponse {
   data?: { section?: { type?: string, description?: string }[] }[]
 }
 
+export class PerenualApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly body: string
+  ) {
+    super(message)
+    this.name = 'PerenualApiError'
+  }
+}
+
 function perenualUrl(path: string, apiKey: string): string {
   const separator = path.includes('?') ? '&' : '?'
   return `${BASE}${path}${separator}key=${encodeURIComponent(apiKey)}`
 }
 
+function isPerenualUpgradeRequired(status: number, body: string): boolean {
+  return status === 429 || /upgrade plan/i.test(body)
+}
+
 async function perenualFetch<T>(path: string, apiKey: string): Promise<T> {
   const res = await fetch(perenualUrl(path, apiKey))
+  const body = await res.text()
   if (!res.ok) {
-    throw new Error(`Perenual API error: ${res.status} ${res.statusText}`)
+    throw new PerenualApiError(
+      `Perenual API error: ${res.status} ${res.statusText}`,
+      res.status,
+      body
+    )
   }
-  return res.json() as Promise<T>
+  try {
+    return JSON.parse(body) as T
+  } catch {
+    throw new PerenualApiError('Perenual API returned invalid JSON', res.status, body)
+  }
 }
 
 async function searchSpeciesList(
@@ -62,10 +87,7 @@ async function resolveSpeciesMatch(
     if (best) return best
   }
 
-  throw createError({
-    statusCode: 404,
-    data: { code: API_ERROR_CODES.PERENUAL_SPECIES_NOT_FOUND, query: speciesQuery }
-  })
+  throwApiError(404, API_ERROR_CODES.PERENUAL_SPECIES_NOT_FOUND, { query: speciesQuery })
 }
 
 export async function fetchSpeciesProfileFromPerenual(
@@ -75,25 +97,37 @@ export async function fetchSpeciesProfileFromPerenual(
 ): Promise<SpeciesProfile> {
   const match = await resolveSpeciesMatch(speciesQuery, apiKey)
 
-  const details = await perenualFetch<Record<string, unknown>>(
-    `/v2/species/details/${match.id}`,
-    apiKey
-  )
-
-  let careGuides: CareGuideListResponse['data'] = []
   try {
-    const guides = await perenualFetch<CareGuideListResponse>(
-      `/species-care-guide-list?species_id=${match.id}`,
+    const details = await perenualFetch<Record<string, unknown>>(
+      `/v2/species/details/${match.id}`,
       apiKey
     )
-    careGuides = guides.data ?? []
-  } catch {
-    careGuides = []
-  }
 
-  return mapPerenualProfile(
-    { ...details, id: match.id } as Parameters<typeof mapPerenualProfile>[0],
-    careGuides ?? [],
-    locale
-  )
+    let careGuides: CareGuideListResponse['data'] = []
+    try {
+      const guides = await perenualFetch<CareGuideListResponse>(
+        `/species-care-guide-list?species_id=${match.id}`,
+        apiKey
+      )
+      careGuides = guides.data ?? []
+    } catch (e) {
+      if (!(e instanceof PerenualApiError && isPerenualUpgradeRequired(e.status, e.body))) {
+        console.warn('Perenual care guides fetch failed:', e)
+      }
+    }
+
+    return mapPerenualProfile(
+      { ...details, id: match.id } as Parameters<typeof mapPerenualProfile>[0],
+      careGuides ?? [],
+      locale
+    )
+  } catch (e) {
+    if (e instanceof PerenualApiError && isPerenualUpgradeRequired(e.status, e.body)) {
+      console.warn(
+        `Perenual details unavailable for id ${match.id} (plan limit); using species-list data`
+      )
+      return mapPerenualListItem(match, locale)
+    }
+    throw e
+  }
 }

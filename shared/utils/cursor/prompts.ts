@@ -50,7 +50,8 @@ function plantContext(plant: Plant): string {
     plant.species ? `Especie: ${plant.species}` : null,
     `Estado actual: ${plant.health_status}`,
     plant.health_status_note ? `Nota estado: ${plant.health_status_note}` : null,
-    `Riego cada ${plant.watering_interval_days} días`,
+    `Riego base cada ${plant.watering_base_interval_days ?? plant.watering_interval_days} días`,
+    `Riego efectivo actual: cada ${plant.watering_interval_days} días`,
     `Fertilización cada ${plant.fertilizing_interval_days} días`,
     plant.last_watered_at ? `Último riego: ${plant.last_watered_at}` : null,
     plant.last_fertilized_at ? `Última fertilización: ${plant.last_fertilized_at}` : null,
@@ -113,10 +114,37 @@ JSON esperado:
   "lightExposure": { "level": "baja" | "media" | "alta", "summary": "string" },
   "seasonalTips": ["string"],
   "riskFlags": ["string"],
-  "environmentNotes": "string explicando cómo influyen sitio, ventana, maceta y sustrato"
+  "environmentNotes": "string explicando cómo influyen sitio, ventana, maceta y sustrato",
+  "suggestedWateringIntervalDays": number opcional entre 1 y 90 (intervalo base sugerido),
+  "suggestedWateringIntervalRationale": "string opcional breve en español"
 }
 
-Considera hemisferio norte: ventana sur = más luz directa. Maceta pequeña + sustrato retentivo = menos riego.`
+Sugiere suggestedWateringIntervalDays solo si el intervalo base actual debería cambiar de forma clara. Considera hemisferio norte: ventana sur = más luz directa. Maceta pequeña + sustrato retentivo = menos riego.`
+}
+
+export function buildSpeciesGeneratePrompt(speciesQuery: string, locale: AppLocale): string {
+  const language = locale === 'en' ? 'English' : 'Spanish'
+  return `You are an indoor plant care expert. The Perenual plant database has no entry for this species. Create a practical houseplant encyclopedia entry.
+
+Species: ${speciesQuery}
+Response language: ${language} (all string values must be in ${language})
+
+Respond ONLY with valid JSON (no markdown). Each care section: 1–4 sentences for indoor cultivation.
+
+{
+  "commonName": "string",
+  "scientificName": ["string"],
+  "watering": "string",
+  "light": "string",
+  "humidity": "string",
+  "fertilizing": "string",
+  "soil": "string",
+  "repotting": "string",
+  "toxicity": "string",
+  "characteristics": "string",
+  "temperature": "string",
+  "pestsAndProblems": "string"
+}`
 }
 
 export function buildSpeciesEnrichPrompt(

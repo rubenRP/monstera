@@ -2,11 +2,11 @@ import type { CareTask, CareTaskType } from '#shared/types/database'
 import { deduplicateOverlappingTasks } from '#shared/utils/care/deduplicateTasks'
 import { nextTaskDue } from '#shared/utils/care/generateTasks'
 import { taskOverdueDays } from '#shared/utils/care/taskDue'
-import { bumpWateringInterval, scheduleWateringFromToday } from '#shared/utils/care/wateringPlan'
 
 export function useCareTasks() {
   const supabase = useSupabaseClient()
   const user = useSupabaseUser()
+  const { rescheduleWatering, countRecentWetSkips } = useAdaptiveWatering()
 
   async function dismissOverlappingPendingTasks(task: CareTask, exceptId: string) {
     const end = new Date()
@@ -88,44 +88,38 @@ export function useCareTasks() {
       .eq('id', task.id)
     if (taskError) throw taskError
 
-    const { data: plant } = await supabase
-      .from('plants')
-      .select('*')
-      .eq('id', task.plant_id)
-      .single()
-
-    if (!plant) return
-
-    const uid = user.value?.id
-    if (!uid) return
-
     if (task.type === 'water') {
       await supabase
         .from('plants')
         .update({ last_watered_at: now })
         .eq('id', task.plant_id)
 
-      await supabase.from('care_tasks').insert({
-        plant_id: task.plant_id,
-        user_id: uid,
-        type: 'water',
-        due_at: nextTaskDue(plant.watering_interval_days, new Date(now)),
-        status: 'pending'
-      })
-    } else {
-      await supabase
-        .from('plants')
-        .update({ last_fertilized_at: now })
-        .eq('id', task.plant_id)
-
-      await supabase.from('care_tasks').insert({
-        plant_id: task.plant_id,
-        user_id: uid,
-        type: 'fertilize',
-        due_at: nextTaskDue(plant.fertilizing_interval_days, new Date(now)),
-        status: 'pending'
-      })
+      await rescheduleWatering(task.plant_id, { wetSkipCountOverride: 0 })
+      return
     }
+
+    const { data: plant } = await supabase
+      .from('plants')
+      .select('fertilizing_interval_days')
+      .eq('id', task.plant_id)
+      .single()
+    if (!plant) return
+
+    const uid = user.value?.id
+    if (!uid) return
+
+    await supabase
+      .from('plants')
+      .update({ last_fertilized_at: now })
+      .eq('id', task.plant_id)
+
+    await supabase.from('care_tasks').insert({
+      plant_id: task.plant_id,
+      user_id: uid,
+      type: 'fertilize',
+      due_at: nextTaskDue(plant.fertilizing_interval_days, new Date(now)),
+      status: 'pending'
+    })
   }
 
   async function skipTask(task: CareTask, options?: { soilStillWet?: boolean }) {
@@ -134,41 +128,32 @@ export function useCareTasks() {
     const now = new Date().toISOString()
     const { error } = await supabase
       .from('care_tasks')
-      .update({ status: 'skipped', completed_at: now })
+      .update({
+        status: 'skipped',
+        completed_at: now,
+        skip_reason: options?.soilStillWet ? 'soil_wet' : null
+      })
       .eq('id', task.id)
     if (error) throw error
+
+    if (task.type === 'water') {
+      const wetCount = await countRecentWetSkips(task.plant_id)
+      const schedule = await rescheduleWatering(task.plant_id, {
+        scheduleFromToday: true,
+        wetSkipCountOverride: wetCount
+      })
+      return schedule.effectiveIntervalDays
+    }
 
     const uid = user.value?.id
     if (!uid) return
 
     const { data: plant } = await supabase
       .from('plants')
-      .select('*')
+      .select('fertilizing_interval_days')
       .eq('id', task.plant_id)
       .single()
     if (!plant) return
-
-    if (task.type === 'water') {
-      let interval = plant.watering_interval_days
-      if (options?.soilStillWet) {
-        interval = bumpWateringInterval(interval)
-        if (interval !== plant.watering_interval_days) {
-          await supabase
-            .from('plants')
-            .update({ watering_interval_days: interval })
-            .eq('id', task.plant_id)
-        }
-      }
-
-      await supabase.from('care_tasks').insert({
-        plant_id: task.plant_id,
-        user_id: uid,
-        type: 'water',
-        due_at: scheduleWateringFromToday(interval),
-        status: 'pending'
-      })
-      return interval
-    }
 
     await supabase.from('care_tasks').insert({
       plant_id: task.plant_id,

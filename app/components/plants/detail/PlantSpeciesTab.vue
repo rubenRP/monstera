@@ -11,7 +11,7 @@ const props = defineProps<{
 
 const { fetchSpeciesProfile } = useSpeciesProfile()
 
-const loading = ref(false)
+const loading = ref(!!props.species?.trim())
 const refreshing = ref(false)
 const profile = ref<SpeciesProfile | null>(null)
 const loaded = ref(false)
@@ -55,6 +55,20 @@ function sectionText(key: typeof sections.value[number]['key']): string {
   if (!profile.value) return ''
   return profile.value[key]
 }
+
+onMounted(() => {
+  if (props.species?.trim()) {
+    void load()
+  }
+})
+
+watch(() => props.species, (next, prev) => {
+  if (next?.trim() && next !== prev) {
+    profile.value = null
+    loaded.value = false
+    void load()
+  }
+})
 
 defineExpose({ load })
 </script>
@@ -110,6 +124,26 @@ defineExpose({ load })
         :title="errorMessage"
       />
 
+      <UAlert
+        v-else-if="loaded && !profile"
+        color="neutral"
+        icon="i-lucide-book-open"
+        :title="t('plants.profileNotLoaded')"
+        :description="t('plants.profileNotLoadedHint')"
+      >
+        <template #actions>
+          <UButton
+            size="sm"
+            variant="soft"
+            icon="i-lucide-refresh-cw"
+            :loading="refreshing"
+            @click="load(true)"
+          >
+            {{ t('plants.refreshProfile') }}
+          </UButton>
+        </template>
+      </UAlert>
+
       <template v-else-if="profile">
         <div
           v-if="profile.imageUrl"
@@ -121,6 +155,15 @@ defineExpose({ load })
             class="w-full h-48 object-cover"
           >
         </div>
+
+        <UAlert
+          v-if="profile.perenualId < 0"
+          color="neutral"
+          variant="subtle"
+          icon="i-lucide-sparkles"
+          :description="t('plants.profileAiGenerated')"
+          class="mb-2"
+        />
 
         <div>
           <h2 class="text-lg font-semibold">

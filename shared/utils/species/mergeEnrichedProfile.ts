@@ -34,3 +34,24 @@ export function mergeEnrichedSpeciesProfile(
 
   return merged
 }
+
+export function mergeGeneratedSpeciesProfile(
+  base: SpeciesProfile,
+  generated: SpeciesEnrichResponse
+): SpeciesProfile {
+  const merged: SpeciesProfile = {
+    ...base,
+    enrichedByAi: true,
+    fetchedAt: new Date().toISOString()
+  }
+
+  for (const key of SPECIES_CARE_FIELD_KEYS) {
+    const value = generated[key]?.trim()
+    if (value) merged[key] = value
+  }
+
+  if (generated.commonName?.trim()) merged.commonName = generated.commonName.trim()
+  if (generated.scientificName?.length) merged.scientificName = generated.scientificName
+
+  return merged
+}

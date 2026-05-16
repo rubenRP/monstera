@@ -7,10 +7,12 @@ const route = useRoute()
 const id = route.params.id as string
 const { fetchPlant } = usePlants()
 const { recommend } = useAiApi()
+const { applySuggestedBaseInterval } = useAdaptiveWatering()
 const toast = useToast()
 
 const plantName = ref('')
 const loading = ref(false)
+const applying = ref(false)
 const result = ref<RecommendResponse | null>(null)
 const weather = ref('')
 
@@ -47,6 +49,28 @@ async function loadRecommendations() {
     loading.value = false
   }
 }
+
+async function applySuggestedInterval() {
+  const days = result.value?.suggestedWateringIntervalDays
+  if (!days) return
+  applying.value = true
+  try {
+    await applySuggestedBaseInterval(id, days)
+    toast.add({
+      title: t('recommend.intervalApplied'),
+      description: t('recommend.intervalAppliedDesc', { days }),
+      color: 'success'
+    })
+  } catch (e: unknown) {
+    toast.add({
+      title: t('common.error'),
+      description: apiErrorMessage(e),
+      color: 'error'
+    })
+  } finally {
+    applying.value = false
+  }
+}
 </script>
 
 <template>
@@ -71,6 +95,27 @@ async function loadRecommendations() {
 
     <UCard v-if="result">
       <div class="space-y-4 text-sm">
+        <div
+          v-if="result.suggestedWateringIntervalDays"
+          class="p-3 rounded-lg border border-primary/30 bg-primary/5 space-y-2"
+        >
+          <p class="font-medium">
+            {{ t('recommend.suggestedInterval', { days: result.suggestedWateringIntervalDays }) }}
+          </p>
+          <p
+            v-if="result.suggestedWateringIntervalRationale"
+            class="text-muted text-xs"
+          >
+            {{ result.suggestedWateringIntervalRationale }}
+          </p>
+          <UButton
+            size="sm"
+            :loading="applying"
+            @click="applySuggestedInterval"
+          >
+            {{ t('recommend.applyInterval') }}
+          </UButton>
+        </div>
         <div>
           <p class="font-medium">
             {{ t('recommend.watering') }}

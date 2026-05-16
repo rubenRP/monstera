@@ -1,6 +1,11 @@
 import type { SpeciesProfile } from '../../types/species'
 import type { AppLocale } from '../i18n/locale'
 import { translate } from '../i18n/translate'
+import type { PerenualSpeciesListItem } from './searchPerenual'
+
+export function isPerenualPlaceholderImage(url?: string | null): boolean {
+  return !url || url.includes('upgrade_access')
+}
 
 interface PerenualImage {
   regular_url?: string
@@ -146,14 +151,18 @@ export function mapPerenualProfile(
   const fertilizingGuide = careSectionText(careSections, 'fertilizing')
     || careSectionText(careSections, 'fertilizer')
 
+  const imageUrl = details.default_image?.regular_url
+    ?? details.default_image?.medium_url
+    ?? null
+
   return {
     perenualId: details.id,
     commonName: details.common_name ?? translate(locale, 'species.unknown'),
     scientificName: details.scientific_name ?? [],
-    imageUrl: details.default_image?.regular_url
-      ?? details.default_image?.medium_url
-      ?? null,
-    imageLicense: details.default_image?.license_name ?? null,
+    imageUrl: isPerenualPlaceholderImage(imageUrl) ? null : imageUrl,
+    imageLicense: isPerenualPlaceholderImage(imageUrl)
+      ? null
+      : (details.default_image?.license_name ?? null),
     watering: formatWatering(locale, details, careSections),
     light: formatLight(locale, details, careSections),
     humidity: humidityGuide || unavailable(locale),
@@ -168,4 +177,20 @@ export function mapPerenualProfile(
     pestsAndProblems: joinList(details.pest_susceptibility) || unavailable(locale),
     fetchedAt: new Date().toISOString()
   }
+}
+
+/** Minimal profile from species-list when details/care guides require a paid Perenual plan */
+export function mapPerenualListItem(
+  item: PerenualSpeciesListItem,
+  locale: AppLocale = 'es'
+): SpeciesProfile {
+  return mapPerenualProfile(
+    {
+      id: item.id,
+      common_name: item.common_name,
+      scientific_name: item.scientific_name
+    },
+    [],
+    locale
+  )
 }

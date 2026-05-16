@@ -4,7 +4,10 @@ import { normalizeSpeciesQuery } from '#shared/utils/species/normalize'
 import { isSpeciesProfileLimited } from '#shared/utils/species/profileCompleteness'
 import type { SpeciesProfile, SpeciesProfileRow } from '#shared/types/species'
 import { fetchSpeciesProfileFromPerenual } from '../../../utils/perenual'
-import { enrichSpeciesProfileWithCursor } from '../../../utils/speciesCursor'
+import {
+  enrichSpeciesProfileWithCursor,
+  generateSpeciesProfileWithCursor
+} from '../../../utils/speciesCursor'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 async function maybeEnrichSpeciesProfile(
@@ -117,8 +120,27 @@ export default defineEventHandler(async (event) => {
   let profile: SpeciesProfile
   try {
     profile = await fetchSpeciesProfileFromPerenual(speciesQuery, config.perenualApiKey, locale)
-  } catch {
-    throwApiError(502, API_ERROR_CODES.PERENUAL_QUERY_FAILED)
+  } catch (e) {
+    const notFound = isError(e)
+      && e.statusCode === 404
+      && (e.data as { code?: string })?.code === API_ERROR_CODES.PERENUAL_SPECIES_NOT_FOUND
+    if (notFound && config.cursorApiKey) {
+      try {
+        profile = await generateSpeciesProfileWithCursor(
+          speciesQuery,
+          locale,
+          config.cursorApiKey
+        )
+      } catch (genErr) {
+        console.error('Cursor species generate failed:', genErr)
+        throw e
+      }
+    } else if (isError(e) && e.statusCode) {
+      throw e
+    } else {
+      console.error('Perenual fetch failed:', e)
+      throwApiError(502, API_ERROR_CODES.PERENUAL_QUERY_FAILED)
+    }
   }
 
   profile = await maybeEnrichSpeciesProfile(
