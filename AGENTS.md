@@ -141,7 +141,7 @@ Form/API validation: Zod schemas in [`shared/utils/plants/schemas.ts`](shared/ut
 
 See [`.env.example`](.env.example). Critical rules:
 
-- **`SUPABASE_KEY`**: publishable (client). **`SUPABASE_SERVICE_KEY`**: server only, never in the bundle.
+- **`SUPABASE_KEY`** / **`NUXT_PUBLIC_SUPABASE_KEY`**: publishable (client). **`NUXT_SUPABASE_SECRET_KEY`**: server only, never in the bundle.
 - **Do not** add a `SUPABASE_DB` variable — it breaks `supabase db push`.
 - `CURSOR_API_KEY`, `PERENUAL_API_KEY` are server-only (`runtimeConfig`).
 

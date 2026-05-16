@@ -1,6 +1,5 @@
 import type { HealthStatus, Plant } from '#shared/types/database'
 import { HEALTH_STATUS_ORDER } from '#shared/constants/plants'
-import { generateFertilizeTasks } from '#shared/utils/care/generateTasks'
 import type { PlantFormInput } from '#shared/utils/plants/schemas'
 
 const PLANT_SELECT = '*, site:sites(*)'
@@ -129,28 +128,7 @@ export function usePlants() {
     if (error) throw error
   }
 
-  async function regenerateTasks(plantId: string, plant: Plant) {
-    const uid = user.value?.id
-    if (!uid) return
-
-    const fertTasks = generateFertilizeTasks(
-      plant.fertilizing_interval_days,
-      plant.last_fertilized_at ? new Date(plant.last_fertilized_at) : null
-    )
-
-    if (fertTasks.length) {
-      const { error } = await supabase.from('care_tasks').insert(
-        fertTasks.map(t => ({
-          plant_id: plantId,
-          user_id: uid,
-          type: t.type,
-          due_at: t.due_at,
-          status: 'pending' as const
-        }))
-      )
-      if (error) throw error
-    }
-
+  async function regenerateTasks(plantId: string, _plant: Plant) {
     await rescheduleWatering(plantId)
   }
 

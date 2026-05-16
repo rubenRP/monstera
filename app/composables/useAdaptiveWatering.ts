@@ -1,5 +1,9 @@
 import type { Plant } from '#shared/types/database'
 import {
+  alignFertilizeDueAt,
+  idealFertilizeDueAt
+} from '#shared/utils/care/alignFertilize'
+import {
   computeWateringSchedule,
   plantToAdaptiveInput,
   type WateringFactors,
@@ -123,7 +127,47 @@ export function useAdaptiveWatering() {
     })
     if (insError) throw insError
 
+    await rescheduleFertilizing(plantId, { nextWaterDueAt: schedule.nextDueAt })
+
     return schedule
+  }
+
+  async function rescheduleFertilizing(
+    plantId: string,
+    options?: { nextWaterDueAt?: string }
+  ): Promise<void> {
+    const uid = user.value?.id
+    if (!uid) throw new Error('No autenticado')
+
+    const { plant, schedule } = await recalculatePlantWatering(plantId)
+    const waterDueAt = options?.nextWaterDueAt ?? schedule.nextDueAt
+
+    const ideal = idealFertilizeDueAt(
+      plant.last_fertilized_at ? new Date(plant.last_fertilized_at) : null,
+      plant.fertilizing_interval_days
+    )
+    const aligned = alignFertilizeDueAt(
+      ideal,
+      new Date(waterDueAt),
+      plant.watering_interval_days
+    )
+
+    const { error: delError } = await supabase
+      .from('care_tasks')
+      .delete()
+      .eq('plant_id', plantId)
+      .eq('type', 'fertilize')
+      .eq('status', 'pending')
+    if (delError) throw delError
+
+    const { error: insError } = await supabase.from('care_tasks').insert({
+      plant_id: plantId,
+      user_id: uid,
+      type: 'fertilize',
+      due_at: aligned.toISOString(),
+      status: 'pending'
+    })
+    if (insError) throw insError
   }
 
   async function applySuggestedBaseInterval(plantId: string, baseDays: number): Promise<void> {
@@ -133,6 +177,23 @@ export function useAdaptiveWatering() {
       .eq('id', plantId)
     if (error) throw error
     await rescheduleWatering(plantId)
+  }
+
+  async function syncFertilizeAlignmentOnce(): Promise<void> {
+    const uid = user.value?.id
+    if (!uid || !import.meta.client) return
+
+    const storageKey = 'monstera_fert_water_align_v1'
+    if (localStorage.getItem(storageKey)) return
+
+    const { data: plants, error } = await supabase.from('plants').select('id')
+    if (error) throw error
+
+    for (const row of plants ?? []) {
+      await rescheduleWatering(row.id)
+    }
+
+    localStorage.setItem(storageKey, '1')
   }
 
   async function syncAllIfSeasonChanged(): Promise<void> {
@@ -164,7 +225,9 @@ export function useAdaptiveWatering() {
     computeScheduleForPlant,
     recalculatePlantWatering,
     rescheduleWatering,
+    rescheduleFertilizing,
     applySuggestedBaseInterval,
+    syncFertilizeAlignmentOnce,
     syncAllIfSeasonChanged
   }
 }

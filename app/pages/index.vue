@@ -3,7 +3,21 @@ import type { CareTask, HealthStatus } from '#shared/types/database'
 
 const { t } = useI18n()
 const { dateLocale } = useDateLocale()
-const { fetchTodayTasks, completeTask, skipTask, taskLabel, taskIcon, overdueDays, overdueLabel } = useCareTasks()
+const UPCOMING_STORAGE_KEY = 'monstera_home_upcoming_tasks'
+
+const {
+  fetchTodayTasks,
+  fetchUpcomingTasks,
+  createAdvanceTask,
+  completeTask,
+  skipTask,
+  taskLabel,
+  taskIcon,
+  overdueDays,
+  overdueLabel,
+  taskDueLabel,
+  fertilizeWithWater
+} = useCareTasks()
 const { fetchPlants } = usePlants()
 const toast = useToast()
 
@@ -13,6 +27,10 @@ const loading = ref(true)
 const acting = ref<string | null>(null)
 const skipWaterModalOpen = ref(false)
 const taskToSkip = ref<CareTask | null>(null)
+const addWaterModalOpen = ref(false)
+const addingWater = ref(false)
+const showUpcoming = ref(false)
+const tasksLoading = ref(false)
 
 const healthSummary = computed(() => {
   const counts: Record<HealthStatus, number> = {
@@ -31,12 +49,46 @@ const todayFormatted = computed(() =>
   new Date().toLocaleDateString(dateLocale.value, { weekday: 'long', day: 'numeric', month: 'long' })
 )
 
-onMounted(async () => {
+const plantIdsWithWaterInView = computed(
+  () => new Set(tasks.value.filter(task => task.type === 'water').map(task => task.plant_id))
+)
+
+const plantsForAdvanceWater = computed(() =>
+  plants.value.filter(p => !plantIdsWithWaterInView.value.has(p.id))
+)
+
+async function loadTasks() {
+  tasks.value = showUpcoming.value
+    ? await fetchUpcomingTasks()
+    : await fetchTodayTasks()
+}
+
+async function reloadTasks() {
+  tasksLoading.value = true
   try {
-    ;[tasks.value, plants.value] = await Promise.all([fetchTodayTasks(), fetchPlants()])
+    await loadTasks()
+  } finally {
+    tasksLoading.value = false
+  }
+}
+
+onMounted(async () => {
+  if (import.meta.client) {
+    showUpcoming.value = localStorage.getItem(UPCOMING_STORAGE_KEY) === '1'
+  }
+  try {
+    plants.value = await fetchPlants()
+    await loadTasks()
   } finally {
     loading.value = false
   }
+})
+
+watch(showUpcoming, (value) => {
+  if (import.meta.client) {
+    localStorage.setItem(UPCOMING_STORAGE_KEY, value ? '1' : '0')
+  }
+  if (!loading.value) void reloadTasks()
 })
 
 async function markDone(taskId: string) {
@@ -45,7 +97,7 @@ async function markDone(taskId: string) {
   acting.value = taskId
   try {
     await completeTask(task)
-    tasks.value = await fetchTodayTasks()
+    await reloadTasks()
   } finally {
     acting.value = null
   }
@@ -66,13 +118,36 @@ function onSkipWaterConfirm(soilStillWet: boolean) {
   void confirmSkip(task, soilStillWet)
 }
 
+async function onAddAdvanceWater(plantId: string) {
+  addingWater.value = true
+  try {
+    const created = await createAdvanceTask(plantId)
+    if (!created) {
+      toast.add({
+        title: t('care.addAdvanceWaterAlready'),
+        color: 'warning'
+      })
+      return
+    }
+    await reloadTasks()
+    addWaterModalOpen.value = false
+    toast.add({
+      title: t('care.addAdvanceWaterSuccess'),
+      description: created.plant?.name,
+      color: 'success'
+    })
+  } finally {
+    addingWater.value = false
+  }
+}
+
 async function confirmSkip(task: CareTask, soilStillWet: boolean) {
   skipWaterModalOpen.value = false
   taskToSkip.value = null
   acting.value = task.id
   try {
     const newInterval = await skipTask(task, { soilStillWet })
-    tasks.value = await fetchTodayTasks()
+    await reloadTasks()
     if (soilStillWet && newInterval) {
       toast.add({
         title: t('home.wateringPlanUpdated'),
@@ -148,84 +223,119 @@ async function confirmSkip(task: CareTask, soilStillWet: boolean) {
       />
     </div>
 
-    <UAlert
-      v-else-if="!tasks.length"
-      color="neutral"
-      icon="i-lucide-check-circle"
-      :title="t('home.allCaughtUp')"
-      :description="t('home.noTasksToday')"
-    />
+    <template v-else>
+      <div class="flex items-center justify-between gap-3 mb-4">
+        <span class="text-sm font-medium">{{ t('home.showUpcomingTasks') }}</span>
+        <USwitch v-model="showUpcoming" />
+      </div>
 
-    <ul
-      v-else
-      class="space-y-3"
-    >
-      <li
-        v-for="task in tasks"
-        :key="task.id"
-        class="p-4 rounded-xl border bg-elevated/30"
-        :class="overdueDays(task.due_at) > 0 ? 'border-warning/50' : 'border-default'"
+      <div
+        v-if="tasksLoading"
+        class="space-y-3"
       >
-        <div class="flex items-start gap-3">
-          <UIcon
-            :name="taskIcon(task.type)"
-            class="w-5 h-5 mt-0.5 shrink-0"
-            :class="overdueDays(task.due_at) > 0 ? 'text-warning' : 'text-primary'"
-          />
-          <div class="flex-1 min-w-0">
-            <NuxtLink
-              :to="`/plants/${task.plant_id}`"
-              class="font-medium hover:text-primary"
-            >
-              {{ task.plant?.name }}
-            </NuxtLink>
-            <p class="text-sm text-muted">
-              {{ taskLabel(task.type) }}
-              <span v-if="task.plant?.site?.name"> · {{ task.plant.site.name }}</span>
-            </p>
-            <p
-              v-if="overdueDays(task.due_at) > 0"
-              class="text-sm text-warning mt-0.5"
-            >
-              {{ overdueLabel(task.due_at) }}
-            </p>
-          </div>
-          <div class="flex gap-1 shrink-0">
-            <UButton
-              size="xs"
-              color="primary"
-              :loading="acting === task.id"
-              @click="markDone(task.id)"
-            >
-              {{ t('common.done') }}
-            </UButton>
-            <UButton
-              size="xs"
-              variant="ghost"
-              color="neutral"
-              :loading="acting === task.id"
-              @click="onSkipClick(task)"
-            >
-              {{ t('common.skip') }}
-            </UButton>
-          </div>
-        </div>
-      </li>
-    </ul>
+        <USkeleton
+          v-for="i in 2"
+          :key="i"
+          class="h-16"
+        />
+      </div>
 
-    <UButton
-      to="/plants/new"
-      block
-      icon="i-lucide-plus"
-      variant="soft"
-    >
-      {{ t('home.addPlant') }}
-    </UButton>
+      <UAlert
+        v-else-if="!tasks.length"
+        color="neutral"
+        icon="i-lucide-check-circle"
+        :title="t('home.allCaughtUp')"
+        :description="showUpcoming ? t('home.noTasksUpcoming') : t('home.noTasksToday')"
+      />
+
+      <UButton
+        v-if="!tasksLoading && plants.length"
+        class="mb-3"
+        block
+        variant="soft"
+        icon="i-lucide-droplets"
+        :disabled="!plantsForAdvanceWater.length"
+        @click="addWaterModalOpen = true"
+      >
+        {{ t('home.addAdvanceWater') }}
+      </UButton>
+
+      <ul
+        v-if="!tasksLoading && tasks.length"
+        class="space-y-3"
+      >
+        <li
+          v-for="task in tasks"
+          :key="task.id"
+          class="p-4 rounded-xl border bg-elevated/30"
+          :class="overdueDays(task.due_at) > 0 ? 'border-warning/50' : 'border-default'"
+        >
+          <div class="flex items-start gap-3">
+            <UIcon
+              :name="taskIcon(task.type)"
+              class="w-5 h-5 mt-0.5 shrink-0"
+              :class="overdueDays(task.due_at) > 0 ? 'text-warning' : 'text-primary'"
+            />
+            <div class="flex-1 min-w-0">
+              <NuxtLink
+                :to="`/plants/${task.plant_id}`"
+                class="font-medium hover:text-primary"
+              >
+                {{ task.plant?.name }}
+              </NuxtLink>
+              <p class="text-sm text-muted">
+                {{ taskLabel(task.type) }}
+                <span v-if="fertilizeWithWater(task, tasks)"> · {{ t('care.fertilizeWithWater') }}</span>
+                <span v-if="task.plant?.site?.name"> · {{ task.plant.site.name }}</span>
+              </p>
+              <p
+                v-if="overdueDays(task.due_at) > 0"
+                class="text-sm text-warning mt-0.5"
+              >
+                {{ overdueLabel(task.due_at) }}
+              </p>
+              <p
+                v-else-if="showUpcoming"
+                class="text-sm text-muted mt-0.5"
+              >
+                {{ taskDueLabel(task.due_at) }}
+              </p>
+            </div>
+            <div class="flex gap-1 shrink-0">
+              <UButton
+                size="xs"
+                color="primary"
+                :loading="acting === task.id"
+                @click="markDone(task.id)"
+              >
+                {{ t('common.done') }}
+              </UButton>
+              <UButton
+                size="xs"
+                variant="ghost"
+                color="neutral"
+                :loading="acting === task.id"
+                @click="onSkipClick(task)"
+              >
+                {{ t('common.skip') }}
+              </UButton>
+            </div>
+          </div>
+        </li>
+      </ul>
+    </template>
 
     <CareSkipWaterModal
       v-model:open="skipWaterModalOpen"
       v-model:task="taskToSkip"
       @confirm="onSkipWaterConfirm"
+    />
+
+    <CareAddAdvanceWaterModal
+      v-model:open="addWaterModalOpen"
+      :plants="plantsForAdvanceWater"
+      :loading="addingWater"
+      @submit="onAddAdvanceWater"
     />
   </div>
 </template>

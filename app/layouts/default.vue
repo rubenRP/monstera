@@ -16,7 +16,7 @@ function isActive(path: string) {
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col md:flex-row pb-20 md:pb-0">
+  <div class="min-h-screen flex flex-col md:flex-row pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-0">
     <aside class="hidden md:flex md:flex-col md:w-56 md:border-r md:border-default md:min-h-screen md:p-4 md:sticky md:top-0">
       <NuxtLink
         to="/"
@@ -61,7 +61,7 @@ function isActive(path: string) {
     </aside>
 
     <div class="flex-1 flex flex-col min-w-0">
-      <header class="sticky top-0 z-40 border-b border-default bg-default/80 backdrop-blur px-4 py-3 md:hidden">
+      <header class="sticky top-0 z-40 border-b border-default bg-default/95 backdrop-blur px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top,0px))] md:hidden">
         <div class="max-w-lg mx-auto flex items-center justify-between">
           <NuxtLink
             to="/"
@@ -87,10 +87,10 @@ function isActive(path: string) {
     </div>
 
     <nav
-      class="fixed bottom-0 inset-x-0 z-40 border-t border-default bg-default/95 backdrop-blur md:hidden"
+      class="fixed bottom-0 inset-x-0 z-40 border-t border-default bg-default/95 backdrop-blur md:hidden pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]"
       :aria-label="t('nav.mainNav')"
     >
-      <div class="flex justify-around py-2">
+      <div class="flex justify-around pt-2 pb-1 px-2">
         <NuxtLink
           v-for="item in nav"
           :key="item.to"

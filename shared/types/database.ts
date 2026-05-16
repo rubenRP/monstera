@@ -95,6 +95,9 @@ export interface UserSettings {
   home_lat: number | null
   home_lon: number | null
   locale: AppLocale
+  push_reminder_time: string
+  push_reminder_timezone: string
+  push_reminder_last_sent_on: string | null
   created_at: string
   updated_at: string
 }

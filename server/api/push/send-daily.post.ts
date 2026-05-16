@@ -1,8 +1,12 @@
 import webpush from 'web-push'
 import { API_ERROR_CODES } from '#shared/utils/i18n/apiErrors'
-import type { AppLocale } from '#shared/utils/i18n/locale'
 import { parseAppLocale } from '#shared/utils/i18n/locale'
 import { translate } from '#shared/utils/i18n/translate'
+import {
+  getLocalDateTimeParts,
+  shouldSendPushReminder,
+  type PushReminderSettings
+} from '#shared/utils/push/reminderSchedule'
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
@@ -39,18 +43,25 @@ export default defineEventHandler(async (event) => {
   }
 
   const userIds = [...byUser.keys()]
+  const now = new Date()
+
   const { data: settingsRows } = await supabase
     .from('user_settings')
-    .select('user_id, locale')
+    .select('user_id, locale, push_reminder_time, push_reminder_timezone, push_reminder_last_sent_on')
     .in('user_id', userIds)
 
-  const localeByUser = new Map<string, AppLocale>(
-    (settingsRows ?? []).map(r => [r.user_id, parseAppLocale(r.locale)])
+  const settingsByUser = new Map(
+    (settingsRows ?? []).map(r => [r.user_id, r])
   )
 
   let sent = 0
   for (const [userId, count] of byUser) {
-    const locale = localeByUser.get(userId) ?? 'es'
+    const settings = settingsByUser.get(userId) as PushReminderSettings | undefined
+    if (!shouldSendPushReminder(settings ?? {}, now)) continue
+
+    const locale = parseAppLocale(
+      (settings as { locale?: string } | undefined)?.locale
+    )
     const { data: subs } = await supabase
       .from('push_subscriptions')
       .select('*')
@@ -80,6 +91,13 @@ export default defineEventHandler(async (event) => {
         console.error('Push failed:', e)
       }
     }
+
+    const timeZone = settings?.push_reminder_timezone || 'UTC'
+    const { dateStr } = getLocalDateTimeParts(now, timeZone)
+    await supabase
+      .from('user_settings')
+      .update({ push_reminder_last_sent_on: dateStr })
+      .eq('user_id', userId)
   }
 
   return { sent }

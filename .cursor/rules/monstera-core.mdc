@@ -11,7 +11,7 @@ alwaysApply: true
 - **Alias**: import shared types/utils via `#shared/...`, not long relative paths from `app/` or `server/`.
 - **Domain types**: `shared/types/database.ts` is the source of truth; update when the schema changes.
 - **Validation**: Zod in `shared/utils/*/schemas.ts`; reuse in forms and APIs.
-- **Secrets**: never `SUPABASE_SERVICE_KEY` on the client; do not commit `.env`.
+- **Secrets**: never `NUXT_SUPABASE_SECRET_KEY` on the client; do not commit `.env`.
 - **Env**: do not use a `SUPABASE_DB` variable (breaks Supabase CLI).
 - **Style**: no trailing comma (ESLint); minimal changes, no unrelated refactors.
 - **Verification**: run `npm run lint` and `npm run typecheck` after relevant changes.

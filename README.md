@@ -30,7 +30,7 @@ npx supabase db push
 |-----------------|--------------|---------|
 | `SUPABASE_URL` | Project URL | Project URL |
 | `SUPABASE_KEY` | **Publishable** (formerly anon) | Nuxt client, respects RLS |
-| `SUPABASE_SERVICE_KEY` | **Secret** (formerly service_role) | Server only (`server/api`) |
+| `NUXT_SUPABASE_SECRET_KEY` | **Secret** (formerly service_role) | Server only (`server/api`) |
 | `CURSOR_API_KEY` | — | Cursor API key |
 | `PERENUAL_API_KEY` | — | Perenual API key (species variety tab) |
 
@@ -42,7 +42,7 @@ npx supabase db push
 npx web-push generate-vapid-keys
 ```
 
-Add `NUXT_PUBLIC_VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY`. For a daily cron job, set `CRON_SECRET` and call `POST /api/push/send-daily` with the `x-cron-secret` header.
+Add `NUXT_PUBLIC_VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY`. Set `CRON_SECRET` and call `POST /api/push/send-daily` with the `x-cron-secret` header **every hour** (e.g. at minute 0). Each user receives at most one reminder per day at their chosen time (Ajustes → Notificaciones); default 09:00 in the device time zone.
 
 ## Development
 

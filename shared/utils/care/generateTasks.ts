@@ -8,7 +8,10 @@ export interface TaskToInsert {
 /** Must cover max fertilizing_interval_days (365) so at least one task is generated. */
 const HORIZON_DAYS = 365
 
-/** Fertilize tasks only; water uses a single pending task via adaptive scheduling. */
+/**
+ * Fertilize tasks only (legacy bulk generation).
+ * Prefer a single pending task via {@link alignFertilizeDueAt} + adaptive watering.
+ */
 export function generateFertilizeTasks(
   fertilizingIntervalDays: number,
   lastFertilizedAt: Date | null,

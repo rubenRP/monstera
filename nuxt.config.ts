@@ -19,7 +19,9 @@ export default defineNuxtConfig({
   runtimeConfig: {
     cursorApiKey: process.env.CURSOR_API_KEY || '',
     perenualApiKey: process.env.PERENUAL_API_KEY || '',
-    supabaseServiceKey: process.env.SUPABASE_SERVICE_KEY || '',
+    supabaseServiceKey: process.env.NUXT_SUPABASE_SECRET_KEY
+      || process.env.SUPABASE_SECRET_KEY
+      || '',
     vapidPrivateKey: process.env.VAPID_PRIVATE_KEY || '',
     public: {
       vapidPublicKey: process.env.NUXT_PUBLIC_VAPID_PUBLIC_KEY || '',
@@ -30,6 +32,17 @@ export default defineNuxtConfig({
 
   alias: {
     '#shared': fileURLToPath(new URL('./shared', import.meta.url))
+  },
+
+  app: {
+    head: {
+      meta: [
+        {
+          name: 'viewport',
+          content: 'width=device-width, initial-scale=1, viewport-fit=cover'
+        }
+      ]
+    }
   },
 
   compatibilityDate: '2025-01-15',

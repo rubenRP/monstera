@@ -1,12 +1,12 @@
 import type { CareTask, CareTaskType } from '#shared/types/database'
 import { deduplicateOverlappingTasks } from '#shared/utils/care/deduplicateTasks'
-import { nextTaskDue } from '#shared/utils/care/generateTasks'
+import { isSameCalendarDay } from '#shared/utils/care/alignFertilize'
 import { taskOverdueDays } from '#shared/utils/care/taskDue'
 
 export function useCareTasks() {
   const supabase = useSupabaseClient()
   const user = useSupabaseUser()
-  const { rescheduleWatering, countRecentWetSkips } = useAdaptiveWatering()
+  const { rescheduleWatering, rescheduleFertilizing, countRecentWetSkips } = useAdaptiveWatering()
 
   async function dismissOverlappingPendingTasks(task: CareTask, exceptId: string) {
     const end = new Date()
@@ -47,6 +47,13 @@ export function useCareTasks() {
   async function fetchTodayTasks() {
     const end = new Date()
     end.setHours(23, 59, 59, 999)
+    return fetchPendingTasks({ dueBefore: end })
+  }
+
+  async function fetchUpcomingTasks(days = 7) {
+    const end = new Date()
+    end.setHours(23, 59, 59, 999)
+    end.setDate(end.getDate() + days)
     return fetchPendingTasks({ dueBefore: end })
   }
 
@@ -98,28 +105,50 @@ export function useCareTasks() {
       return
     }
 
-    const { data: plant } = await supabase
-      .from('plants')
-      .select('fertilizing_interval_days')
-      .eq('id', task.plant_id)
-      .single()
-    if (!plant) return
-
-    const uid = user.value?.id
-    if (!uid) return
-
     await supabase
       .from('plants')
       .update({ last_fertilized_at: now })
       .eq('id', task.plant_id)
 
-    await supabase.from('care_tasks').insert({
-      plant_id: task.plant_id,
-      user_id: uid,
-      type: 'fertilize',
-      due_at: nextTaskDue(plant.fertilizing_interval_days, new Date(now)),
-      status: 'pending'
-    })
+    await rescheduleFertilizing(task.plant_id)
+  }
+
+  async function hasPendingTaskDueToday(plantId: string, type: CareTaskType) {
+    const end = new Date()
+    end.setHours(23, 59, 59, 999)
+
+    const { count, error } = await supabase
+      .from('care_tasks')
+      .select('*', { count: 'exact', head: true })
+      .eq('plant_id', plantId)
+      .eq('type', type)
+      .eq('status', 'pending')
+      .lte('due_at', end.toISOString())
+    if (error) throw error
+    return (count ?? 0) > 0
+  }
+
+  async function createAdvanceTask(plantId: string, type: CareTaskType = 'water') {
+    const uid = user.value?.id
+    if (!uid) throw new Error('No autenticado')
+
+    if (await hasPendingTaskDueToday(plantId, type)) {
+      return null
+    }
+
+    const { data, error } = await supabase
+      .from('care_tasks')
+      .insert({
+        plant_id: plantId,
+        user_id: uid,
+        type,
+        due_at: new Date().toISOString(),
+        status: 'pending'
+      })
+      .select(taskSelect)
+      .single()
+    if (error) throw error
+    return data as CareTask
   }
 
   async function skipTask(task: CareTask, options?: { soilStillWet?: boolean }) {
@@ -145,23 +174,7 @@ export function useCareTasks() {
       return schedule.effectiveIntervalDays
     }
 
-    const uid = user.value?.id
-    if (!uid) return
-
-    const { data: plant } = await supabase
-      .from('plants')
-      .select('fertilizing_interval_days')
-      .eq('id', task.plant_id)
-      .single()
-    if (!plant) return
-
-    await supabase.from('care_tasks').insert({
-      plant_id: task.plant_id,
-      user_id: uid,
-      type: 'fertilize',
-      due_at: nextTaskDue(plant.fertilizing_interval_days, new Date()),
-      status: 'pending'
-    })
+    await rescheduleFertilizing(task.plant_id)
   }
 
   const { t } = useI18n()
@@ -178,6 +191,15 @@ export function useCareTasks() {
     return taskOverdueDays(dueAt)
   }
 
+  function fertilizeWithWater(task: CareTask, pendingTasks: CareTask[]) {
+    if (task.type !== 'fertilize') return false
+    return pendingTasks.some(
+      other => other.plant_id === task.plant_id
+        && other.type === 'water'
+        && isSameCalendarDay(other.due_at, task.due_at)
+    )
+  }
+
   function overdueLabel(dueAt: string) {
     const days = taskOverdueDays(dueAt)
     if (days <= 0) return ''
@@ -185,16 +207,30 @@ export function useCareTasks() {
     return t('care.overdueMany', { days })
   }
 
+  function taskDueLabel(dueAt: string) {
+    const overdue = taskOverdueDays(dueAt)
+    if (overdue > 0) return overdueLabel(dueAt)
+    if (overdue === 0) return t('care.dueToday')
+    const days = -overdue
+    if (days === 1) return t('care.dueTomorrow')
+    return t('care.dueInDays', { days })
+  }
+
   return {
     fetchTodayTasks,
+    fetchUpcomingTasks,
     fetchPlantPendingTasks,
     fetchCareHistory,
     fetchTasksInRange,
+    createAdvanceTask,
+    hasPendingTaskDueToday,
     completeTask,
     skipTask,
     taskLabel,
     taskIcon,
     overdueDays,
-    overdueLabel
+    overdueLabel,
+    taskDueLabel,
+    fertilizeWithWater
   }
 }

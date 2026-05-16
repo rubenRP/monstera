@@ -27,7 +27,7 @@ const emit = defineEmits<{
   skipTask: [task: CareTask]
 }>()
 
-const { taskLabel, taskIcon, overdueDays, overdueLabel } = useCareTasks()
+const { taskLabel, taskIcon, overdueDays, overdueLabel, fertilizeWithWater } = useCareTasks()
 const { fetchHomeLat, computeScheduleForPlant, countRecentWetSkips } = useAdaptiveWatering()
 
 const wateringSchedule = ref<ReturnType<typeof computeScheduleForPlant> | null>(null)
@@ -255,6 +255,10 @@ const plantRows = computed((): InfoRow[] => [
           <div class="min-w-0">
             <p class="text-sm font-medium">
               {{ taskLabel(task.type) }}
+              <span
+                v-if="fertilizeWithWater(task, pendingTasks)"
+                class="font-normal text-muted"
+              > · {{ t('care.fertilizeWithWater') }}</span>
             </p>
             <p
               class="text-xs"

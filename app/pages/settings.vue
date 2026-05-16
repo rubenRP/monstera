@@ -1,5 +1,10 @@
 <script setup lang="ts">
 import type { AppLocale } from '#shared/types/database'
+import {
+  getBrowserTimezone,
+  reminderTimeFromInput,
+  reminderTimeToInputValue
+} from '#shared/utils/push/reminderSchedule'
 
 const { t, locales, locale, setLocale } = useI18n()
 const supabase = useSupabaseClient()
@@ -13,6 +18,9 @@ const homeLat = ref(Number(config.public.homeLat))
 const homeLon = ref(Number(config.public.homeLon))
 const saving = ref(false)
 const pushLoading = ref(false)
+const savingReminder = ref(false)
+const pushReminderTime = ref('09:00')
+const pushReminderTimezone = ref(getBrowserTimezone())
 
 const localeItems = computed(() =>
   locales.value.map(l => ({ label: l.name, value: l.code }))
@@ -23,11 +31,17 @@ onMounted(async () => {
   if (!userId) return
   const { data } = await supabase
     .from('user_settings')
-    .select('home_lat, home_lon, locale')
+    .select('home_lat, home_lon, locale, push_reminder_time, push_reminder_timezone')
     .eq('user_id', userId)
     .maybeSingle()
   if (data?.home_lat) homeLat.value = Number(data.home_lat)
   if (data?.home_lon) homeLon.value = Number(data.home_lon)
+  if (data?.push_reminder_time) {
+    pushReminderTime.value = reminderTimeToInputValue(data.push_reminder_time)
+  }
+  if (data?.push_reminder_timezone) {
+    pushReminderTimezone.value = data.push_reminder_timezone
+  }
 })
 
 async function saveLocation() {
@@ -50,10 +64,40 @@ async function saveLocation() {
   }
 }
 
+async function savePushReminder() {
+  const userId = user.value?.id
+  if (!userId) return
+  savingReminder.value = true
+  pushReminderTimezone.value = getBrowserTimezone()
+  try {
+    await supabase.from('user_settings').upsert({
+      user_id: userId,
+      push_reminder_time: reminderTimeFromInput(pushReminderTime.value),
+      push_reminder_timezone: pushReminderTimezone.value,
+      updated_at: new Date().toISOString()
+    })
+    toast.add({ title: t('settings.pushReminderSaved'), color: 'success' })
+  } catch (e: unknown) {
+    toast.add({ title: t('common.error'), description: apiErrorMessage(e), color: 'error' })
+  } finally {
+    savingReminder.value = false
+  }
+}
+
 async function enablePush() {
   pushLoading.value = true
   try {
     await subscribe()
+    const userId = user.value?.id
+    if (userId) {
+      pushReminderTimezone.value = getBrowserTimezone()
+      await supabase.from('user_settings').upsert({
+        user_id: userId,
+        push_reminder_time: reminderTimeFromInput(pushReminderTime.value),
+        push_reminder_timezone: pushReminderTimezone.value,
+        updated_at: new Date().toISOString()
+      })
+    }
     toast.add({ title: t('settings.pushEnabled'), color: 'success' })
   } catch (e: unknown) {
     toast.add({
@@ -165,14 +209,37 @@ async function onLocaleChange(value: string) {
       <p class="text-sm text-muted mb-3">
         {{ t('settings.notificationsHint') }}
       </p>
-      <UButton
-        :loading="pushLoading"
-        :disabled="!config.public.vapidPublicKey"
-        icon="i-lucide-bell"
-        @click="enablePush"
+      <UFormField
+        :label="t('settings.pushReminderTime')"
+        class="mb-3"
       >
-        {{ t('settings.enablePush') }}
-      </UButton>
+        <UInput
+          v-model="pushReminderTime"
+          type="time"
+          class="w-full"
+        />
+      </UFormField>
+      <p class="text-xs text-muted mb-3">
+        {{ t('settings.pushReminderTimezone', { tz: pushReminderTimezone }) }}
+      </p>
+      <div class="flex flex-wrap gap-2">
+        <UButton
+          :loading="savingReminder"
+          variant="soft"
+          icon="i-lucide-clock"
+          @click="savePushReminder"
+        >
+          {{ t('settings.savePushReminder') }}
+        </UButton>
+        <UButton
+          :loading="pushLoading"
+          :disabled="!config.public.vapidPublicKey"
+          icon="i-lucide-bell"
+          @click="enablePush"
+        >
+          {{ t('settings.enablePush') }}
+        </UButton>
+      </div>
       <p
         v-if="!config.public.vapidPublicKey"
         class="text-xs text-muted mt-2"
