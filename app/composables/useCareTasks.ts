@@ -1,7 +1,7 @@
 import type { CareTask, CareTaskType } from '#shared/types/database'
 import { deduplicateOverlappingTasks } from '#shared/utils/care/deduplicateTasks'
 import { nextTaskDue } from '#shared/utils/care/generateTasks'
-import { formatTaskOverdueLabel, taskOverdueDays } from '#shared/utils/care/taskDue'
+import { taskOverdueDays } from '#shared/utils/care/taskDue'
 import { bumpWateringInterval, scheduleWateringFromToday } from '#shared/utils/care/wateringPlan'
 
 export function useCareTasks() {
@@ -161,8 +161,10 @@ export function useCareTasks() {
     })
   }
 
+  const { t } = useI18n()
+
   function taskLabel(type: CareTaskType) {
-    return type === 'water' ? 'Riego' : 'Fertilización'
+    return type === 'water' ? t('care.taskWater') : t('care.taskFertilize')
   }
 
   function taskIcon(type: CareTaskType) {
@@ -174,7 +176,10 @@ export function useCareTasks() {
   }
 
   function overdueLabel(dueAt: string) {
-    return formatTaskOverdueLabel(taskOverdueDays(dueAt))
+    const days = taskOverdueDays(dueAt)
+    if (days <= 0) return ''
+    if (days === 1) return t('care.overdueOne')
+    return t('care.overdueMany', { days })
   }
 
   return {

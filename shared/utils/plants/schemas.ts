@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { VALIDATION_KEYS } from '../i18n/validationKeys'
 
 export const healthStatusSchema = z.enum(['healthy', 'fair', 'sick', 'critical'])
 export const placementSchema = z.enum(['indoor', 'outdoor', 'semi_outdoor'])
@@ -10,7 +11,7 @@ export const substrateTypeSchema = z.enum([
 ])
 
 export const plantFormSchema = z.object({
-  name: z.string().min(1, 'El nombre es obligatorio'),
+  name: z.string().min(1, VALIDATION_KEYS.PLANT_NAME_REQUIRED),
   species: z.string().optional().nullable(),
   notes: z.string().optional().default(''),
   health_status: healthStatusSchema.default('healthy'),
@@ -33,7 +34,7 @@ export type PlantFormInput = z.infer<typeof plantFormSchema>
 
 export const diagnoseRequestSchema = z.object({
   plantId: z.string().uuid(),
-  symptoms: z.string().min(3),
+  symptoms: z.string().min(3, VALIDATION_KEYS.SYMPTOMS_MIN),
   imageBase64: z.string().optional(),
   mimeType: z.string().optional().default('image/jpeg')
 })

@@ -3,14 +3,14 @@ export type WindowOrientation = 'N' | 'NE' | 'E' | 'SE' | 'S' | 'SW' | 'W' | 'NW
 export type Luminosity = 'low' | 'medium' | 'high' | 'direct_sun'
 export type PotSize = 'xs' | 's' | 'm' | 'l' | 'xl'
 export type PotMaterial = 'terracotta' | 'plastic' | 'ceramic' | 'metal' | 'other'
-export type SubstrateType =
-  | 'universal'
-  | 'cactus_succulent'
-  | 'orchid'
-  | 'acid_loving'
-  | 'coco_coir'
-  | 'peat'
-  | 'other'
+export type SubstrateType
+  = | 'universal'
+    | 'cactus_succulent'
+    | 'orchid'
+    | 'acid_loving'
+    | 'coco_coir'
+    | 'peat'
+    | 'other'
 export type HealthStatus = 'healthy' | 'fair' | 'sick' | 'critical'
 export type CareTaskType = 'water' | 'fertilize'
 export type CareTaskStatus = 'pending' | 'done' | 'skipped'
@@ -85,10 +85,13 @@ export interface Diagnosis {
   created_at: string
 }
 
+export type AppLocale = 'es' | 'en'
+
 export interface UserSettings {
   user_id: string
   home_lat: number | null
   home_lon: number | null
+  locale: AppLocale
   created_at: string
   updated_at: string
 }

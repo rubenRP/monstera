@@ -1,6 +1,7 @@
 <script setup lang="ts">
 definePageMeta({ layout: false })
 
+const { t } = useI18n()
 const user = useSupabaseUser()
 
 watchEffect(() => {
@@ -13,8 +14,13 @@ watchEffect(() => {
 <template>
   <div class="min-h-screen flex items-center justify-center p-4">
     <div class="text-center space-y-3">
-      <UIcon name="i-lucide-loader-circle" class="w-10 h-10 animate-spin mx-auto text-primary" />
-      <p class="text-muted">Confirmando sesión…</p>
+      <UIcon
+        name="i-lucide-loader-circle"
+        class="w-10 h-10 animate-spin mx-auto text-primary"
+      />
+      <p class="text-muted">
+        {{ t('auth.confirmingSession') }}
+      </p>
     </div>
   </div>
 </template>

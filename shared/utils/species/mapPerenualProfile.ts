@@ -1,6 +1,6 @@
 import type { SpeciesProfile } from '../../types/species'
-
-const UNAVAILABLE = 'No disponible en la fuente'
+import type { AppLocale } from '../i18n/locale'
+import { translate } from '../i18n/translate'
 
 interface PerenualImage {
   regular_url?: string
@@ -38,6 +38,10 @@ interface CareGuideEntry {
   section?: CareGuideSection[]
 }
 
+function unavailable(locale: AppLocale): string {
+  return translate(locale, 'species.unavailable')
+}
+
 function joinList(items: string[] | undefined | null): string {
   if (!items?.length) return ''
   return items.join(', ')
@@ -48,69 +52,93 @@ function careSectionText(sections: CareGuideSection[] | undefined, type: string)
   return section?.description?.trim() ?? ''
 }
 
-function formatWatering(details: PerenualDetails, careSections: CareGuideSection[]): string {
+function formatWatering(
+  locale: AppLocale,
+  details: PerenualDetails,
+  careSections: CareGuideSection[]
+): string {
   const parts: string[] = []
-  if (details.watering) parts.push(`Frecuencia: ${details.watering}`)
+  if (details.watering) {
+    parts.push(translate(locale, 'species.frequency', { value: details.watering }))
+  }
   const bench = details.watering_general_benchmark
   if (bench?.value && bench?.unit) {
-    parts.push(`Referencia: cada ${bench.value} ${bench.unit}`)
+    parts.push(translate(locale, 'species.benchmark', { value: bench.value, unit: bench.unit }))
   }
   const guide = careSectionText(careSections, 'watering')
   if (guide) parts.push(guide)
-  return parts.join('\n\n') || UNAVAILABLE
+  return parts.join('\n\n') || unavailable(locale)
 }
 
-function formatLight(details: PerenualDetails, careSections: CareGuideSection[]): string {
+function formatLight(
+  locale: AppLocale,
+  details: PerenualDetails,
+  careSections: CareGuideSection[]
+): string {
   const parts: string[] = []
   const sunlight = joinList(details.sunlight)
-  if (sunlight) parts.push(`Requisitos: ${sunlight}`)
+  if (sunlight) parts.push(translate(locale, 'species.lightRequirements', { value: sunlight }))
   const guide = careSectionText(careSections, 'sunlight')
   if (guide) parts.push(guide)
-  return parts.join('\n\n') || UNAVAILABLE
+  return parts.join('\n\n') || unavailable(locale)
 }
 
-function formatToxicity(details: PerenualDetails): string {
+function formatToxicity(locale: AppLocale, details: PerenualDetails): string {
   const human = details.poisonous_to_humans
   const pets = details.poisonous_to_pets
-  if (human == null && pets == null) return UNAVAILABLE
+  if (human == null && pets == null) return unavailable(locale)
   const lines: string[] = []
-  if (human != null) lines.push(`Humanos: ${human ? 'Tóxica' : 'No tóxica'}`)
-  if (pets != null) lines.push(`Mascotas: ${pets ? 'Tóxica' : 'No tóxica'}`)
+  if (human != null) {
+    lines.push(translate(locale, 'species.humans', {
+      value: human ? translate(locale, 'species.toxic') : translate(locale, 'species.nonToxic')
+    }))
+  }
+  if (pets != null) {
+    lines.push(translate(locale, 'species.pets', {
+      value: pets ? translate(locale, 'species.toxic') : translate(locale, 'species.nonToxic')
+    }))
+  }
   return lines.join('. ')
 }
 
-function formatTemperature(details: PerenualDetails): string {
+function formatTemperature(locale: AppLocale, details: PerenualDetails): string {
   const h = details.hardiness
   if (h?.min != null || h?.max != null) {
-    const min = h.min ?? '?'
-    const max = h.max ?? '?'
-    return `Zona de rusticidad USDA: ${min}–${max}`
+    return translate(locale, 'species.hardiness', {
+      min: h.min ?? '?',
+      max: h.max ?? '?'
+    })
   }
-  return UNAVAILABLE
+  return unavailable(locale)
 }
 
-function formatRepotting(details: PerenualDetails): string {
+function formatRepotting(locale: AppLocale, details: PerenualDetails): string {
   const parts: string[] = []
-  if (details.growth_rate) parts.push(`Crecimiento: ${details.growth_rate}`)
-  if (details.maintenance) parts.push(`Mantenimiento: ${details.maintenance}`)
+  if (details.growth_rate) {
+    parts.push(translate(locale, 'species.growth', { value: details.growth_rate }))
+  }
+  if (details.maintenance) {
+    parts.push(translate(locale, 'species.maintenance', { value: details.maintenance }))
+  }
   const pruning = joinList(details.pruning_month)
-  if (pruning) parts.push(`Poda / trasplante sugerido: ${pruning}`)
-  return parts.join('. ') || UNAVAILABLE
+  if (pruning) parts.push(translate(locale, 'species.pruning', { value: pruning }))
+  return parts.join('. ') || unavailable(locale)
 }
 
-function formatCharacteristics(details: PerenualDetails): string {
+function formatCharacteristics(locale: AppLocale, details: PerenualDetails): string {
   const parts: string[] = []
   if (details.description) parts.push(details.description)
   const meta: string[] = []
-  if (details.type) meta.push(`Tipo: ${details.type}`)
-  if (details.cycle) meta.push(`Ciclo: ${details.cycle}`)
+  if (details.type) meta.push(translate(locale, 'species.type', { value: details.type }))
+  if (details.cycle) meta.push(translate(locale, 'species.cycle', { value: details.cycle }))
   if (meta.length) parts.push(meta.join(' · '))
-  return parts.join('\n\n') || UNAVAILABLE
+  return parts.join('\n\n') || unavailable(locale)
 }
 
 export function mapPerenualProfile(
   details: PerenualDetails,
-  careGuides: CareGuideEntry[]
+  careGuides: CareGuideEntry[],
+  locale: AppLocale = 'es'
 ): SpeciesProfile {
   const careSections = careGuides.flatMap(g => g.section ?? [])
   const humidityGuide = careSectionText(careSections, 'humidity')
@@ -120,22 +148,24 @@ export function mapPerenualProfile(
 
   return {
     perenualId: details.id,
-    commonName: details.common_name ?? 'Desconocida',
+    commonName: details.common_name ?? translate(locale, 'species.unknown'),
     scientificName: details.scientific_name ?? [],
     imageUrl: details.default_image?.regular_url
       ?? details.default_image?.medium_url
       ?? null,
     imageLicense: details.default_image?.license_name ?? null,
-    watering: formatWatering(details, careSections),
-    light: formatLight(details, careSections),
-    humidity: humidityGuide || UNAVAILABLE,
-    fertilizing: fertilizingGuide || (details.maintenance ? `Mantenimiento: ${details.maintenance}` : UNAVAILABLE),
-    soil: joinList(details.soil) || UNAVAILABLE,
-    repotting: formatRepotting(details),
-    toxicity: formatToxicity(details),
-    characteristics: formatCharacteristics(details),
-    temperature: formatTemperature(details),
-    pestsAndProblems: joinList(details.pest_susceptibility) || UNAVAILABLE,
+    watering: formatWatering(locale, details, careSections),
+    light: formatLight(locale, details, careSections),
+    humidity: humidityGuide || unavailable(locale),
+    fertilizing: fertilizingGuide || (details.maintenance
+      ? translate(locale, 'species.maintenance', { value: details.maintenance })
+      : unavailable(locale)),
+    soil: joinList(details.soil) || unavailable(locale),
+    repotting: formatRepotting(locale, details),
+    toxicity: formatToxicity(locale, details),
+    characteristics: formatCharacteristics(locale, details),
+    temperature: formatTemperature(locale, details),
+    pestsAndProblems: joinList(details.pest_susceptibility) || unavailable(locale),
     fetchedAt: new Date().toISOString()
   }
 }

@@ -1,7 +1,12 @@
 <script setup lang="ts">
 definePageMeta({ layout: false })
 
+const { t, locale } = useI18n()
 const supabase = useSupabaseClient()
+
+const emailPlaceholder = computed(() =>
+  locale.value === 'en' ? 'you@email.com' : 'tu@email.com'
+)
 const email = ref('')
 const sent = ref(false)
 const loading = ref(false)
@@ -20,7 +25,7 @@ async function sendMagicLink() {
     if (err) throw err
     sent.value = true
   } catch (e: unknown) {
-    error.value = e instanceof Error ? e.message : 'Error al enviar el enlace'
+    error.value = e instanceof Error ? e.message : t('auth.sendLinkError')
   } finally {
     loading.value = false
   }
@@ -32,29 +37,53 @@ async function sendMagicLink() {
     <UCard class="w-full max-w-md">
       <template #header>
         <div class="flex items-center gap-2">
-          <UIcon name="i-lucide-sprout" class="w-8 h-8 text-primary" />
+          <UIcon
+            name="i-lucide-sprout"
+            class="w-8 h-8 text-primary"
+          />
           <div>
-            <h1 class="text-xl font-bold">Monstera</h1>
-            <p class="text-sm text-muted">Inicia sesión con tu email</p>
+            <h1 class="text-xl font-bold">
+              {{ t('app.title') }}
+            </h1>
+            <p class="text-sm text-muted">
+              {{ t('auth.loginSubtitle') }}
+            </p>
           </div>
         </div>
       </template>
 
-      <UAlert v-if="error" color="error" :title="error" class="mb-4" />
+      <UAlert
+        v-if="error"
+        color="error"
+        :title="error"
+        class="mb-4"
+      />
       <UAlert
         v-if="sent"
         color="success"
-        title="Revisa tu correo"
-        description="Te hemos enviado un enlace mágico para entrar."
+        :title="t('auth.checkEmail')"
+        :description="t('auth.magicLinkSent')"
         class="mb-4"
       />
 
-      <form class="space-y-4" @submit.prevent="sendMagicLink">
-        <UFormField label="Email">
-          <UInput v-model="email" type="email" required placeholder="tu@email.com" />
+      <form
+        class="space-y-4"
+        @submit.prevent="sendMagicLink"
+      >
+        <UFormField :label="t('auth.email')">
+          <UInput
+            v-model="email"
+            type="email"
+            required
+            :placeholder="emailPlaceholder"
+          />
         </UFormField>
-        <UButton type="submit" block :loading="loading">
-          Enviar enlace mágico
+        <UButton
+          type="submit"
+          block
+          :loading="loading"
+        >
+          {{ t('auth.sendMagicLink') }}
         </UButton>
       </form>
     </UCard>

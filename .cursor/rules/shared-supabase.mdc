@@ -10,7 +10,8 @@ alwaysApply: false
 
 - **No** Vue/Nuxt dependencies — standard TS, Zod, types only.
 - `shared/utils/<domain>/` — pure logic (care, species, plants, cursor).
-- `shared/constants/` — Spanish labels for enums (user-facing).
+- `shared/constants/` — enum values and non-lingual metadata only (no display labels).
+- Enum labels: `enums.*` keys in `i18n/locales/`; client: `usePlantEnumLabels()` / `useSiteEnumLabels()`.
 - Import types from `shared/types/`; do not duplicate in `app/`.
 
 ## Care tasks

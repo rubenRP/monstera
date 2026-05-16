@@ -1,6 +1,6 @@
 # Monstera — agent guide
 
-Indoor plant care PWA (watering/fertilizing calendar, AI diagnosis, weather recommendations, species profiles). **User-facing UI copy and API error messages are in Spanish** — keep them in Spanish when adding or changing strings.
+Indoor plant care PWA (watering/fertilizing calendar, AI diagnosis, weather recommendations, species profiles). **User-facing UI copy** lives in [`i18n/locales/es.json`](i18n/locales/es.json) and [`i18n/locales/en.json`](i18n/locales/en.json) — add or update both languages when changing strings. API errors use codes in [`shared/utils/i18n/apiErrors.ts`](shared/utils/i18n/apiErrors.ts); translate on the client with `useApiError()`.
 
 ## Before you code
 
@@ -12,7 +12,7 @@ Indoor plant care PWA (watering/fertilizing calendar, AI diagnosis, weather reco
 
 | Layer | Technology |
 |-------|------------|
-| Frontend | Nuxt 4, Vue 3, Nuxt UI 4, Tailwind 4 |
+| Frontend | Nuxt 4, Vue 3, Nuxt UI 4, Tailwind 4, `@nuxtjs/i18n` (es/en) |
 | Backend | Nitro (`server/api`, `server/utils`) |
 | Data | Supabase (Postgres + magic link auth + Storage + RLS) |
 | AI | `@cursor/sdk` on Nitro routes (`/api/diagnose`, `/api/recommend`) |

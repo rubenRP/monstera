@@ -1,12 +1,13 @@
 <script setup lang="ts">
 const route = useRoute()
+const { t } = useI18n()
 
-const nav = [
-  { to: '/', label: 'Hoy', icon: 'i-lucide-home' },
-  { to: '/plants', label: 'Plantas', icon: 'i-lucide-leaf' },
-  { to: '/sites', label: 'Sitios', icon: 'i-lucide-map-pin' },
-  { to: '/settings', label: 'Ajustes', icon: 'i-lucide-settings' }
-]
+const nav = computed(() => [
+  { to: '/', label: t('nav.today'), icon: 'i-lucide-home' },
+  { to: '/plants', label: t('nav.plants'), icon: 'i-lucide-leaf' },
+  { to: '/sites', label: t('nav.sites'), icon: 'i-lucide-map-pin' },
+  { to: '/settings', label: t('nav.settings'), icon: 'i-lucide-settings' }
+])
 
 function isActive(path: string) {
   if (path === '/') return route.path === '/'
@@ -16,13 +17,21 @@ function isActive(path: string) {
 
 <template>
   <div class="min-h-screen flex flex-col md:flex-row pb-20 md:pb-0">
-    <!-- Nav lateral escritorio -->
     <aside class="hidden md:flex md:flex-col md:w-56 md:border-r md:border-default md:min-h-screen md:p-4 md:sticky md:top-0">
-      <NuxtLink to="/" class="flex items-center gap-2 font-bold text-lg text-primary mb-8 px-2">
-        <UIcon name="i-lucide-sprout" class="w-6 h-6" />
+      <NuxtLink
+        to="/"
+        class="flex items-center gap-2 font-bold text-lg text-primary mb-8 px-2"
+      >
+        <UIcon
+          name="i-lucide-sprout"
+          class="w-6 h-6"
+        />
         Monstera
       </NuxtLink>
-      <nav class="flex flex-col gap-1" aria-label="Navegación principal">
+      <nav
+        class="flex flex-col gap-1"
+        :aria-label="t('nav.mainNav')"
+      >
         <NuxtLink
           v-for="item in nav"
           :key="item.to"
@@ -30,14 +39,23 @@ function isActive(path: string) {
           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
           :class="isActive(item.to) ? 'bg-primary/10 text-primary' : 'text-muted hover:bg-elevated'"
         >
-          <UIcon :name="item.icon" class="w-5 h-5" />
+          <UIcon
+            :name="item.icon"
+            class="w-5 h-5"
+          />
           {{ item.label }}
         </NuxtLink>
       </nav>
       <div class="mt-auto pt-4 px-2">
-        <NuxtLink to="/calendar" class="text-sm text-muted hover:text-primary flex items-center gap-2">
-          <UIcon name="i-lucide-calendar" class="w-4 h-4" />
-          Calendario
+        <NuxtLink
+          to="/calendar"
+          class="text-sm text-muted hover:text-primary flex items-center gap-2"
+        >
+          <UIcon
+            name="i-lucide-calendar"
+            class="w-4 h-4"
+          />
+          {{ t('nav.calendar') }}
         </NuxtLink>
       </div>
     </aside>
@@ -45,8 +63,14 @@ function isActive(path: string) {
     <div class="flex-1 flex flex-col min-w-0">
       <header class="sticky top-0 z-40 border-b border-default bg-default/80 backdrop-blur px-4 py-3 md:hidden">
         <div class="max-w-lg mx-auto flex items-center justify-between">
-          <NuxtLink to="/" class="flex items-center gap-2 font-bold text-lg text-primary">
-            <UIcon name="i-lucide-sprout" class="w-6 h-6" />
+          <NuxtLink
+            to="/"
+            class="flex items-center gap-2 font-bold text-lg text-primary"
+          >
+            <UIcon
+              name="i-lucide-sprout"
+              class="w-6 h-6"
+            />
             Monstera
           </NuxtLink>
           <UColorModeButton />
@@ -62,10 +86,9 @@ function isActive(path: string) {
       </main>
     </div>
 
-    <!-- Bottom nav móvil -->
     <nav
       class="fixed bottom-0 inset-x-0 z-40 border-t border-default bg-default/95 backdrop-blur md:hidden"
-      aria-label="Navegación principal"
+      :aria-label="t('nav.mainNav')"
     >
       <div class="flex justify-around py-2">
         <NuxtLink
@@ -75,7 +98,10 @@ function isActive(path: string) {
           class="flex flex-col items-center gap-0.5 px-3 py-1 text-xs rounded-lg transition-colors min-w-[4rem]"
           :class="isActive(item.to) ? 'text-primary' : 'text-muted'"
         >
-          <UIcon :name="item.icon" class="w-5 h-5" />
+          <UIcon
+            :name="item.icon"
+            class="w-5 h-5"
+          />
           {{ item.label }}
         </NuxtLink>
       </div>

@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import type { HealthStatus } from '#shared/types/database'
+import type { HealthStatus, Plant } from '#shared/types/database'
 import { plantFormSchema, type PlantFormInput } from '#shared/utils/plants/schemas'
-import type { Plant } from '#shared/types/database'
+
+const { t } = useI18n()
+const { validationMessage } = useApiError()
 
 const props = defineProps<{
   initial?: Plant | null
@@ -47,7 +49,8 @@ function onPhotoChange(e: Event) {
 function handleSubmit() {
   const parsed = plantFormSchema.safeParse(form)
   if (!parsed.success) {
-    errors.value = parsed.error.errors[0]?.message ?? 'Revisa el formulario'
+    const msg = parsed.error.errors[0]?.message
+    errors.value = msg ? validationMessage(msg) : t('common.formInvalid')
     return
   }
   errors.value = null
@@ -56,24 +59,51 @@ function handleSubmit() {
 </script>
 
 <template>
-  <form class="space-y-6" @submit.prevent="handleSubmit">
-    <UAlert v-if="errors" color="error" :title="errors" />
+  <form
+    class="space-y-6"
+    @submit.prevent="handleSubmit"
+  >
+    <UAlert
+      v-if="errors"
+      color="error"
+      :title="errors"
+    />
 
-    <UFormField label="Nombre" required>
-      <UInput v-model="form.name" placeholder="Ej. Monstera del salón" />
+    <UFormField
+      :label="t('plants.name')"
+      required
+    >
+      <UInput
+        v-model="form.name"
+        :placeholder="t('plants.namePlaceholder')"
+      />
     </UFormField>
 
-    <UFormField label="Especie">
-      <UInput v-model="form.species" placeholder="Opcional" />
+    <UFormField :label="t('plants.species')">
+      <UInput
+        v-model="form.species"
+        :placeholder="t('common.optional')"
+      />
     </UFormField>
 
-    <UFormField label="Foto">
-      <input type="file" accept="image/*" class="text-sm" @change="onPhotoChange">
-      <img v-if="photoPreview" :src="photoPreview" class="mt-2 w-24 h-24 object-cover rounded-lg">
+    <UFormField :label="t('plants.photo')">
+      <input
+        type="file"
+        accept="image/*"
+        class="text-sm"
+        @change="onPhotoChange"
+      >
+      <img
+        v-if="photoPreview"
+        :src="photoPreview"
+        class="mt-2 w-24 h-24 object-cover rounded-lg"
+      >
     </UFormField>
 
     <div>
-      <p class="text-sm font-medium mb-2">Estado de salud</p>
+      <p class="text-sm font-medium mb-2">
+        {{ t('plants.healthStatus') }}
+      </p>
       <PlantsHealthSemaphore
         v-model="form.health_status"
         v-model:note="form.health_status_note"
@@ -81,22 +111,35 @@ function handleSubmit() {
     </div>
 
     <div class="grid grid-cols-2 gap-4">
-      <UFormField label="Riego cada (días)">
-        <UInput v-model.number="form.watering_interval_days" type="number" min="1" />
+      <UFormField :label="t('plants.waterEvery')">
+        <UInput
+          v-model.number="form.watering_interval_days"
+          type="number"
+          min="1"
+        />
       </UFormField>
-      <UFormField label="Fertilizar cada (días)">
-        <UInput v-model.number="form.fertilizing_interval_days" type="number" min="1" />
+      <UFormField :label="t('plants.fertilizeEvery')">
+        <UInput
+          v-model.number="form.fertilizing_interval_days"
+          type="number"
+          min="1"
+        />
       </UFormField>
     </div>
 
     <PlantsPlantEnvironmentForm v-model:form="form" />
 
-    <UFormField label="Notas">
+    <UFormField :label="t('plants.notes')">
       <UTextarea v-model="form.notes" />
     </UFormField>
 
-    <UButton type="submit" block :loading="loading" color="primary">
-      Guardar
+    <UButton
+      type="submit"
+      block
+      :loading="loading"
+      color="primary"
+    >
+      {{ t('common.save') }}
     </UButton>
   </form>
 </template>

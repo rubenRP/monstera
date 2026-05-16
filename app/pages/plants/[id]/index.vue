@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import type { TabsItem } from '@nuxt/ui'
 import type { HealthStatus } from '#shared/types/database'
-import { getHealthLabel, getHealthColor } from '#shared/constants/plants'
+import { getHealthColor } from '#shared/constants/plants'
 
+const { t } = useI18n()
+const { apiErrorMessage } = useApiError()
+const { healthLabel } = usePlantEnumLabels()
 const route = useRoute()
 const id = route.params.id as string
 const { fetchPlant, updateHealthStatus, deletePlant } = usePlants()
@@ -15,7 +18,7 @@ const pendingTasks = ref<Awaited<ReturnType<typeof fetchTodayTasks>>>([])
 const loading = ref(true)
 const actingTaskId = ref<string | null>(null)
 const healthStatus = ref<HealthStatus>('healthy')
-const healthNote = ref<string | null>(null)
+const healthNote = ref('')
 const activeTab = ref('mi-planta')
 
 const speciesTabRef = ref<{ load: (refresh?: boolean) => Promise<void> } | null>(null)
@@ -23,11 +26,11 @@ const historyTabRef = ref<{ load: () => Promise<void> } | null>(null)
 const speciesTabVisited = ref(false)
 const historyTabVisited = ref(false)
 
-const tabItems: TabsItem[] = [
-  { label: 'Mi planta', icon: 'i-lucide-leaf', slot: 'mi-planta', value: 'mi-planta' },
-  { label: 'Variedad', icon: 'i-lucide-book-open', slot: 'variedad', value: 'variedad' },
-  { label: 'Historial', icon: 'i-lucide-history', slot: 'historial', value: 'historial' }
-]
+const tabItems = computed<TabsItem[]>(() => [
+  { label: t('plants.myPlant'), icon: 'i-lucide-leaf', slot: 'mi-planta', value: 'mi-planta' },
+  { label: t('plants.variety'), icon: 'i-lucide-book-open', slot: 'variedad', value: 'variedad' },
+  { label: t('plants.history'), icon: 'i-lucide-history', slot: 'historial', value: 'historial' }
+])
 
 watch(activeTab, (tab) => {
   if (tab === 'variedad' && !speciesTabVisited.value) {
@@ -58,9 +61,9 @@ async function saveHealth() {
     await updateHealthStatus(plant.value.id, healthStatus.value, healthNote.value)
     plant.value.health_status = healthStatus.value
     plant.value.health_status_note = healthNote.value
-    toast.add({ title: 'Estado actualizado', color: 'success' })
+    toast.add({ title: t('plants.healthUpdated'), color: 'success' })
   } catch (e: unknown) {
-    toast.add({ title: 'Error', description: e instanceof Error ? e.message : '', color: 'error' })
+    toast.add({ title: t('common.error'), description: apiErrorMessage(e), color: 'error' })
   }
 }
 
@@ -82,39 +85,56 @@ async function onCompleteTask(taskId: string) {
 }
 
 async function onDelete() {
-  if (!confirm('¿Eliminar esta planta?')) return
+  if (!confirm(t('plants.deleteConfirm'))) return
   await deletePlant(id)
   await navigateTo('/plants')
 }
 </script>
 
 <template>
-  <div v-if="loading" class="space-y-4">
+  <div
+    v-if="loading"
+    class="space-y-4"
+  >
     <USkeleton class="h-48 w-full" />
     <USkeleton class="h-8 w-2/3" />
   </div>
 
-  <div v-else-if="plant" class="space-y-5">
+  <div
+    v-else-if="plant"
+    class="space-y-5"
+  >
     <div class="flex items-start justify-between gap-2">
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2 flex-wrap">
-          <h1 class="text-2xl font-bold">{{ plant.name }}</h1>
+          <h1 class="text-2xl font-bold">
+            {{ plant.name }}
+          </h1>
           <span
             class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full text-white"
             :class="getHealthColor(plant.health_status)"
           >
-            {{ getHealthLabel(plant.health_status) }}
+            {{ healthLabel(plant.health_status) }}
           </span>
         </div>
-        <p v-if="plant.species" class="text-muted text-sm mt-0.5">{{ plant.species }}</p>
+        <p
+          v-if="plant.species"
+          class="text-muted text-sm mt-0.5"
+        >
+          {{ plant.species }}
+        </p>
       </div>
       <UDropdownMenu
         :items="[[
-          { label: 'Editar', icon: 'i-lucide-pencil', to: `/plants/${id}/edit` },
-          { label: 'Eliminar', icon: 'i-lucide-trash', onSelect: onDelete }
+          { label: t('common.edit'), icon: 'i-lucide-pencil', to: `/plants/${id}/edit` },
+          { label: t('common.delete'), icon: 'i-lucide-trash', onSelect: onDelete }
         ]]"
       >
-        <UButton icon="i-lucide-more-vertical" variant="ghost" color="neutral" />
+        <UButton
+          icon="i-lucide-more-vertical"
+          variant="ghost"
+          color="neutral"
+        />
       </UDropdownMenu>
     </div>
 
@@ -126,15 +146,31 @@ async function onDelete() {
     >
 
     <div class="grid grid-cols-2 gap-2">
-      <UButton :to="`/plants/${id}/diagnose`" block variant="soft" icon="i-lucide-stethoscope" size="sm">
-        Diagnosticar
+      <UButton
+        :to="`/plants/${id}/diagnose`"
+        block
+        variant="soft"
+        icon="i-lucide-stethoscope"
+        size="sm"
+      >
+        {{ t('plants.diagnose') }}
       </UButton>
-      <UButton :to="`/plants/${id}/recommend`" block variant="soft" icon="i-lucide-cloud-sun" size="sm">
-        Recomendaciones
+      <UButton
+        :to="`/plants/${id}/recommend`"
+        block
+        variant="soft"
+        icon="i-lucide-cloud-sun"
+        size="sm"
+      >
+        {{ t('plants.recommendations') }}
       </UButton>
     </div>
 
-    <UTabs v-model="activeTab" :items="tabItems" class="w-full">
+    <UTabs
+      v-model="activeTab"
+      :items="tabItems"
+      class="w-full"
+    >
       <template #mi-planta>
         <PlantsDetailPlantMyInfoTab
           v-model:health-status="healthStatus"

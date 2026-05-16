@@ -1,4 +1,5 @@
 import { Agent } from '@cursor/sdk'
+import { API_ERROR_CODES } from '#shared/utils/i18n/apiErrors'
 import { buildRecommendPrompt, extractJsonFromText } from '#shared/utils/cursor/prompts'
 import { recommendRequestSchema, recommendResponseSchema } from '#shared/utils/plants/schemas'
 import type { Plant } from '#shared/types/database'
@@ -6,26 +7,29 @@ import type { Plant } from '#shared/types/database'
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
   if (!config.cursorApiKey) {
-    throw createError({ statusCode: 503, message: 'CURSOR_API_KEY no configurada' })
+    throwApiError(503, API_ERROR_CODES.AI_SERVICE_UNAVAILABLE)
   }
 
   const body = await readBody(event)
   const parsed = recommendRequestSchema.safeParse(body)
   if (!parsed.success) {
-    throw createError({ statusCode: 400, message: parsed.error.message })
+    throwApiError(400, API_ERROR_CODES.VALIDATION_FAILED, {
+      messageKey: parsed.error.errors[0]?.message
+    })
   }
 
   const { plantId, latitude, longitude } = parsed.data
+  const locale = getRequestLocale(event)
   const supabase = getServiceSupabase()
 
   const authHeader = getHeader(event, 'authorization')
   if (!authHeader?.startsWith('Bearer ')) {
-    throw createError({ statusCode: 401, message: 'No autorizado' })
+    throwApiError(401, API_ERROR_CODES.AUTH_UNAUTHORIZED)
   }
   const token = authHeader.slice(7)
   const { data: { user }, error: authError } = await supabase.auth.getUser(token)
   if (authError || !user) {
-    throw createError({ statusCode: 401, message: 'Sesión inválida' })
+    throwApiError(401, API_ERROR_CODES.AUTH_INVALID_SESSION)
   }
 
   const { data: plant, error: plantError } = await supabase
@@ -36,7 +40,7 @@ export default defineEventHandler(async (event) => {
     .single()
 
   if (plantError || !plant) {
-    throw createError({ statusCode: 404, message: 'Planta no encontrada' })
+    throwApiError(404, API_ERROR_CODES.PLANT_NOT_FOUND)
   }
 
   let lat = latitude
@@ -51,8 +55,8 @@ export default defineEventHandler(async (event) => {
     lon = settings?.home_lon ?? Number(process.env.NUXT_PUBLIC_HOME_LON ?? -3.7038)
   }
 
-  const weatherSummary = await fetchWeatherSummary(lat, lon)
-  const promptText = buildRecommendPrompt(plant as Plant, weatherSummary, lat, lon)
+  const weatherSummary = await fetchWeatherSummary(lat!, lon!, locale)
+  const promptText = buildRecommendPrompt(plant as Plant, weatherSummary, lat!, lon!)
 
   let resultText: string
   try {
@@ -64,7 +68,7 @@ export default defineEventHandler(async (event) => {
     resultText = result.result ?? ''
   } catch (e) {
     console.error('Cursor recommend error:', e)
-    throw createError({ statusCode: 502, message: 'Error al consultar la IA' })
+    throwApiError(502, API_ERROR_CODES.AI_QUERY_FAILED)
   }
 
   let recommendation = recommendResponseSchema.safeParse(
@@ -84,7 +88,7 @@ export default defineEventHandler(async (event) => {
     )
   }
   if (!recommendation.success) {
-    throw createError({ statusCode: 502, message: 'No se pudo interpretar la respuesta de la IA' })
+    throwApiError(502, API_ERROR_CODES.AI_PARSE_FAILED)
   }
 
   return { recommendation: recommendation.data, weatherSummary }

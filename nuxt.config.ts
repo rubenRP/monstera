@@ -6,7 +6,8 @@ export default defineNuxtConfig({
     '@nuxt/eslint',
     '@nuxt/ui',
     '@nuxtjs/supabase',
-    '@vite-pwa/nuxt'
+    '@vite-pwa/nuxt',
+    '@nuxtjs/i18n'
   ],
 
   devtools: {
@@ -14,12 +15,6 @@ export default defineNuxtConfig({
   },
 
   css: ['~/assets/css/main.css'],
-
-  compatibilityDate: '2025-01-15',
-
-  alias: {
-    '#shared': fileURLToPath(new URL('./shared', import.meta.url))
-  },
 
   runtimeConfig: {
     cursorApiKey: process.env.CURSOR_API_KEY || '',
@@ -33,12 +28,33 @@ export default defineNuxtConfig({
     }
   },
 
-  supabase: {
-    redirect: true,
-    redirectOptions: {
-      login: '/login',
-      callback: '/confirm',
-      exclude: ['/login', '/confirm']
+  alias: {
+    '#shared': fileURLToPath(new URL('./shared', import.meta.url))
+  },
+
+  compatibilityDate: '2025-01-15',
+
+  eslint: {
+    config: {
+      stylistic: {
+        commaDangle: 'never',
+        braceStyle: '1tbs'
+      }
+    }
+  },
+
+  i18n: {
+    defaultLocale: 'es',
+    strategy: 'no_prefix',
+    locales: [
+      { code: 'es', name: 'Español', file: 'es.json' },
+      { code: 'en', name: 'English', file: 'en.json' }
+    ],
+    langDir: 'locales',
+    detectBrowserLanguage: {
+      useCookie: true,
+      cookieKey: 'i18n_locale',
+      fallbackLocale: 'es'
     }
   },
 
@@ -47,7 +63,7 @@ export default defineNuxtConfig({
     manifest: {
       name: 'Monstera',
       short_name: 'Monstera',
-      description: 'Cuidado de plantas de casa',
+      description: 'Houseplant care',
       theme_color: '#2d6a4f',
       background_color: '#f8faf8',
       display: 'standalone',
@@ -89,12 +105,12 @@ export default defineNuxtConfig({
     }
   },
 
-  eslint: {
-    config: {
-      stylistic: {
-        commaDangle: 'never',
-        braceStyle: '1tbs'
-      }
+  supabase: {
+    redirect: true,
+    redirectOptions: {
+      login: '/login',
+      callback: '/confirm',
+      exclude: ['/login', '/confirm']
     }
   }
 })

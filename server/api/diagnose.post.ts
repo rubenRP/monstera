@@ -1,4 +1,5 @@
 import { Agent } from '@cursor/sdk'
+import { API_ERROR_CODES } from '#shared/utils/i18n/apiErrors'
 import { buildDiagnosePrompt, extractJsonFromText } from '#shared/utils/cursor/prompts'
 import { diagnoseRequestSchema, diagnosisResponseSchema } from '#shared/utils/plants/schemas'
 import type { Plant } from '#shared/types/database'
@@ -6,13 +7,15 @@ import type { Plant } from '#shared/types/database'
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
   if (!config.cursorApiKey) {
-    throw createError({ statusCode: 503, message: 'CURSOR_API_KEY no configurada' })
+    throwApiError(503, API_ERROR_CODES.AI_SERVICE_UNAVAILABLE)
   }
 
   const body = await readBody(event)
   const parsed = diagnoseRequestSchema.safeParse(body)
   if (!parsed.success) {
-    throw createError({ statusCode: 400, message: parsed.error.message })
+    throwApiError(400, API_ERROR_CODES.VALIDATION_FAILED, {
+      messageKey: parsed.error.errors[0]?.message
+    })
   }
 
   const { plantId, symptoms, imageBase64, mimeType } = parsed.data
@@ -20,12 +23,12 @@ export default defineEventHandler(async (event) => {
 
   const authHeader = getHeader(event, 'authorization')
   if (!authHeader?.startsWith('Bearer ')) {
-    throw createError({ statusCode: 401, message: 'No autorizado' })
+    throwApiError(401, API_ERROR_CODES.AUTH_UNAUTHORIZED)
   }
   const token = authHeader.slice(7)
   const { data: { user }, error: authError } = await supabase.auth.getUser(token)
   if (authError || !user) {
-    throw createError({ statusCode: 401, message: 'Sesión inválida' })
+    throwApiError(401, API_ERROR_CODES.AUTH_INVALID_SESSION)
   }
 
   const { data: plant, error: plantError } = await supabase
@@ -36,7 +39,7 @@ export default defineEventHandler(async (event) => {
     .single()
 
   if (plantError || !plant) {
-    throw createError({ statusCode: 404, message: 'Planta no encontrada' })
+    throwApiError(404, API_ERROR_CODES.PLANT_NOT_FOUND)
   }
 
   const promptText = buildDiagnosePrompt(plant as Plant, symptoms)
@@ -69,7 +72,7 @@ export default defineEventHandler(async (event) => {
     }
   } catch (e) {
     console.error('Cursor diagnose error:', e)
-    throw createError({ statusCode: 502, message: 'Error al consultar la IA' })
+    throwApiError(502, API_ERROR_CODES.AI_QUERY_FAILED)
   }
 
   let diagnosis = diagnosisResponseSchema.safeParse(
@@ -89,7 +92,7 @@ export default defineEventHandler(async (event) => {
     )
   }
   if (!diagnosis.success) {
-    throw createError({ statusCode: 502, message: 'No se pudo interpretar la respuesta de la IA' })
+    throwApiError(502, API_ERROR_CODES.AI_PARSE_FAILED)
   }
 
   const d = diagnosis.data
@@ -107,7 +110,7 @@ export default defineEventHandler(async (event) => {
     .single()
 
   if (saveError) {
-    throw createError({ statusCode: 500, message: saveError.message })
+    throwApiError(500, API_ERROR_CODES.AI_SAVE_FAILED)
   }
 
   return { diagnosis: d, record: saved }

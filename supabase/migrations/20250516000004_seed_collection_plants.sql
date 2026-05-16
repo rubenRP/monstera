@@ -1,10 +1,10 @@
--- Colección adicional de plantas (Estudio, Salón, Terraza)
+-- Colección adicional de plantas (Despacho, Salón, Terraza)
 -- Requiere migraciones sites (002) y función seed_care_tasks (001).
 
 DO $$
 DECLARE
   v_user_id UUID;
-  v_estudio_id UUID;
+  v_despacho_id UUID;
   v_salon_id UUID;
   v_terrace_id UUID;
   v_plant_id UUID;
@@ -17,14 +17,14 @@ BEGIN
 
   -- Sitios
   INSERT INTO sites (user_id, name, placement, window_orientation, luminosity, has_ceiling_cover, notes)
-  VALUES (v_user_id, 'Estudio', 'indoor', 'W', 'medium', false, 'Ventana oeste')
+  VALUES (v_user_id, 'Despacho', 'indoor', 'W', 'medium', false, 'Ventana oeste')
   ON CONFLICT (user_id, name) DO UPDATE SET
     placement = EXCLUDED.placement,
     window_orientation = EXCLUDED.window_orientation,
     updated_at = now()
-  RETURNING id INTO v_estudio_id;
-  IF v_estudio_id IS NULL THEN
-    SELECT id INTO v_estudio_id FROM sites WHERE user_id = v_user_id AND name = 'Estudio';
+  RETURNING id INTO v_despacho_id;
+  IF v_despacho_id IS NULL THEN
+    SELECT id INTO v_despacho_id FROM sites WHERE user_id = v_user_id AND name = 'Despacho';
   END IF;
 
   INSERT INTO sites (user_id, name, placement, window_orientation, luminosity, has_ceiling_cover, notes)
@@ -61,7 +61,7 @@ BEGIN
     ) VALUES (
       v_user_id, 'Ave del paraíso', 'Strelitzia nicolai', '', 'healthy',
       7, 30, now() - INTERVAL '1 day',
-      v_estudio_id, 50,
+      v_despacho_id, 50,
       'm', 25, 'terracotta', true, 'universal',
       50, now(), 3
     ) RETURNING id INTO v_plant_id;
@@ -80,7 +80,7 @@ BEGIN
     ) VALUES (
       v_user_id, 'Oreja Polly', 'Alocasia amazonica Polly', '1 mes de vida', 'healthy',
       7, 30, now() - INTERVAL '3 days',
-      v_estudio_id, 50,
+      v_despacho_id, 50,
       's', 15, 'terracotta', true, 'universal',
       10, now(), NULL
     ) RETURNING id INTO v_plant_id;
@@ -99,7 +99,7 @@ BEGIN
     ) VALUES (
       v_user_id, 'Mini costilla', 'Monstera deliciosa', '8 meses de vida', 'healthy',
       7, 30, now() - INTERVAL '1 day',
-      v_estudio_id, 50,
+      v_despacho_id, 50,
       'xs', 12, 'terracotta', true, 'universal',
       25, now(), NULL
     ) RETURNING id INTO v_plant_id;

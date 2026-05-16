@@ -1,3 +1,5 @@
+import { API_ERROR_CODES } from '#shared/utils/i18n/apiErrors'
+import type { AppLocale } from '#shared/utils/i18n/locale'
 import { mapPerenualProfile } from '#shared/utils/species/mapPerenualProfile'
 import {
   buildPerenualSearchQueries,
@@ -60,12 +62,16 @@ async function resolveSpeciesMatch(
     if (best) return best
   }
 
-  throw new Error(`No se encontró la especie "${speciesQuery}" en Perenual`)
+  throw createError({
+    statusCode: 404,
+    data: { code: API_ERROR_CODES.PERENUAL_SPECIES_NOT_FOUND, query: speciesQuery }
+  })
 }
 
 export async function fetchSpeciesProfileFromPerenual(
   speciesQuery: string,
-  apiKey: string
+  apiKey: string,
+  locale: AppLocale = 'es'
 ): Promise<SpeciesProfile> {
   const match = await resolveSpeciesMatch(speciesQuery, apiKey)
 
@@ -87,6 +93,7 @@ export async function fetchSpeciesProfileFromPerenual(
 
   return mapPerenualProfile(
     { ...details, id: match.id } as Parameters<typeof mapPerenualProfile>[0],
-    careGuides ?? []
+    careGuides ?? [],
+    locale
   )
 }

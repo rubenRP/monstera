@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import {
-  LUMINOSITY_OPTIONS,
-  PLACEMENT_OPTIONS,
-  WINDOW_ORIENTATION_OPTIONS
-} from '#shared/constants/sites'
 import { siteFormSchema, type SiteFormInput } from '#shared/utils/sites/schemas'
 import type { Site } from '#shared/types/database'
+
+const { t } = useI18n()
+const { validationMessage } = useApiError()
+const {
+  placementOptions,
+  orientationOptions,
+  luminosityOptions
+} = useSiteEnumLabels()
 
 const props = defineProps<{
   initial?: Site | null
@@ -34,6 +37,8 @@ const showCeiling = computed(
   () => form.placement === 'semi_outdoor' || form.placement === 'outdoor'
 )
 
+const noneOption = computed(() => ({ label: t('common.none'), value: null }))
+
 watch(() => form.placement, (p) => {
   if (p === 'outdoor') {
     form.window_orientation = null
@@ -43,7 +48,8 @@ watch(() => form.placement, (p) => {
 function handleSubmit() {
   const parsed = siteFormSchema.safeParse(form)
   if (!parsed.success) {
-    errors.value = parsed.error.errors[0]?.message ?? 'Revisa el formulario'
+    const msg = parsed.error.errors[0]?.message
+    errors.value = msg ? validationMessage(msg) : t('common.formInvalid')
     return
   }
   errors.value = null
@@ -52,25 +58,38 @@ function handleSubmit() {
 </script>
 
 <template>
-  <form class="space-y-5" @submit.prevent="handleSubmit">
-    <UAlert v-if="errors" color="error" :title="errors" />
+  <form
+    class="space-y-5"
+    @submit.prevent="handleSubmit"
+  >
+    <UAlert
+      v-if="errors"
+      color="error"
+      :title="errors"
+    />
 
-    <UFormField label="Nombre del sitio" required>
-      <UInput v-model="form.name" placeholder="Ej. Despacho, Terraza norte" />
+    <UFormField
+      :label="t('sites.name')"
+      required
+    >
+      <UInput
+        v-model="form.name"
+        :placeholder="t('sites.namePlaceholder')"
+      />
     </UFormField>
 
-    <UFormField label="Tipo de ubicación">
+    <UFormField :label="t('sites.placementType')">
       <USelect
         v-model="form.placement"
-        :items="PLACEMENT_OPTIONS.map(o => ({ label: o.label, value: o.value }))"
+        :items="placementOptions"
       />
     </UFormField>
 
     <template v-if="showLightFields">
-      <UFormField label="Orientación (ventana o zona luminosa)">
+      <UFormField :label="t('sites.orientation')">
         <div class="grid grid-cols-4 gap-2">
           <UButton
-            v-for="opt in WINDOW_ORIENTATION_OPTIONS"
+            v-for="opt in orientationOptions"
             :key="opt.value"
             type="button"
             size="sm"
@@ -81,13 +100,15 @@ function handleSubmit() {
             {{ opt.value }}
           </UButton>
         </div>
-        <p class="text-xs text-muted mt-1">{{ WINDOW_ORIENTATION_OPTIONS.find(o => o.value === form.window_orientation)?.label }}</p>
+        <p class="text-xs text-muted mt-1">
+          {{ orientationOptions.find(o => o.value === form.window_orientation)?.label }}
+        </p>
       </UFormField>
 
-      <UFormField label="Luminosidad">
+      <UFormField :label="t('sites.luminosity')">
         <USelect
           v-model="form.luminosity"
-          :items="[{ label: '—', value: null }, ...LUMINOSITY_OPTIONS.map(o => ({ label: o.label, value: o.value }))]"
+          :items="[noneOption, ...luminosityOptions]"
         />
       </UFormField>
     </template>
@@ -95,16 +116,23 @@ function handleSubmit() {
     <UFormField v-if="showCeiling">
       <UCheckbox
         v-model="form.has_ceiling_cover"
-        label="Tiene techo o cubierta (p. ej. terraza con toldo/pergola)"
+        :label="t('sites.ceilingCheckbox')"
       />
     </UFormField>
 
-    <UFormField label="Notas">
-      <UTextarea v-model="form.notes" placeholder="Detalles del espacio" />
+    <UFormField :label="t('sites.notes')">
+      <UTextarea
+        v-model="form.notes"
+        :placeholder="t('sites.notesPlaceholder')"
+      />
     </UFormField>
 
-    <UButton type="submit" block :loading="loading">
-      Guardar sitio
+    <UButton
+      type="submit"
+      block
+      :loading="loading"
+    >
+      {{ t('sites.saveSite') }}
     </UButton>
   </form>
 </template>

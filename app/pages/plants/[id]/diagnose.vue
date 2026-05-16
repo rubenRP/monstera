@@ -2,6 +2,8 @@
 import type { DiagnosisResponse } from '#shared/utils/plants/schemas'
 import type { HealthStatus } from '#shared/types/database'
 
+const { t } = useI18n()
+const { apiErrorMessage } = useApiError()
 const route = useRoute()
 const id = route.params.id as string
 const { fetchPlant, updateHealthStatus } = usePlants()
@@ -36,7 +38,7 @@ function onImage(e: Event) {
 
 async function runDiagnose() {
   if (symptoms.value.length < 3) {
-    toast.add({ title: 'Describe los síntomas', color: 'warning' })
+    toast.add({ title: t('diagnose.symptomsRequired'), color: 'warning' })
     return
   }
   loading.value = true
@@ -48,8 +50,8 @@ async function runDiagnose() {
     showHealthModal.value = true
   } catch (e: unknown) {
     toast.add({
-      title: 'Error en diagnóstico',
-      description: e instanceof Error ? e.message : 'Intenta de nuevo',
+      title: t('diagnose.error'),
+      description: apiErrorMessage(e) || t('common.tryAgain'),
       color: 'error'
     })
   } finally {
@@ -61,7 +63,7 @@ async function applySuggestedStatus() {
   if (!suggestedStatus.value) return
   await updateHealthStatus(id, suggestedStatus.value)
   showHealthModal.value = false
-  toast.add({ title: 'Estado actualizado', color: 'success' })
+  toast.add({ title: t('plants.healthUpdated'), color: 'success' })
   await navigateTo(`/plants/${id}`)
 }
 </script>
@@ -69,53 +71,105 @@ async function applySuggestedStatus() {
 <template>
   <div class="space-y-6">
     <div>
-      <h1 class="text-2xl font-bold">Diagnosticar</h1>
-      <p class="text-muted text-sm">{{ plantName }}</p>
+      <h1 class="text-2xl font-bold">
+        {{ t('diagnose.title') }}
+      </h1>
+      <p class="text-muted text-sm">
+        {{ plantName }}
+      </p>
     </div>
 
-    <UFormField label="Síntomas" required>
-      <UTextarea v-model="symptoms" placeholder="Ej. hojas amarillas en la punta, manchas marrones..." rows="4" />
+    <UFormField
+      :label="t('diagnose.symptoms')"
+      required
+    >
+      <UTextarea
+        v-model="symptoms"
+        :placeholder="t('diagnose.symptomsPlaceholder')"
+        :rows="4"
+      />
     </UFormField>
 
-    <UFormField label="Foto (opcional)">
-      <input type="file" accept="image/*" @change="onImage">
-      <img v-if="imagePreview" :src="imagePreview" class="mt-2 max-h-40 rounded-lg">
+    <UFormField :label="t('diagnose.photoOptional')">
+      <input
+        type="file"
+        accept="image/*"
+        @change="onImage"
+      >
+      <img
+        v-if="imagePreview"
+        :src="imagePreview"
+        class="mt-2 max-h-40 rounded-lg"
+      >
     </UFormField>
 
-    <UButton block :loading="loading" icon="i-lucide-stethoscope" @click="runDiagnose">
-      Analizar con IA
+    <UButton
+      block
+      :loading="loading"
+      icon="i-lucide-stethoscope"
+      @click="runDiagnose"
+    >
+      {{ t('diagnose.analyze') }}
     </UButton>
 
     <UCard v-if="result">
-      <p class="font-medium mb-2">{{ result.summary }}</p>
+      <p class="font-medium mb-2">
+        {{ result.summary }}
+      </p>
       <div class="space-y-3 text-sm">
         <div>
-          <p class="font-medium">Causas probables</p>
+          <p class="font-medium">
+            {{ t('diagnose.probableCauses') }}
+          </p>
           <ul class="list-disc pl-4 text-muted">
-            <li v-for="(c, i) in result.probableCauses" :key="i">{{ c }}</li>
+            <li
+              v-for="(c, i) in result.probableCauses"
+              :key="i"
+            >
+              {{ c }}
+            </li>
           </ul>
         </div>
         <div>
-          <p class="font-medium">Acciones inmediatas</p>
+          <p class="font-medium">
+            {{ t('diagnose.immediateActions') }}
+          </p>
           <ul class="list-disc pl-4 text-muted">
-            <li v-for="(a, i) in result.immediateActions" :key="i">{{ a }}</li>
+            <li
+              v-for="(a, i) in result.immediateActions"
+              :key="i"
+            >
+              {{ a }}
+            </li>
           </ul>
         </div>
-        <p class="text-muted"><strong>Cuándo preocuparse:</strong> {{ result.whenToWorry }}</p>
+        <p class="text-muted">
+          <strong>{{ t('diagnose.whenToWorry') }}</strong> {{ result.whenToWorry }}
+        </p>
       </div>
     </UCard>
 
-    <UModal v-model:open="showHealthModal" title="¿Actualizar estado de la planta?">
+    <UModal
+      v-model:open="showHealthModal"
+      :title="t('diagnose.updateHealthTitle')"
+    >
       <template #body>
         <p class="text-sm text-muted mb-4">
-          La IA sugiere cambiar el estado según el diagnóstico.
+          {{ t('diagnose.updateHealthBody') }}
         </p>
         <div class="flex gap-2">
-          <UButton block @click="applySuggestedStatus">
-            Actualizar estado
+          <UButton
+            block
+            @click="applySuggestedStatus"
+          >
+            {{ t('diagnose.updateHealth') }}
           </UButton>
-          <UButton block variant="ghost" @click="showHealthModal = false">
-            Mantener actual
+          <UButton
+            block
+            variant="ghost"
+            @click="showHealthModal = false"
+          >
+            {{ t('diagnose.keepCurrent') }}
           </UButton>
         </div>
       </template>

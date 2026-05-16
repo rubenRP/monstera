@@ -2,12 +2,14 @@ import type { DiagnosisResponse, RecommendResponse } from '#shared/utils/plants/
 
 export function useAiApi() {
   const supabase = useSupabaseClient()
+  const { localeHeaders } = useI18nHeaders()
+  const { t } = useI18n()
 
   async function getAuthHeader(): Promise<Record<string, string>> {
     const { data } = await supabase.auth.getSession()
     const token = data.session?.access_token
-    if (!token) throw new Error('No autenticado')
-    return { Authorization: `Bearer ${token}` }
+    if (!token) throw new Error(t('auth.notAuthenticated'))
+    return { Authorization: `Bearer ${token}`, ...localeHeaders() }
   }
 
   async function diagnose(plantId: string, symptoms: string, imageBase64?: string) {

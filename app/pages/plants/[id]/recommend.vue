@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { RecommendResponse } from '#shared/utils/plants/schemas'
 
+const { t } = useI18n()
+const { apiErrorMessage } = useApiError()
 const route = useRoute()
 const id = route.params.id as string
 const { fetchPlant } = usePlants()
@@ -37,8 +39,8 @@ async function loadRecommendations() {
     weather.value = res.weatherSummary
   } catch (e: unknown) {
     toast.add({
-      title: 'Error',
-      description: e instanceof Error ? e.message : 'No se pudieron obtener recomendaciones',
+      title: t('common.error'),
+      description: apiErrorMessage(e) || t('recommend.fetchFailed'),
       color: 'error'
     })
   } finally {
@@ -50,45 +52,89 @@ async function loadRecommendations() {
 <template>
   <div class="space-y-6">
     <div>
-      <h1 class="text-2xl font-bold">Recomendaciones</h1>
-      <p class="text-muted text-sm">{{ plantName }}</p>
+      <h1 class="text-2xl font-bold">
+        {{ t('recommend.title') }}
+      </h1>
+      <p class="text-muted text-sm">
+        {{ plantName }}
+      </p>
     </div>
 
-    <UButton block :loading="loading" icon="i-lucide-cloud-sun" @click="loadRecommendations">
-      Obtener recomendaciones
+    <UButton
+      block
+      :loading="loading"
+      icon="i-lucide-cloud-sun"
+      @click="loadRecommendations"
+    >
+      {{ t('recommend.fetch') }}
     </UButton>
 
     <UCard v-if="result">
       <div class="space-y-4 text-sm">
         <div>
-          <p class="font-medium">Riego</p>
-          <p class="text-muted">{{ result.wateringAdvice }}</p>
+          <p class="font-medium">
+            {{ t('recommend.watering') }}
+          </p>
+          <p class="text-muted">
+            {{ result.wateringAdvice }}
+          </p>
         </div>
         <div>
-          <p class="font-medium">Fertilización</p>
-          <p class="text-muted">{{ result.fertilizingAdvice }}</p>
+          <p class="font-medium">
+            {{ t('recommend.fertilizing') }}
+          </p>
+          <p class="text-muted">
+            {{ result.fertilizingAdvice }}
+          </p>
         </div>
         <div>
-          <p class="font-medium">Luz ({{ result.lightExposure.level }})</p>
-          <p class="text-muted">{{ result.lightExposure.summary }}</p>
+          <p class="font-medium">
+            {{ t('recommend.light', { level: result.lightExposure.level }) }}
+          </p>
+          <p class="text-muted">
+            {{ result.lightExposure.summary }}
+          </p>
         </div>
         <div v-if="result.seasonalTips.length">
-          <p class="font-medium">Consejos</p>
+          <p class="font-medium">
+            {{ t('recommend.tips') }}
+          </p>
           <ul class="list-disc pl-4 text-muted">
-            <li v-for="(t, i) in result.seasonalTips" :key="i">{{ t }}</li>
+            <li
+              v-for="(tip, i) in result.seasonalTips"
+              :key="i"
+            >
+              {{ tip }}
+            </li>
           </ul>
         </div>
-        <UAlert v-if="result.riskFlags.length" color="warning" title="Alertas">
+        <UAlert
+          v-if="result.riskFlags.length"
+          color="warning"
+          :title="t('recommend.alerts')"
+        >
           <ul class="list-disc pl-4">
-            <li v-for="(r, i) in result.riskFlags" :key="i">{{ r }}</li>
+            <li
+              v-for="(r, i) in result.riskFlags"
+              :key="i"
+            >
+              {{ r }}
+            </li>
           </ul>
         </UAlert>
-        <p class="text-muted italic">{{ result.environmentNotes }}</p>
+        <p class="text-muted italic">
+          {{ result.environmentNotes }}
+        </p>
       </div>
     </UCard>
 
-    <UCard v-if="weather" variant="subtle">
-      <template #header>Pronóstico</template>
+    <UCard
+      v-if="weather"
+      variant="subtle"
+    >
+      <template #header>
+        {{ t('recommend.forecast') }}
+      </template>
       <pre class="text-xs whitespace-pre-wrap text-muted">{{ weather }}</pre>
     </UCard>
   </div>

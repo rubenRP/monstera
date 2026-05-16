@@ -5,7 +5,8 @@ alwaysApply: true
 
 # Monstera — global conventions
 
-- **User-facing language**: Spanish (labels, toasts, `createError` messages, Zod validation). Agent docs are in English.
+- **User-facing language**: Spanish and English via `@nuxtjs/i18n` (`i18n/locales/*.json`, `$t()` / `useI18n()`). Agent docs are in English.
+- **API errors**: use `throwApiError()` + codes from `#shared/utils/i18n/apiErrors`; client translates with `useApiError()`.
 - **Stack**: Nuxt 4 + Vue 3 + Nuxt UI + Supabase + Nitro. See `AGENTS.md` for architecture.
 - **Alias**: import shared types/utils via `#shared/...`, not long relative paths from `app/` or `server/`.
 - **Domain types**: `shared/types/database.ts` is the source of truth; update when the schema changes.

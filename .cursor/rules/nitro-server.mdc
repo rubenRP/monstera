@@ -46,5 +46,5 @@ export default defineEventHandler(async (event) => {
 
 ## Errors
 
-- `createError({ statusCode, message })` — user-facing messages in **Spanish**.
-- 400 Zod validation, 401 auth, 404 resource, 503 service not configured.
+- `throwApiError(statusCode, code)` from `server/utils/apiError.ts` — codes in `#shared/utils/i18n/apiErrors`.
+- 400 validation → `VALIDATION_FAILED` + optional `messageKey`; 401 auth; 404 resource; 503 service not configured.

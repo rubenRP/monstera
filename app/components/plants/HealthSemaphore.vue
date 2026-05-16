@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { HealthStatus } from '#shared/types/database'
-import { HEALTH_STATUS_OPTIONS } from '#shared/constants/plants'
+
+const { t } = useI18n()
+const { healthOptions } = usePlantEnumLabels()
 
 const props = withDefaults(
   defineProps<{
@@ -19,7 +21,7 @@ const showNote = computed(
   () => props.modelValue === 'fair' || props.modelValue === 'sick' || props.modelValue === 'critical'
 )
 
-const note = defineModel<string | null>('note', { default: null })
+const note = defineModel<string>('note', { default: '' })
 </script>
 
 <template>
@@ -28,15 +30,15 @@ const note = defineModel<string | null>('note', { default: null })
       class="flex gap-1 p-1 rounded-xl bg-elevated/50"
       :class="compact ? 'text-xs' : 'text-sm'"
       role="radiogroup"
-      aria-label="Estado de salud de la planta"
+      :aria-label="t('plants.healthAria')"
     >
       <button
-        v-for="opt in HEALTH_STATUS_OPTIONS"
+        v-for="opt in healthOptions"
         :key="opt.value"
         type="button"
         role="radio"
         :aria-checked="modelValue === opt.value"
-        :aria-label="`Estado: ${opt.label}`"
+        :aria-label="t('plants.healthStatusAria', { label: opt.label })"
         :disabled="readonly"
         class="flex-1 flex flex-col items-center gap-1 py-2 px-1 rounded-lg transition-all"
         :class="[
@@ -58,7 +60,7 @@ const note = defineModel<string | null>('note', { default: null })
     <UInput
       v-if="showNote && !readonly"
       v-model="note"
-      placeholder="Motivo del estado (opcional)"
+      :placeholder="t('plants.healthNotePlaceholder')"
       size="sm"
     />
   </div>

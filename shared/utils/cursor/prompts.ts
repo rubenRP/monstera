@@ -1,17 +1,27 @@
 import type { Plant, Site } from '../../types/database'
-import {
-  getLuminosityLabel,
-  getOrientationLabel,
-  getPlacementLabel
-} from '../../constants/sites'
+import { translate } from '../i18n/translate'
+
+const LOCALE = 'es' as const
+
+function placementLabel(p: Site['placement']): string {
+  return translate(LOCALE, `enums.placement.${p}`)
+}
+
+function orientationLabel(o: NonNullable<Site['window_orientation']>): string {
+  return translate(LOCALE, `enums.orientation.${o}`)
+}
+
+function luminosityLabel(l: NonNullable<Site['luminosity']>): string {
+  return translate(LOCALE, `enums.luminosity.${l}`)
+}
 
 function siteContext(site: Site | null | undefined): string | null {
   if (!site) return null
   const lines = [
     `Sitio: ${site.name}`,
-    `Ubicación: ${getPlacementLabel(site.placement)}`,
-    site.window_orientation ? `Orientación: ${getOrientationLabel(site.window_orientation)}` : null,
-    site.luminosity ? `Luminosidad: ${getLuminosityLabel(site.luminosity)}` : null,
+    `Ubicación: ${placementLabel(site.placement)}`,
+    site.window_orientation ? `Orientación: ${orientationLabel(site.window_orientation)}` : null,
+    site.luminosity ? `Luminosidad: ${luminosityLabel(site.luminosity)}` : null,
     site.has_ceiling_cover ? 'Techo/cubierta: sí (terraza cubierta)' : null,
     site.notes ? `Notas sitio: ${site.notes}` : null
   ]

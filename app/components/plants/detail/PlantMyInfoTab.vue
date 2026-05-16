@@ -1,17 +1,16 @@
 <script setup lang="ts">
 import type { CareTask, HealthStatus, Plant } from '#shared/types/database'
-import {
-  getHealthLabel,
-  POT_MATERIAL_OPTIONS,
-  POT_SIZE_OPTIONS,
-  SUBSTRATE_OPTIONS
-} from '#shared/constants/plants'
-import {
-  getLuminosityLabel,
-  getOrientationLabel,
-  getPlacementLabel
-} from '#shared/constants/sites'
 import type { InfoRow } from './PlantInfoRows.vue'
+
+const { t } = useI18n()
+const { dateLocale } = useDateLocale()
+const {
+  healthLabel,
+  potSizeLabel,
+  potMaterialLabel,
+  substrateLabel
+} = usePlantEnumLabels()
+const { placementLabel, orientationLabel, luminosityLabel } = useSiteEnumLabels()
 
 const props = defineProps<{
   plant: Plant
@@ -20,7 +19,7 @@ const props = defineProps<{
 }>()
 
 const healthStatus = defineModel<HealthStatus>('healthStatus', { required: true })
-const healthNote = defineModel<string | null>('healthNote', { required: true })
+const healthNote = defineModel<string>('healthNote', { required: true })
 
 const emit = defineEmits<{
   saveHealth: []
@@ -29,11 +28,11 @@ const emit = defineEmits<{
 
 const { taskLabel, taskIcon } = useCareTasks()
 
-const EMPTY = 'No indicado'
+const empty = computed(() => t('common.notIndicated'))
 
 function formatDate(iso: string | null): string {
-  if (!iso) return EMPTY
-  return new Date(iso).toLocaleDateString('es-ES', {
+  if (!iso) return empty.value
+  return new Date(iso).toLocaleDateString(dateLocale.value, {
     day: 'numeric',
     month: 'short',
     year: 'numeric'
@@ -44,105 +43,94 @@ const lightingRows = computed((): InfoRow[] => {
   const site = props.plant.site
   const rows: InfoRow[] = []
   if (site) {
+    rows.push({ label: t('plants.fieldSite'), value: site.name })
+    rows.push({ label: t('plants.fieldPlacement'), value: placementLabel(site.placement) })
     rows.push({
-      label: 'Sitio',
-      value: site.name
-    })
-    rows.push({
-      label: 'Ubicación',
-      value: getPlacementLabel(site.placement)
-    })
-    rows.push({
-      label: 'Orientación ventana',
+      label: t('plants.fieldOrientation'),
       value: site.window_orientation
-        ? getOrientationLabel(site.window_orientation)
-        : EMPTY
+        ? orientationLabel(site.window_orientation)
+        : empty.value
     })
     rows.push({
-      label: 'Luminosidad',
-      value: site.luminosity ? getLuminosityLabel(site.luminosity) : EMPTY
+      label: t('plants.fieldLuminosity'),
+      value: site.luminosity ? luminosityLabel(site.luminosity) : empty.value
     })
     rows.push({
-      label: 'Techo / cubierta',
-      value: site.has_ceiling_cover ? 'Sí' : 'No'
+      label: t('plants.fieldCeiling'),
+      value: site.has_ceiling_cover ? t('common.yes') : t('common.no')
     })
   } else {
-    rows.push({ label: 'Sitio', value: EMPTY })
+    rows.push({ label: t('plants.fieldSite'), value: empty.value })
   }
   rows.push({
-    label: 'Distancia a ventana',
+    label: t('plants.fieldWindowDistance'),
     value: props.plant.window_distance_cm != null
-      ? `${props.plant.window_distance_cm} cm`
-      : EMPTY
+      ? `${props.plant.window_distance_cm} ${t('common.cm')}`
+      : empty.value
   })
   return rows
 })
 
-const potRows = computed((): InfoRow[] => {
-  const pot = POT_SIZE_OPTIONS.find(p => p.value === props.plant.pot_size)
-  const material = POT_MATERIAL_OPTIONS.find(m => m.value === props.plant.pot_material)
-  const sub = SUBSTRATE_OPTIONS.find(s => s.value === props.plant.substrate_type)
-  return [
-    {
-      label: 'Tamaño',
-      value: pot?.label ?? EMPTY
-    },
-    {
-      label: 'Diámetro',
-      value: props.plant.pot_diameter_cm != null
-        ? `${props.plant.pot_diameter_cm} cm`
-        : EMPTY
-    },
-    {
-      label: 'Material',
-      value: material?.label ?? EMPTY
-    },
-    {
-      label: 'Drenaje',
-      value: props.plant.has_drainage ? 'Con agujeros' : 'Sin drenaje'
-    },
-    {
-      label: 'Sustrato',
-      value: sub?.label ?? EMPTY
-    },
-    {
-      label: 'Notas sustrato',
-      value: props.plant.substrate_notes?.trim() || EMPTY
-    }
-  ]
-})
+const potRows = computed((): InfoRow[] => [
+  {
+    label: t('plants.fieldSize'),
+    value: props.plant.pot_size ? potSizeLabel(props.plant.pot_size) : empty.value
+  },
+  {
+    label: t('plants.fieldDiameter'),
+    value: props.plant.pot_diameter_cm != null
+      ? `${props.plant.pot_diameter_cm} ${t('common.cm')}`
+      : empty.value
+  },
+  {
+    label: t('plants.fieldMaterial'),
+    value: props.plant.pot_material ? potMaterialLabel(props.plant.pot_material) : empty.value
+  },
+  {
+    label: t('plants.fieldDrainage'),
+    value: props.plant.has_drainage ? t('plants.drainageYes') : t('plants.drainageNo')
+  },
+  {
+    label: t('plants.fieldSubstrate'),
+    value: props.plant.substrate_type ? substrateLabel(props.plant.substrate_type) : empty.value
+  },
+  {
+    label: t('plants.fieldSubstrateNotes'),
+    value: props.plant.substrate_notes?.trim() || empty.value
+  }
+])
 
 const plantRows = computed((): InfoRow[] => [
   {
-    label: 'Especie',
-    value: props.plant.species?.trim() || EMPTY
+    label: t('plants.species'),
+    value: props.plant.species?.trim() || empty.value
   },
   {
-    label: 'Altura',
+    label: t('plants.fieldHeight'),
     value: props.plant.height_cm != null
-      ? `${props.plant.height_cm} cm${props.plant.height_updated_at ? ` (actualizado ${formatDate(props.plant.height_updated_at)})` : ''}`
-      : EMPTY
+      ? `${props.plant.height_cm} ${t('common.cm')}${props.plant.height_updated_at ? t('plants.heightUpdated', { date: formatDate(props.plant.height_updated_at) }) : ''}`
+      : empty.value
   },
   {
-    label: 'Antigüedad',
+    label: t('plants.fieldAge'),
     value: props.plant.age_years != null
-      ? `${props.plant.age_years} año${props.plant.age_years > 1 ? 's' : ''}`
-      : EMPTY
+      ? t('plants.ageValue', { count: props.plant.age_years })
+      : empty.value
   },
   {
-    label: 'Riego cada',
-    value: `${props.plant.watering_interval_days} días`
+    label: t('plants.fieldWaterEvery'),
+    value: t('plants.intervalDays', { count: props.plant.watering_interval_days })
   },
   {
-    label: 'Fertilizar cada',
-    value: `${props.plant.fertilizing_interval_days} días`
+    label: t('plants.fieldFertilizeEvery'),
+    value: t('plants.intervalDays', { count: props.plant.fertilizing_interval_days })
   },
   {
-    label: 'Último riego',
+    label: t('plants.fieldLastWater'),
     value: formatDate(props.plant.last_watered_at)
   },
   {
-    label: 'Última fertilización',
+    label: t('plants.fieldLastFertilize'),
     value: formatDate(props.plant.last_fertilized_at)
   }
 ])
@@ -150,51 +138,80 @@ const plantRows = computed((): InfoRow[] => [
 
 <template>
   <div class="space-y-4">
-    <PlantsDetailPlantInfoSection title="Iluminación" icon="i-lucide-sun">
-      <p v-if="plant.site_id && plant.site" class="text-xs text-muted mb-3">
-        <NuxtLink :to="`/sites/${plant.site_id}`" class="text-primary underline">
-          Ver sitio «{{ plant.site.name }}»
+    <PlantsDetailPlantInfoSection
+      :title="t('plants.lighting')"
+      icon="i-lucide-sun"
+    >
+      <p
+        v-if="plant.site_id && plant.site"
+        class="text-xs text-muted mb-3"
+      >
+        <NuxtLink
+          :to="`/sites/${plant.site_id}`"
+          class="text-primary underline"
+        >
+          {{ t('plants.viewSite', { name: plant.site.name }) }}
         </NuxtLink>
       </p>
       <PlantsDetailPlantInfoRows :rows="lightingRows" />
     </PlantsDetailPlantInfoSection>
 
-    <PlantsDetailPlantInfoSection title="Maceta" icon="i-lucide-flower-2">
+    <PlantsDetailPlantInfoSection
+      :title="t('plants.pot')"
+      icon="i-lucide-flower-2"
+    >
       <PlantsDetailPlantInfoRows :rows="potRows" />
     </PlantsDetailPlantInfoSection>
 
-    <PlantsDetailPlantInfoSection title="Planta" icon="i-lucide-leaf">
+    <PlantsDetailPlantInfoSection
+      :title="t('plants.plantSection')"
+      icon="i-lucide-leaf"
+    >
       <PlantsDetailPlantInfoRows :rows="plantRows" />
       <div class="mt-4 pt-4 border-t border-default">
         <p class="text-sm font-medium mb-2">
-          Estado: {{ getHealthLabel(plant.health_status) }}
+          {{ t('plants.statusLabel', { status: healthLabel(plant.health_status) }) }}
         </p>
         <PlantsHealthSemaphore
           v-model="healthStatus"
           v-model:note="healthNote"
         />
-        <UButton class="mt-3" size="sm" @click="emit('saveHealth')">
-          Guardar estado
+        <UButton
+          class="mt-3"
+          size="sm"
+          @click="emit('saveHealth')"
+        >
+          {{ t('plants.saveHealth') }}
         </UButton>
       </div>
     </PlantsDetailPlantInfoSection>
 
     <UCard v-if="plant.notes?.trim()">
       <template #header>
-        <span class="font-medium">Notas</span>
+        <span class="font-medium">{{ t('plants.notes') }}</span>
       </template>
-      <p class="text-sm text-muted whitespace-pre-wrap">{{ plant.notes }}</p>
+      <p class="text-sm text-muted whitespace-pre-wrap">
+        {{ plant.notes }}
+      </p>
     </UCard>
 
-    <div v-if="pendingTasks.length" class="space-y-2">
-      <h2 class="font-semibold text-sm">Tareas de hoy</h2>
+    <div
+      v-if="pendingTasks.length"
+      class="space-y-2"
+    >
+      <h2 class="font-semibold text-sm">
+        {{ t('plants.todayTasks') }}
+      </h2>
       <div
         v-for="task in pendingTasks"
         :key="task.id"
         class="flex items-center justify-between p-3 rounded-lg border border-default"
       >
         <div class="flex items-center gap-2">
-          <UIcon :name="taskIcon(task.type)" class="text-primary" />
+          <UIcon
+            :name="taskIcon(task.type)"
+            class="text-primary"
+          />
           <span class="text-sm">{{ taskLabel(task.type) }}</span>
         </div>
         <UButton
@@ -202,7 +219,7 @@ const plantRows = computed((): InfoRow[] => [
           :loading="actingTaskId === task.id"
           @click="emit('completeTask', task.id)"
         >
-          Hecho
+          {{ t('common.done') }}
         </UButton>
       </div>
     </div>

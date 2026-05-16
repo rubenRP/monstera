@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { PlantFormInput } from '#shared/utils/plants/schemas'
 
+const { t } = useI18n()
+const { apiErrorMessage } = useApiError()
 const route = useRoute()
 const id = route.params.id as string
 const { fetchPlant, updatePlant } = usePlants()
@@ -18,12 +20,12 @@ async function onSubmit(data: PlantFormInput, photo?: File) {
   saving.value = true
   try {
     await updatePlant(id, data, photo)
-    toast.add({ title: 'Planta actualizada', color: 'success' })
+    toast.add({ title: t('plants.updated'), color: 'success' })
     await navigateTo(`/plants/${id}`)
   } catch (e: unknown) {
     toast.add({
-      title: 'Error',
-      description: e instanceof Error ? e.message : '',
+      title: t('common.error'),
+      description: apiErrorMessage(e),
       color: 'error'
     })
   } finally {
@@ -34,8 +36,13 @@ async function onSubmit(data: PlantFormInput, photo?: File) {
 
 <template>
   <div class="space-y-4">
-    <h1 class="text-2xl font-bold">Editar planta</h1>
-    <USkeleton v-if="loading" class="h-64" />
+    <h1 class="text-2xl font-bold">
+      {{ t('plants.editTitle') }}
+    </h1>
+    <USkeleton
+      v-if="loading"
+      class="h-64"
+    />
     <PlantsPlantForm
       v-else-if="plant"
       :initial="plant"

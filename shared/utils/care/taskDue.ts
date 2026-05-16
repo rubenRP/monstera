@@ -1,18 +1,17 @@
-function startOfDay(date: Date): Date {
-  const d = new Date(date)
-  d.setHours(0, 0, 0, 0)
-  return d
+import type { AppLocale } from '../i18n/locale'
+import { translate } from '../i18n/translate'
+
+export function taskOverdueDays(dueAt: string, now = new Date()): number {
+  const due = new Date(dueAt)
+  due.setHours(0, 0, 0, 0)
+  const today = new Date(now)
+  today.setHours(0, 0, 0, 0)
+  const diff = today.getTime() - due.getTime()
+  return Math.floor(diff / (1000 * 60 * 60 * 24))
 }
 
-export function taskOverdueDays(dueAt: string | Date, referenceDate: Date = new Date()): number {
-  const due = startOfDay(new Date(dueAt))
-  const today = startOfDay(referenceDate)
-  const diffMs = today.getTime() - due.getTime()
-  return Math.max(0, Math.floor(diffMs / 86_400_000))
-}
-
-export function formatTaskOverdueLabel(days: number): string {
+export function formatTaskOverdueLabel(days: number, locale: AppLocale = 'es'): string {
   if (days <= 0) return ''
-  if (days === 1) return '1 día de retraso'
-  return `${days} días de retraso`
+  if (days === 1) return translate(locale, 'care.overdueOne')
+  return translate(locale, 'care.overdueMany', { days })
 }

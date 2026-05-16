@@ -1,4 +1,11 @@
-export async function fetchWeatherSummary(lat: number, lon: number): Promise<string> {
+import type { AppLocale } from '#shared/utils/i18n/locale'
+import { translate } from '#shared/utils/i18n/translate'
+
+export async function fetchWeatherSummary(
+  lat: number,
+  lon: number,
+  locale: AppLocale = 'es'
+): Promise<string> {
   const params = new URLSearchParams({
     latitude: String(lat),
     longitude: String(lon),
@@ -8,12 +15,12 @@ export async function fetchWeatherSummary(lat: number, lon: number): Promise<str
   })
   const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`)
   if (!res.ok) {
-    return 'Datos meteorológicos no disponibles.'
+    return translate(locale, 'errors.api.weather.unavailable')
   }
   const data = await res.json()
   const daily = data.daily
   if (!daily?.time?.length) {
-    return 'Sin datos de pronóstico.'
+    return translate(locale, 'errors.api.weather.noForecast')
   }
   const lines: string[] = []
   for (let i = 0; i < Math.min(5, daily.time.length); i++) {

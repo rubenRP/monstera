@@ -1,3 +1,4 @@
+import { API_ERROR_CODES } from '#shared/utils/i18n/apiErrors'
 import { normalizeSpeciesQuery } from '#shared/utils/species/normalize'
 import type { SpeciesProfile, SpeciesProfileRow } from '#shared/types/species'
 import { fetchSpeciesProfileFromPerenual } from '../../../utils/perenual'
@@ -5,25 +6,26 @@ import { fetchSpeciesProfileFromPerenual } from '../../../utils/perenual'
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
   if (!config.perenualApiKey) {
-    throw createError({ statusCode: 503, message: 'PERENUAL_API_KEY no configurada' })
+    throwApiError(503, API_ERROR_CODES.PERENUAL_SERVICE_UNAVAILABLE)
   }
 
   const plantId = getRouterParam(event, 'id')
   if (!plantId) {
-    throw createError({ statusCode: 400, message: 'ID de planta requerido' })
+    throwApiError(400, API_ERROR_CODES.PLANT_ID_REQUIRED)
   }
 
   const refresh = getQuery(event).refresh === 'true'
+  const locale = getRequestLocale(event)
 
   const supabase = getServiceSupabase()
   const authHeader = getHeader(event, 'authorization')
   if (!authHeader?.startsWith('Bearer ')) {
-    throw createError({ statusCode: 401, message: 'No autorizado' })
+    throwApiError(401, API_ERROR_CODES.AUTH_UNAUTHORIZED)
   }
   const token = authHeader.slice(7)
   const { data: { user }, error: authError } = await supabase.auth.getUser(token)
   if (authError || !user) {
-    throw createError({ statusCode: 401, message: 'Sesión inválida' })
+    throwApiError(401, API_ERROR_CODES.AUTH_INVALID_SESSION)
   }
 
   const { data: plant, error: plantError } = await supabase
@@ -34,14 +36,11 @@ export default defineEventHandler(async (event) => {
     .single()
 
   if (plantError || !plant) {
-    throw createError({ statusCode: 404, message: 'Planta no encontrada' })
+    throwApiError(404, API_ERROR_CODES.PLANT_NOT_FOUND)
   }
 
   if (!plant.species?.trim()) {
-    throw createError({
-      statusCode: 404,
-      message: 'Añade la especie de la planta en el formulario de edición para ver la ficha de variedad'
-    })
+    throwApiError(404, API_ERROR_CODES.PLANT_SPECIES_REQUIRED)
   }
 
   const speciesQuery = normalizeSpeciesQuery(plant.species)
@@ -61,12 +60,9 @@ export default defineEventHandler(async (event) => {
 
   let profile: SpeciesProfile
   try {
-    profile = await fetchSpeciesProfileFromPerenual(speciesQuery, config.perenualApiKey)
-  } catch (e) {
-    throw createError({
-      statusCode: 502,
-      message: e instanceof Error ? e.message : 'Error al consultar Perenual'
-    })
+    profile = await fetchSpeciesProfileFromPerenual(speciesQuery, config.perenualApiKey, locale)
+  } catch {
+    throwApiError(502, API_ERROR_CODES.PERENUAL_QUERY_FAILED)
   }
 
   const { error: upsertError } = await supabase

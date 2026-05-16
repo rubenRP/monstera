@@ -1,4 +1,6 @@
 <script setup lang="ts">
+const { t } = useI18n()
+const { dateLocale } = useDateLocale()
 const { fetchTasksInRange, taskLabel, taskIcon } = useCareTasks()
 
 const weekStart = ref(startOfWeek(new Date()))
@@ -60,38 +62,68 @@ onMounted(load)
 
 <template>
   <div class="space-y-4">
-    <h1 class="text-2xl font-bold">Calendario</h1>
+    <h1 class="text-2xl font-bold">
+      {{ t('care.calendarTitle') }}
+    </h1>
 
     <div class="flex items-center justify-between">
-      <UButton icon="i-lucide-chevron-left" variant="ghost" @click="prevWeek" />
+      <UButton
+        icon="i-lucide-chevron-left"
+        variant="ghost"
+        @click="prevWeek"
+      />
       <span class="text-sm font-medium">
-        {{ weekDays[0]?.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) }}
+        {{ weekDays[0]?.toLocaleDateString(dateLocale, { day: 'numeric', month: 'short' }) }}
         –
-        {{ weekDays[6]?.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) }}
+        {{ weekDays[6]?.toLocaleDateString(dateLocale, { day: 'numeric', month: 'short' }) }}
       </span>
-      <UButton icon="i-lucide-chevron-right" variant="ghost" @click="nextWeek" />
+      <UButton
+        icon="i-lucide-chevron-right"
+        variant="ghost"
+        @click="nextWeek"
+      />
     </div>
 
-    <USkeleton v-if="loading" class="h-64" />
+    <USkeleton
+      v-if="loading"
+      class="h-64"
+    />
 
-    <div v-else class="space-y-3">
+    <div
+      v-else
+      class="space-y-3"
+    >
       <UCard
         v-for="day in weekDays"
         :key="day.toISOString()"
         :ui="{ body: 'p-3' }"
       >
         <p class="font-medium text-sm mb-2">
-          {{ day.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric' }) }}
+          {{ day.toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric' }) }}
         </p>
-        <p v-if="!tasksForDay(day).length" class="text-xs text-muted">Sin tareas</p>
-        <ul v-else class="space-y-1">
+        <p
+          v-if="!tasksForDay(day).length"
+          class="text-xs text-muted"
+        >
+          {{ t('care.noTasksDay') }}
+        </p>
+        <ul
+          v-else
+          class="space-y-1"
+        >
           <li
             v-for="task in tasksForDay(day)"
             :key="task.id"
             class="flex items-center gap-2 text-sm"
           >
-            <UIcon :name="taskIcon(task.type)" class="w-4 h-4 text-primary shrink-0" />
-            <NuxtLink :to="`/plants/${task.plant_id}`" class="truncate hover:text-primary">
+            <UIcon
+              :name="taskIcon(task.type)"
+              class="w-4 h-4 text-primary shrink-0"
+            />
+            <NuxtLink
+              :to="`/plants/${task.plant_id}`"
+              class="truncate hover:text-primary"
+            >
               {{ task.plant?.name }} — {{ taskLabel(task.type) }}
             </NuxtLink>
             <UBadge
@@ -99,7 +131,7 @@ onMounted(load)
               size="xs"
               :color="task.status === 'done' ? 'success' : 'neutral'"
             >
-              {{ task.status === 'done' ? 'hecho' : 'omitido' }}
+              {{ task.status === 'done' ? t('care.statusDone') : t('care.statusSkipped') }}
             </UBadge>
           </li>
         </ul>
