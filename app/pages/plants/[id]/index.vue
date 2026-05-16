@@ -9,12 +9,12 @@ const { healthLabel } = usePlantEnumLabels()
 const route = useRoute()
 const id = route.params.id as string
 const { fetchPlant, updateHealthStatus, deletePlant } = usePlants()
-const { fetchTodayTasks, completeTask } = useCareTasks()
+const { fetchPlantPendingTasks, completeTask } = useCareTasks()
 const toast = useToast()
 
 const plant = ref<Awaited<ReturnType<typeof fetchPlant>> | null>(null)
 const { url: photoUrl } = usePlantPhoto(computed(() => plant.value?.photo_path))
-const pendingTasks = ref<Awaited<ReturnType<typeof fetchTodayTasks>>>([])
+const pendingTasks = ref<Awaited<ReturnType<typeof fetchPlantPendingTasks>>>([])
 const loading = ref(true)
 const actingTaskId = ref<string | null>(null)
 const healthStatus = ref<HealthStatus>('healthy')
@@ -47,9 +47,8 @@ onMounted(async () => {
   try {
     plant.value = await fetchPlant(id)
     healthStatus.value = plant.value.health_status
-    healthNote.value = plant.value.health_status_note
-    const all = await fetchTodayTasks()
-    pendingTasks.value = all.filter(t => t.plant_id === id)
+    healthNote.value = plant.value.health_status_note ?? ''
+    pendingTasks.value = await fetchPlantPendingTasks(id)
   } finally {
     loading.value = false
   }
@@ -73,7 +72,7 @@ async function onCompleteTask(taskId: string) {
   actingTaskId.value = taskId
   try {
     await completeTask(task)
-    pendingTasks.value = (await fetchTodayTasks()).filter(t => t.plant_id === id)
+    pendingTasks.value = await fetchPlantPendingTasks(id)
     plant.value = await fetchPlant(id)
     historyTabVisited.value = false
     if (activeTab.value === 'historial') {

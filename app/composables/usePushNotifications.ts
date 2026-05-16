@@ -1,21 +1,38 @@
+import { exportPushSubscription } from '~/utils/push/exportSubscription'
+
+function isIosStandalonePwa(): boolean {
+  if (!import.meta.client) return true
+  const nav = navigator as Navigator & { standalone?: boolean }
+  if (nav.standalone) return true
+  return window.matchMedia('(display-mode: standalone)').matches
+}
+
 export function usePushNotifications() {
   const config = useRuntimeConfig()
   const supabase = useSupabaseClient()
+  const { t } = useI18n()
 
   async function subscribe() {
     if (!import.meta.client || !('serviceWorker' in navigator) || !('PushManager' in window)) {
-      throw new Error('Push no soportado en este navegador')
+      throw new Error(t('settings.pushNotSupported'))
+    }
+
+    const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent)
+      || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+    if (isIos && !isIosStandalonePwa()) {
+      throw new Error(t('settings.pushRequiresPwa'))
     }
 
     const permission = await Notification.requestPermission()
     if (permission !== 'granted') {
-      throw new Error('Permiso de notificaciones denegado')
+      throw new Error(t('settings.pushDenied'))
     }
 
     const reg = await navigator.serviceWorker.ready
+
     const vapidKey = config.public.vapidPublicKey
     if (!vapidKey) {
-      throw new Error('VAPID public key no configurada')
+      throw new Error(t('settings.vapidHint'))
     }
 
     const sub = await reg.pushManager.subscribe({
@@ -23,17 +40,18 @@ export function usePushNotifications() {
       applicationServerKey: urlBase64ToUint8Array(vapidKey)
     })
 
-    const json = sub.toJSON()
-    const { data } = await supabase.auth.getSession()
-    const token = data.session?.access_token
+    const payload = exportPushSubscription(sub)
+
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = session?.access_token
+    if (!token) {
+      throw new Error(t('settings.pushSessionExpired'))
+    }
 
     await $fetch('/api/push/subscribe', {
       method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      body: {
-        endpoint: json.endpoint,
-        keys: json.keys
-      }
+      headers: { Authorization: `Bearer ${token}` },
+      body: payload
     })
 
     return sub

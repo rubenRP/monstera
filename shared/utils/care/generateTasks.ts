@@ -5,7 +5,8 @@ export interface TaskToInsert {
   due_at: string
 }
 
-const HORIZON_DAYS = 60
+/** Must cover max fertilizing_interval_days (365) so at least one task is generated. */
+const HORIZON_DAYS = 365
 
 export function generateCareTasks(
   wateringIntervalDays: number,

@@ -23,18 +23,35 @@ export function useCareTasks() {
     if (error) throw error
   }
 
+  const taskSelect = '*, plant:plants(id, name, photo_path, health_status, site:sites(id, name))'
+
+  async function fetchPendingTasks(options?: { plantId?: string, dueBefore?: Date }) {
+    let query = supabase
+      .from('care_tasks')
+      .select(taskSelect)
+      .eq('status', 'pending')
+      .order('due_at')
+
+    if (options?.plantId) {
+      query = query.eq('plant_id', options.plantId)
+    }
+    if (options?.dueBefore) {
+      query = query.lte('due_at', options.dueBefore.toISOString())
+    }
+
+    const { data, error } = await query
+    if (error) throw error
+    return deduplicateOverlappingTasks((data ?? []) as CareTask[])
+  }
+
   async function fetchTodayTasks() {
     const end = new Date()
     end.setHours(23, 59, 59, 999)
+    return fetchPendingTasks({ dueBefore: end })
+  }
 
-    const { data, error } = await supabase
-      .from('care_tasks')
-      .select('*, plant:plants(id, name, photo_path, health_status, site:sites(id, name))')
-      .eq('status', 'pending')
-      .lte('due_at', end.toISOString())
-      .order('due_at')
-    if (error) throw error
-    return deduplicateOverlappingTasks((data ?? []) as CareTask[])
+  async function fetchPlantPendingTasks(plantId: string) {
+    return fetchPendingTasks({ plantId })
   }
 
   async function fetchCareHistory(plantId: string, limit = 50) {
@@ -52,12 +69,13 @@ export function useCareTasks() {
   async function fetchTasksInRange(start: Date, end: Date) {
     const { data, error } = await supabase
       .from('care_tasks')
-      .select('*, plant:plants(id, name, photo_path, health_status, site:sites(id, name))')
+      .select(taskSelect)
+      .eq('status', 'pending')
       .gte('due_at', start.toISOString())
       .lte('due_at', end.toISOString())
       .order('due_at')
     if (error) throw error
-    return (data ?? []) as CareTask[]
+    return deduplicateOverlappingTasks((data ?? []) as CareTask[])
   }
 
   async function completeTask(task: CareTask) {
@@ -184,6 +202,7 @@ export function useCareTasks() {
 
   return {
     fetchTodayTasks,
+    fetchPlantPendingTasks,
     fetchCareHistory,
     fetchTasksInRange,
     completeTask,

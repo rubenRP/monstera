@@ -63,6 +63,10 @@
     "enablePush": "Activar notificaciones push",
     "pushEnabled": "Notificaciones activadas",
     "pushFailed": "No se pudieron activar",
+    "pushNotSupported": "Las notificaciones push no están disponibles en este navegador",
+    "pushRequiresPwa": "En iPhone, añade Monstera a la pantalla de inicio y ábrela desde ahí para activar las notificaciones",
+    "pushDenied": "Permiso de notificaciones denegado",
+    "pushSessionExpired": "Sesión caducada. Vuelve a iniciar sesión e inténtalo de nuevo",
     "vapidHint": "Configura NUXT_PUBLIC_VAPID_PUBLIC_KEY y VAPID_PRIVATE_KEY"
   },
   "home": {
@@ -216,6 +220,10 @@
     "skipWaterWet": "Sí, sigue húmeda",
     "skipWaterOther": "No, otro motivo",
     "thisPlant": "esta planta",
+    "pendingTasks": "Próximas tareas",
+    "dueToday": "Hoy",
+    "dueTomorrow": "Mañana",
+    "dueInDays": "En {days} días",
     "calendarTitle": "Calendario",
     "noTasksDay": "Sin tareas",
     "statusDone": "hecho",

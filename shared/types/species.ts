@@ -15,6 +15,8 @@ export interface SpeciesProfile {
   temperature: string
   pestsAndProblems: string
   fetchedAt: string
+  /** Set when missing care sections were filled via Cursor AI */
+  enrichedByAi?: boolean
 }
 
 export interface SpeciesProfileRow {

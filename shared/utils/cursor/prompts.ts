@@ -1,7 +1,23 @@
 import type { Plant, Site } from '../../types/database'
+import type { SpeciesProfile } from '../../types/species'
+import type { AppLocale } from '../i18n/locale'
 import { translate } from '../i18n/translate'
+import { isUnavailableField, type SpeciesCareFieldKey } from '../species/profileCompleteness'
 
 const LOCALE = 'es' as const
+
+const SPECIES_SECTION_I18N: Record<SpeciesCareFieldKey, string> = {
+  watering: 'species.sectionWatering',
+  light: 'species.sectionLight',
+  humidity: 'species.sectionHumidity',
+  fertilizing: 'species.sectionFertilizing',
+  soil: 'species.sectionSoil',
+  repotting: 'species.sectionRepotting',
+  toxicity: 'species.sectionToxicity',
+  characteristics: 'species.sectionCharacteristics',
+  temperature: 'species.sectionTemperature',
+  pestsAndProblems: 'species.sectionPests'
+}
 
 function placementLabel(p: Site['placement']): string {
   return translate(LOCALE, `enums.placement.${p}`)
@@ -101,6 +117,57 @@ JSON esperado:
 }
 
 Considera hemisferio norte: ventana sur = más luz directa. Maceta pequeña + sustrato retentivo = menos riego.`
+}
+
+export function buildSpeciesEnrichPrompt(
+  speciesQuery: string,
+  profile: SpeciesProfile,
+  missingFields: SpeciesCareFieldKey[],
+  locale: AppLocale
+): string {
+  const language = locale === 'en' ? 'English' : 'Spanish'
+  const sections = missingFields
+    .map(key => `- ${translate(locale, SPECIES_SECTION_I18N[key])} (${key})`)
+    .join('\n')
+
+  const knownLines = [
+    profile.commonName ? `Common name: ${profile.commonName}` : null,
+    profile.scientificName.length ? `Scientific name: ${profile.scientificName.join(', ')}` : null,
+    !isUnavailableField(profile.watering, locale) ? `Watering (reference): ${profile.watering}` : null,
+    !isUnavailableField(profile.light, locale) ? `Light (reference): ${profile.light}` : null,
+    !isUnavailableField(profile.characteristics, locale)
+      ? `Characteristics (reference): ${profile.characteristics}`
+      : null
+  ].filter(Boolean).join('\n')
+
+  return `You are an indoor plant care expert. A plant encyclopedia returned incomplete data for this species. Complete ONLY the missing sections with practical advice for houseplant care.
+
+Species searched: ${speciesQuery}
+Response language: ${language} (all string values must be in ${language})
+
+Known data (do not repeat verbatim; use for consistency):
+${knownLines || '(none)'}
+
+Missing sections to complete:
+${sections}
+
+Respond ONLY with valid JSON (no markdown). Include only keys for sections you can fill confidently. Each value: 1–4 sentences, practical for indoor cultivation.
+
+Expected JSON shape (omit keys you cannot fill):
+{
+  "commonName": "string (only if missing)",
+  "scientificName": ["string"],
+  "watering": "string",
+  "light": "string",
+  "humidity": "string",
+  "fertilizing": "string",
+  "soil": "string",
+  "repotting": "string",
+  "toxicity": "string",
+  "characteristics": "string",
+  "temperature": "string",
+  "pestsAndProblems": "string"
+}`
 }
 
 export function extractJsonFromText(text: string): string {

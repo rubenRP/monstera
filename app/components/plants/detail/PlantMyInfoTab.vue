@@ -26,7 +26,7 @@ const emit = defineEmits<{
   completeTask: [taskId: string]
 }>()
 
-const { taskLabel, taskIcon } = useCareTasks()
+const { taskLabel, taskIcon, overdueDays, overdueLabel } = useCareTasks()
 
 const empty = computed(() => t('common.notIndicated'))
 
@@ -37,6 +37,15 @@ function formatDate(iso: string | null): string {
     month: 'short',
     year: 'numeric'
   })
+}
+
+function taskDueLabel(dueAt: string): string {
+  const overdue = overdueDays(dueAt)
+  if (overdue > 0) return overdueLabel(dueAt)
+  if (overdue === 0) return t('care.dueToday')
+  const days = -overdue
+  if (days === 1) return t('care.dueTomorrow')
+  return t('care.dueInDays', { days })
 }
 
 const lightingRows = computed((): InfoRow[] => {
@@ -200,19 +209,31 @@ const plantRows = computed((): InfoRow[] => [
       class="space-y-2"
     >
       <h2 class="font-semibold text-sm">
-        {{ t('plants.todayTasks') }}
+        {{ t('care.pendingTasks') }}
       </h2>
       <div
         v-for="task in pendingTasks"
         :key="task.id"
         class="flex items-center justify-between p-3 rounded-lg border border-default"
+        :class="overdueDays(task.due_at) > 0 ? 'border-warning/50' : ''"
       >
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 min-w-0">
           <UIcon
             :name="taskIcon(task.type)"
-            class="text-primary"
+            class="shrink-0"
+            :class="overdueDays(task.due_at) > 0 ? 'text-warning' : 'text-primary'"
           />
-          <span class="text-sm">{{ taskLabel(task.type) }}</span>
+          <div class="min-w-0">
+            <p class="text-sm font-medium">
+              {{ taskLabel(task.type) }}
+            </p>
+            <p
+              class="text-xs"
+              :class="overdueDays(task.due_at) > 0 ? 'text-warning' : 'text-muted'"
+            >
+              {{ taskDueLabel(task.due_at) }}
+            </p>
+          </div>
         </div>
         <UButton
           size="sm"

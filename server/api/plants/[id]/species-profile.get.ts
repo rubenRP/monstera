@@ -1,7 +1,53 @@
 import { API_ERROR_CODES } from '#shared/utils/i18n/apiErrors'
+import type { AppLocale } from '#shared/utils/i18n/locale'
 import { normalizeSpeciesQuery } from '#shared/utils/species/normalize'
+import { isSpeciesProfileLimited } from '#shared/utils/species/profileCompleteness'
 import type { SpeciesProfile, SpeciesProfileRow } from '#shared/types/species'
 import { fetchSpeciesProfileFromPerenual } from '../../../utils/perenual'
+import { enrichSpeciesProfileWithCursor } from '../../../utils/speciesCursor'
+import type { SupabaseClient } from '@supabase/supabase-js'
+
+async function maybeEnrichSpeciesProfile(
+  profile: SpeciesProfile,
+  speciesQuery: string,
+  locale: AppLocale,
+  cursorApiKey: string | undefined,
+  refresh: boolean
+): Promise<SpeciesProfile> {
+  if (!cursorApiKey || (profile.enrichedByAi && !refresh)) {
+    return profile
+  }
+  if (!isSpeciesProfileLimited(profile, locale)) {
+    return profile
+  }
+  try {
+    return await enrichSpeciesProfileWithCursor(profile, speciesQuery, locale, cursorApiKey)
+  } catch (e) {
+    console.error('species profile enrich failed:', e)
+    return profile
+  }
+}
+
+async function upsertSpeciesProfile(
+  supabase: SupabaseClient,
+  speciesQuery: string,
+  profile: SpeciesProfile
+): Promise<void> {
+  const { error } = await supabase
+    .from('species_profiles')
+    .upsert(
+      {
+        species_query: speciesQuery,
+        perenual_id: profile.perenualId,
+        profile,
+        updated_at: new Date().toISOString()
+      },
+      { onConflict: 'species_query' }
+    )
+  if (error) {
+    console.error('species_profiles upsert:', error)
+  }
+}
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
@@ -54,7 +100,17 @@ export default defineEventHandler(async (event) => {
 
     if (cached) {
       const row = cached as SpeciesProfileRow
-      return { profile: row.profile, cached: true, speciesQuery }
+      const enriched = await maybeEnrichSpeciesProfile(
+        row.profile,
+        speciesQuery,
+        locale,
+        config.cursorApiKey,
+        refresh
+      )
+      if (enriched !== row.profile) {
+        await upsertSpeciesProfile(supabase, speciesQuery, enriched)
+      }
+      return { profile: enriched, cached: true, speciesQuery }
     }
   }
 
@@ -65,21 +121,15 @@ export default defineEventHandler(async (event) => {
     throwApiError(502, API_ERROR_CODES.PERENUAL_QUERY_FAILED)
   }
 
-  const { error: upsertError } = await supabase
-    .from('species_profiles')
-    .upsert(
-      {
-        species_query: speciesQuery,
-        perenual_id: profile.perenualId,
-        profile,
-        updated_at: new Date().toISOString()
-      },
-      { onConflict: 'species_query' }
-    )
+  profile = await maybeEnrichSpeciesProfile(
+    profile,
+    speciesQuery,
+    locale,
+    config.cursorApiKey,
+    refresh
+  )
 
-  if (upsertError) {
-    console.error('species_profiles upsert:', upsertError)
-  }
+  await upsertSpeciesProfile(supabase, speciesQuery, profile)
 
   return { profile, cached: false, speciesQuery }
 })

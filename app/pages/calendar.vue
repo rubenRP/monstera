@@ -126,13 +126,6 @@ onMounted(load)
             >
               {{ task.plant?.name }} — {{ taskLabel(task.type) }}
             </NuxtLink>
-            <UBadge
-              v-if="task.status !== 'pending'"
-              size="xs"
-              :color="task.status === 'done' ? 'success' : 'neutral'"
-            >
-              {{ task.status === 'done' ? t('care.statusDone') : t('care.statusSkipped') }}
-            </UBadge>
           </li>
         </ul>
       </UCard>
