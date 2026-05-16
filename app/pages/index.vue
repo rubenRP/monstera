@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import type { HealthStatus } from '#shared/types/database'
+import type { CareTask, HealthStatus } from '#shared/types/database'
 
-const { fetchTodayTasks, completeTask, skipTask, taskLabel, taskIcon } = useCareTasks()
+const { fetchTodayTasks, completeTask, skipTask, taskLabel, taskIcon, overdueDays, overdueLabel } = useCareTasks()
 const { fetchPlants } = usePlants()
+const toast = useToast()
 
 const tasks = ref<Awaited<ReturnType<typeof fetchTodayTasks>>>([])
 const plants = ref<Awaited<ReturnType<typeof fetchPlants>>>([])
 const loading = ref(true)
 const acting = ref<string | null>(null)
+const skipWaterModalOpen = ref(false)
+const taskToSkip = ref<CareTask | null>(null)
 
 const healthSummary = computed(() => {
   const counts: Record<HealthStatus, number> = {
@@ -42,11 +45,35 @@ async function markDone(taskId: string) {
   }
 }
 
-async function markSkip(taskId: string) {
-  acting.value = taskId
+function onSkipClick(task: CareTask) {
+  if (task.type === 'water') {
+    taskToSkip.value = task
+    skipWaterModalOpen.value = true
+    return
+  }
+  void confirmSkip(task, false)
+}
+
+function onSkipWaterConfirm(soilStillWet: boolean) {
+  const task = taskToSkip.value
+  if (!task) return
+  void confirmSkip(task, soilStillWet)
+}
+
+async function confirmSkip(task: CareTask, soilStillWet: boolean) {
+  skipWaterModalOpen.value = false
+  taskToSkip.value = null
+  acting.value = task.id
   try {
-    await skipTask(taskId)
+    const newInterval = await skipTask(task, { soilStillWet })
     tasks.value = await fetchTodayTasks()
+    if (soilStillWet && newInterval) {
+      toast.add({
+        title: 'Plan de riego actualizado',
+        description: `Próximo riego en ${newInterval} días`,
+        color: 'success'
+      })
+    }
   } finally {
     acting.value = null
   }
@@ -96,10 +123,15 @@ async function markSkip(taskId: string) {
       <li
         v-for="task in tasks"
         :key="task.id"
-        class="p-4 rounded-xl border border-default bg-elevated/30"
+        class="p-4 rounded-xl border bg-elevated/30"
+        :class="overdueDays(task.due_at) > 0 ? 'border-warning/50' : 'border-default'"
       >
         <div class="flex items-start gap-3">
-          <UIcon :name="taskIcon(task.type)" class="w-5 h-5 text-primary mt-0.5 shrink-0" />
+          <UIcon
+            :name="taskIcon(task.type)"
+            class="w-5 h-5 mt-0.5 shrink-0"
+            :class="overdueDays(task.due_at) > 0 ? 'text-warning' : 'text-primary'"
+          />
           <div class="flex-1 min-w-0">
             <NuxtLink :to="`/plants/${task.plant_id}`" class="font-medium hover:text-primary">
               {{ task.plant?.name }}
@@ -107,6 +139,9 @@ async function markSkip(taskId: string) {
             <p class="text-sm text-muted">
               {{ taskLabel(task.type) }}
               <span v-if="task.plant?.site?.name"> · {{ task.plant.site.name }}</span>
+            </p>
+            <p v-if="overdueDays(task.due_at) > 0" class="text-sm text-warning mt-0.5">
+              {{ overdueLabel(task.due_at) }}
             </p>
           </div>
           <div class="flex gap-1 shrink-0">
@@ -122,7 +157,8 @@ async function markSkip(taskId: string) {
               size="xs"
               variant="ghost"
               color="neutral"
-              @click="markSkip(task.id)"
+              :loading="acting === task.id"
+              @click="onSkipClick(task)"
             >
               Omitir
             </UButton>
@@ -134,5 +170,11 @@ async function markSkip(taskId: string) {
     <UButton to="/plants/new" block icon="i-lucide-plus" variant="soft">
       Añadir planta
     </UButton>
+
+    <CareSkipWaterModal
+      v-model:open="skipWaterModalOpen"
+      v-model:task="taskToSkip"
+      @confirm="onSkipWaterConfirm"
+    />
   </div>
 </template>

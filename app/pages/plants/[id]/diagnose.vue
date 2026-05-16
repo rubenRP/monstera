@@ -105,9 +105,8 @@ async function applySuggestedStatus() {
       </div>
     </UCard>
 
-    <UModal v-model:open="showHealthModal">
-      <UCard>
-        <template #header>¿Actualizar estado de la planta?</template>
+    <UModal v-model:open="showHealthModal" title="¿Actualizar estado de la planta?">
+      <template #body>
         <p class="text-sm text-muted mb-4">
           La IA sugiere cambiar el estado según el diagnóstico.
         </p>
@@ -119,7 +118,7 @@ async function applySuggestedStatus() {
             Mantener actual
           </UButton>
         </div>
-      </UCard>
+      </template>
     </UModal>
   </div>
 </template>

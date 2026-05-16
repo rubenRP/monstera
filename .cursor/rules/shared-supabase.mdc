@@ -1,0 +1,40 @@
+---
+description: Shared code, migrations, and Supabase in Monstera
+globs: shared/**,supabase/**
+alwaysApply: false
+---
+
+# Shared and Supabase
+
+## `shared/`
+
+- **No** Vue/Nuxt dependencies — standard TS, Zod, types only.
+- `shared/utils/<domain>/` — pure logic (care, species, plants, cursor).
+- `shared/constants/` — Spanish labels for enums (user-facing).
+- Import types from `shared/types/`; do not duplicate in `app/`.
+
+## Care tasks
+
+When changing watering/fertilizing, review in order:
+
+1. `generateTasks.ts` — when to create tasks
+2. `deduplicateTasks.ts` — one visible task per plant/type
+3. `wateringPlan.ts` — skip and interval adjustment
+4. `useCareTasks.ts` — Supabase persistence
+
+## Species (Perenual)
+
+- Normalize query: `shared/utils/species/normalize.ts`
+- API mapping: `mapPerenualProfile.ts`
+- Cache in `species_profiles` table (global read for authenticated users)
+
+## Migrations
+
+- Files in `supabase/migrations/` with timestamp `YYYYMMDDHHMMSS_description.sql`.
+- After migration: update `shared/types/database.ts` and Zod schemas if needed.
+- RLS: `auth.uid() = user_id` policies on user tables.
+- Apply: `npx supabase db push` (linked project).
+
+## Postgres enums
+
+Reuse existing values (`health_status`, `placement_type`, `care_task_type`, etc.) — do not invent loose strings in TS without aligning with SQL.

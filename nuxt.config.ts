@@ -23,6 +23,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     cursorApiKey: process.env.CURSOR_API_KEY || '',
+    perenualApiKey: process.env.PERENUAL_API_KEY || '',
     supabaseServiceKey: process.env.SUPABASE_SERVICE_KEY || '',
     vapidPrivateKey: process.env.VAPID_PRIVATE_KEY || '',
     public: {

@@ -1,0 +1,44 @@
+---
+description: Nuxt/Vue frontend patterns in Monstera
+globs: app/**
+alwaysApply: false
+---
+
+# Frontend (`app/`)
+
+## Structure
+
+- `pages/` — file-based routes; `[id]` for detail views.
+- `components/<domain>/` — e.g. `plants/`, `sites/`, `care/`.
+- `composables/use*.ts` — data logic and actions (one composable per domain).
+
+## Composables
+
+```typescript
+// ✅ Project pattern
+export function usePlants() {
+  const supabase = useSupabaseClient()
+  const user = useSupabaseUser()
+  async function fetchPlants() { /* ... */ }
+  return { fetchPlants }
+}
+```
+
+- Supabase client with publishable key (RLS). Do not use the service key here.
+- Privileged APIs: `useAiApi()` → `$fetch('/api/...')` with `Authorization: Bearer`.
+
+## UI
+
+- Nuxt UI: `UButton`, `UCard`, `UModal`, `UForm`, `UBadge`, Lucide icons via `@iconify-json/lucide`.
+- Theme: primary `green`, neutral `slate` (`app/app.config.ts`).
+- Loading states: `loading` ref + disable actions with an `acting` id.
+
+## Photos
+
+- Upload: `usePlants().uploadPhoto` → `plant-photos` bucket.
+- Display: `getSignedPhotoUrl(path)` — private bucket.
+
+## PWA / auth
+
+- Public routes: `/login`, `/confirm` (`layout: false`).
+- Everything else protected by `@nuxtjs/supabase` redirect.

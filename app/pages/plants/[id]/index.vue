@@ -1,19 +1,44 @@
 <script setup lang="ts">
+import type { TabsItem } from '@nuxt/ui'
 import type { HealthStatus } from '#shared/types/database'
-import { getHealthLabel } from '#shared/constants/plants'
+import { getHealthLabel, getHealthColor } from '#shared/constants/plants'
 
 const route = useRoute()
 const id = route.params.id as string
 const { fetchPlant, updateHealthStatus, deletePlant } = usePlants()
-const { fetchTodayTasks, completeTask, taskLabel, taskIcon } = useCareTasks()
+const { fetchTodayTasks, completeTask } = useCareTasks()
 const toast = useToast()
 
 const plant = ref<Awaited<ReturnType<typeof fetchPlant>> | null>(null)
 const { url: photoUrl } = usePlantPhoto(computed(() => plant.value?.photo_path))
 const pendingTasks = ref<Awaited<ReturnType<typeof fetchTodayTasks>>>([])
 const loading = ref(true)
+const actingTaskId = ref<string | null>(null)
 const healthStatus = ref<HealthStatus>('healthy')
 const healthNote = ref<string | null>(null)
+const activeTab = ref('mi-planta')
+
+const speciesTabRef = ref<{ load: (refresh?: boolean) => Promise<void> } | null>(null)
+const historyTabRef = ref<{ load: () => Promise<void> } | null>(null)
+const speciesTabVisited = ref(false)
+const historyTabVisited = ref(false)
+
+const tabItems: TabsItem[] = [
+  { label: 'Mi planta', icon: 'i-lucide-leaf', slot: 'mi-planta', value: 'mi-planta' },
+  { label: 'Variedad', icon: 'i-lucide-book-open', slot: 'variedad', value: 'variedad' },
+  { label: 'Historial', icon: 'i-lucide-history', slot: 'historial', value: 'historial' }
+]
+
+watch(activeTab, (tab) => {
+  if (tab === 'variedad' && !speciesTabVisited.value) {
+    speciesTabVisited.value = true
+    nextTick(() => speciesTabRef.value?.load())
+  }
+  if (tab === 'historial' && !historyTabVisited.value) {
+    historyTabVisited.value = true
+    nextTick(() => historyTabRef.value?.load())
+  }
+})
 
 onMounted(async () => {
   try {
@@ -32,6 +57,7 @@ async function saveHealth() {
   try {
     await updateHealthStatus(plant.value.id, healthStatus.value, healthNote.value)
     plant.value.health_status = healthStatus.value
+    plant.value.health_status_note = healthNote.value
     toast.add({ title: 'Estado actualizado', color: 'success' })
   } catch (e: unknown) {
     toast.add({ title: 'Error', description: e instanceof Error ? e.message : '', color: 'error' })
@@ -41,9 +67,18 @@ async function saveHealth() {
 async function onCompleteTask(taskId: string) {
   const task = pendingTasks.value.find(t => t.id === taskId)
   if (!task) return
-  await completeTask(task)
-  pendingTasks.value = (await fetchTodayTasks()).filter(t => t.plant_id === id)
-  plant.value = await fetchPlant(id)
+  actingTaskId.value = taskId
+  try {
+    await completeTask(task)
+    pendingTasks.value = (await fetchTodayTasks()).filter(t => t.plant_id === id)
+    plant.value = await fetchPlant(id)
+    historyTabVisited.value = false
+    if (activeTab.value === 'historial') {
+      nextTick(() => historyTabRef.value?.load())
+    }
+  } finally {
+    actingTaskId.value = null
+  }
 }
 
 async function onDelete() {
@@ -59,11 +94,19 @@ async function onDelete() {
     <USkeleton class="h-8 w-2/3" />
   </div>
 
-  <div v-else-if="plant" class="space-y-6">
+  <div v-else-if="plant" class="space-y-5">
     <div class="flex items-start justify-between gap-2">
-      <div>
-        <h1 class="text-2xl font-bold">{{ plant.name }}</h1>
-        <p v-if="plant.species" class="text-muted">{{ plant.species }}</p>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 flex-wrap">
+          <h1 class="text-2xl font-bold">{{ plant.name }}</h1>
+          <span
+            class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full text-white"
+            :class="getHealthColor(plant.health_status)"
+          >
+            {{ getHealthLabel(plant.health_status) }}
+          </span>
+        </div>
+        <p v-if="plant.species" class="text-muted text-sm mt-0.5">{{ plant.species }}</p>
       </div>
       <UDropdownMenu
         :items="[[
@@ -79,48 +122,45 @@ async function onDelete() {
       v-if="photoUrl"
       :src="photoUrl"
       :alt="plant.name"
-      class="w-full h-48 object-cover rounded-xl"
+      class="w-full h-40 object-cover rounded-xl"
     >
 
-    <UCard>
-      <p class="text-sm font-medium mb-2">Estado: {{ getHealthLabel(plant.health_status) }}</p>
-      <PlantsHealthSemaphore
-        v-model="healthStatus"
-        v-model:note="healthNote"
-      />
-      <UButton class="mt-3" size="sm" @click="saveHealth">
-        Guardar estado
-      </UButton>
-    </UCard>
-
-    <PlantsPlantContextBadges :plant="plant" />
-
-    <div v-if="pendingTasks.length" class="space-y-2">
-      <h2 class="font-semibold">Tareas de hoy</h2>
-      <div
-        v-for="task in pendingTasks"
-        :key="task.id"
-        class="flex items-center justify-between p-3 rounded-lg border border-default"
-      >
-        <div class="flex items-center gap-2">
-          <UIcon :name="taskIcon(task.type)" class="text-primary" />
-          <span>{{ taskLabel(task.type) }}</span>
-        </div>
-        <UButton size="sm" @click="onCompleteTask(task.id)">
-          Hecho
-        </UButton>
-      </div>
-    </div>
-
     <div class="grid grid-cols-2 gap-2">
-      <UButton :to="`/plants/${id}/diagnose`" block variant="soft" icon="i-lucide-stethoscope">
+      <UButton :to="`/plants/${id}/diagnose`" block variant="soft" icon="i-lucide-stethoscope" size="sm">
         Diagnosticar
       </UButton>
-      <UButton :to="`/plants/${id}/recommend`" block variant="soft" icon="i-lucide-cloud-sun">
+      <UButton :to="`/plants/${id}/recommend`" block variant="soft" icon="i-lucide-cloud-sun" size="sm">
         Recomendaciones
       </UButton>
     </div>
 
-    <p v-if="plant.notes" class="text-sm text-muted whitespace-pre-wrap">{{ plant.notes }}</p>
+    <UTabs v-model="activeTab" :items="tabItems" class="w-full">
+      <template #mi-planta>
+        <PlantsDetailPlantMyInfoTab
+          v-model:health-status="healthStatus"
+          v-model:health-note="healthNote"
+          :plant="plant"
+          :pending-tasks="pendingTasks"
+          :acting-task-id="actingTaskId"
+          @save-health="saveHealth"
+          @complete-task="onCompleteTask"
+        />
+      </template>
+
+      <template #variedad>
+        <PlantsDetailPlantSpeciesTab
+          ref="speciesTabRef"
+          :plant-id="id"
+          :species="plant.species"
+        />
+      </template>
+
+      <template #historial>
+        <PlantsDetailPlantCareHistoryTab
+          ref="historyTabRef"
+          :plant-id="id"
+        />
+      </template>
+    </UTabs>
   </div>
 </template>

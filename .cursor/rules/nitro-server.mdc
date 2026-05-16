@@ -1,0 +1,50 @@
+---
+description: Nitro routes and server utilities in Monstera
+globs: server/**
+alwaysApply: false
+---
+
+# Nitro server (`server/`)
+
+## API routes
+
+- Convention: `server/api/<route>.<method>.ts` → `/api/<route>`.
+- Dynamic params: `server/api/plants/[id]/species-profile.get.ts`.
+
+## Protected handler template
+
+```typescript
+export default defineEventHandler(async (event) => {
+  const config = useRuntimeConfig()
+  const supabase = getServiceSupabase()
+
+  const authHeader = getHeader(event, 'authorization')
+  if (!authHeader?.startsWith('Bearer ')) {
+    throw createError({ statusCode: 401, message: 'No autorizado' })
+  }
+  const { data: { user }, error } = await supabase.auth.getUser(authHeader.slice(7))
+  if (error || !user) throw createError({ statusCode: 401, message: 'Sesión inválida' })
+
+  // Validate body/query with Zod, filter .eq('user_id', user.id)
+})
+```
+
+## AI (Cursor SDK)
+
+- `Agent.create({ apiKey: config.cursorApiKey, model: { id: 'composer-2' }, ... })`.
+- Prompts: `#shared/utils/cursor/prompts.ts`; parse JSON with `extractJsonFromText`.
+- Check `config.cursorApiKey` → 503 if missing.
+
+## Runtime keys
+
+| Key | Use |
+|-----|-----|
+| `cursorApiKey` | diagnose, recommend |
+| `perenualApiKey` | species-profile |
+| `supabaseServiceKey` | `getServiceSupabase()` |
+| `vapidPrivateKey` | push |
+
+## Errors
+
+- `createError({ statusCode, message })` — user-facing messages in **Spanish**.
+- 400 Zod validation, 401 auth, 404 resource, 503 service not configured.

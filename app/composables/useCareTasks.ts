@@ -1,9 +1,27 @@
 import type { CareTask, CareTaskType } from '#shared/types/database'
+import { deduplicateOverlappingTasks } from '#shared/utils/care/deduplicateTasks'
 import { nextTaskDue } from '#shared/utils/care/generateTasks'
+import { formatTaskOverdueLabel, taskOverdueDays } from '#shared/utils/care/taskDue'
+import { bumpWateringInterval, scheduleWateringFromToday } from '#shared/utils/care/wateringPlan'
 
 export function useCareTasks() {
   const supabase = useSupabaseClient()
   const user = useSupabaseUser()
+
+  async function dismissOverlappingPendingTasks(task: CareTask, exceptId: string) {
+    const end = new Date()
+    end.setHours(23, 59, 59, 999)
+
+    const { error } = await supabase
+      .from('care_tasks')
+      .update({ status: 'skipped', completed_at: new Date().toISOString() })
+      .eq('plant_id', task.plant_id)
+      .eq('type', task.type)
+      .eq('status', 'pending')
+      .lte('due_at', end.toISOString())
+      .neq('id', exceptId)
+    if (error) throw error
+  }
 
   async function fetchTodayTasks() {
     const end = new Date()
@@ -15,6 +33,18 @@ export function useCareTasks() {
       .eq('status', 'pending')
       .lte('due_at', end.toISOString())
       .order('due_at')
+    if (error) throw error
+    return deduplicateOverlappingTasks((data ?? []) as CareTask[])
+  }
+
+  async function fetchCareHistory(plantId: string, limit = 50) {
+    const { data, error } = await supabase
+      .from('care_tasks')
+      .select('*')
+      .eq('plant_id', plantId)
+      .in('status', ['done', 'skipped'])
+      .order('completed_at', { ascending: false })
+      .limit(limit)
     if (error) throw error
     return (data ?? []) as CareTask[]
   }
@@ -31,6 +61,8 @@ export function useCareTasks() {
   }
 
   async function completeTask(task: CareTask) {
+    await dismissOverlappingPendingTasks(task, task.id)
+
     const now = new Date().toISOString()
     const { error: taskError } = await supabase
       .from('care_tasks')
@@ -78,12 +110,55 @@ export function useCareTasks() {
     }
   }
 
-  async function skipTask(taskId: string) {
+  async function skipTask(task: CareTask, options?: { soilStillWet?: boolean }) {
+    await dismissOverlappingPendingTasks(task, task.id)
+
+    const now = new Date().toISOString()
     const { error } = await supabase
       .from('care_tasks')
-      .update({ status: 'skipped', completed_at: new Date().toISOString() })
-      .eq('id', taskId)
+      .update({ status: 'skipped', completed_at: now })
+      .eq('id', task.id)
     if (error) throw error
+
+    const uid = user.value?.id
+    if (!uid) return
+
+    const { data: plant } = await supabase
+      .from('plants')
+      .select('*')
+      .eq('id', task.plant_id)
+      .single()
+    if (!plant) return
+
+    if (task.type === 'water') {
+      let interval = plant.watering_interval_days
+      if (options?.soilStillWet) {
+        interval = bumpWateringInterval(interval)
+        if (interval !== plant.watering_interval_days) {
+          await supabase
+            .from('plants')
+            .update({ watering_interval_days: interval })
+            .eq('id', task.plant_id)
+        }
+      }
+
+      await supabase.from('care_tasks').insert({
+        plant_id: task.plant_id,
+        user_id: uid,
+        type: 'water',
+        due_at: scheduleWateringFromToday(interval),
+        status: 'pending'
+      })
+      return interval
+    }
+
+    await supabase.from('care_tasks').insert({
+      plant_id: task.plant_id,
+      user_id: uid,
+      type: 'fertilize',
+      due_at: nextTaskDue(plant.fertilizing_interval_days, new Date()),
+      status: 'pending'
+    })
   }
 
   function taskLabel(type: CareTaskType) {
@@ -94,12 +169,23 @@ export function useCareTasks() {
     return type === 'water' ? 'i-lucide-droplets' : 'i-lucide-flask-conical'
   }
 
+  function overdueDays(dueAt: string) {
+    return taskOverdueDays(dueAt)
+  }
+
+  function overdueLabel(dueAt: string) {
+    return formatTaskOverdueLabel(taskOverdueDays(dueAt))
+  }
+
   return {
     fetchTodayTasks,
+    fetchCareHistory,
     fetchTasksInRange,
     completeTask,
     skipTask,
     taskLabel,
-    taskIcon
+    taskIcon,
+    overdueDays,
+    overdueLabel
   }
 }

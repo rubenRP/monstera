@@ -1,0 +1,17 @@
+---
+description: Global conventions for the Monstera project
+alwaysApply: true
+---
+
+# Monstera — global conventions
+
+- **User-facing language**: Spanish (labels, toasts, `createError` messages, Zod validation). Agent docs are in English.
+- **Stack**: Nuxt 4 + Vue 3 + Nuxt UI + Supabase + Nitro. See `AGENTS.md` for architecture.
+- **Alias**: import shared types/utils via `#shared/...`, not long relative paths from `app/` or `server/`.
+- **Domain types**: `shared/types/database.ts` is the source of truth; update when the schema changes.
+- **Validation**: Zod in `shared/utils/*/schemas.ts`; reuse in forms and APIs.
+- **Secrets**: never `SUPABASE_SERVICE_KEY` on the client; do not commit `.env`.
+- **Env**: do not use a `SUPABASE_DB` variable (breaks Supabase CLI).
+- **Style**: no trailing comma (ESLint); minimal changes, no unrelated refactors.
+- **Verification**: run `npm run lint` and `npm run typecheck` after relevant changes.
+- **Commits**: only when the user explicitly asks.

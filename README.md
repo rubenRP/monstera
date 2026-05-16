@@ -1,60 +1,61 @@
 # Monstera
 
-PWA para cuidar plantas de interior: calendario de riego y fertilización, diagnóstico con IA (Cursor) y recomendaciones con clima (Open-Meteo).
+PWA for caring for indoor plants: watering and fertilizing calendar, AI diagnosis (Cursor), and weather-based recommendations (Open-Meteo).
 
 ## Stack
 
 - **Nuxt 3/4** + Vue 3 + Nuxt UI
-- **Supabase** (Postgres, Auth magic link, Storage)
-- **@cursor/sdk** en rutas Nitro (`server/api`)
+- **Supabase** (Postgres, magic link auth, storage)
+- **@cursor/sdk** on Nitro routes (`server/api`)
 - **@vite-pwa/nuxt**
 
-## Configuración
+## Setup
 
-1. Copia `.env.example` a `.env`:
+1. Copy `.env.example` to `.env`:
 
 ```bash
 cp .env.example .env
 ```
 
-2. Crea un proyecto en [Supabase](https://supabase.com) y aplica migraciones:
+2. Create a project on [Supabase](https://supabase.com) and apply migrations:
 
 ```bash
 npx supabase link
 npx supabase db push
 ```
 
-3. Variables obligatorias (en **Project Settings → API** del dashboard):
+3. Required variables (in **Project Settings → API** in the dashboard):
 
-| Variable en `.env` | Clave en Supabase | Uso |
-|--------------------|-------------------|-----|
-| `SUPABASE_URL` | Project URL | URL del proyecto |
-| `SUPABASE_KEY` | **Publishable** (antes anon) | Cliente Nuxt, respeta RLS |
-| `SUPABASE_SERVICE_KEY` | **Secret** (antes service_role) | Solo servidor (`server/api`) |
-| `CURSOR_API_KEY` | — | API key de Cursor |
+| `.env` variable | Supabase key | Purpose |
+|-----------------|--------------|---------|
+| `SUPABASE_URL` | Project URL | Project URL |
+| `SUPABASE_KEY` | **Publishable** (formerly anon) | Nuxt client, respects RLS |
+| `SUPABASE_SERVICE_KEY` | **Secret** (formerly service_role) | Server only (`server/api`) |
+| `CURSOR_API_KEY` | — | Cursor API key |
+| `PERENUAL_API_KEY` | — | Perenual API key (species variety tab) |
 
-> La **Secret** key tiene permisos elevados: no la expongas en el frontend ni la subas a Git.
+> The **Secret** key has elevated permissions: do not expose it in the frontend or commit it to Git.
 
-4. Opcional — notificaciones push:
+4. Optional — push notifications:
 
 ```bash
 npx web-push generate-vapid-keys
 ```
 
-Añade `NUXT_PUBLIC_VAPID_PUBLIC_KEY` y `VAPID_PRIVATE_KEY`. Para cron diario, configura `CRON_SECRET` y llama `POST /api/push/send-daily` con header `x-cron-secret`.
+Add `NUXT_PUBLIC_VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY`. For a daily cron job, set `CRON_SECRET` and call `POST /api/push/send-daily` with the `x-cron-secret` header.
 
-## Desarrollo
+## Development
 
 ```bash
 npm install
 npm run dev
 ```
 
-## Producción
+## Production
 
 ```bash
 npm run build
 npm run preview
 ```
 
-Despliega en Vercel/Netlify/Cloudflare con las mismas variables de entorno.
+Deploy to Vercel, Netlify, or Cloudflare with the same environment variables.
