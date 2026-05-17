@@ -7,6 +7,7 @@ const UPCOMING_STORAGE_KEY = 'monstera_home_upcoming_tasks'
 
 const {
   fetchTodayTasks,
+  fetchTodayCompletedTasks,
   fetchUpcomingTasks,
   createAdvanceTask,
   completeTask,
@@ -22,6 +23,7 @@ const { fetchPlants } = usePlants()
 const toast = useToast()
 
 const tasks = ref<Awaited<ReturnType<typeof fetchTodayTasks>>>([])
+const completedToday = ref<Awaited<ReturnType<typeof fetchTodayCompletedTasks>>>([])
 const plants = ref<Awaited<ReturnType<typeof fetchPlants>>>([])
 const loading = ref(true)
 const acting = ref<string | null>(null)
@@ -50,7 +52,10 @@ const todayFormatted = computed(() =>
 )
 
 const plantIdsWithWaterInView = computed(
-  () => new Set(tasks.value.filter(task => task.type === 'water').map(task => task.plant_id))
+  () => new Set([
+    ...tasks.value.filter(task => task.type === 'water').map(task => task.plant_id),
+    ...completedToday.value.filter(task => task.type === 'water').map(task => task.plant_id)
+  ])
 )
 
 const plantsForAdvanceWater = computed(() =>
@@ -58,9 +63,17 @@ const plantsForAdvanceWater = computed(() =>
 )
 
 async function loadTasks() {
-  tasks.value = showUpcoming.value
-    ? await fetchUpcomingTasks()
-    : await fetchTodayTasks()
+  if (showUpcoming.value) {
+    tasks.value = await fetchUpcomingTasks()
+    completedToday.value = []
+    return
+  }
+  const [pending, completed] = await Promise.all([
+    fetchTodayTasks(),
+    fetchTodayCompletedTasks()
+  ])
+  tasks.value = pending
+  completedToday.value = completed
 }
 
 async function reloadTasks() {
@@ -241,7 +254,7 @@ async function confirmSkip(task: CareTask, soilStillWet: boolean) {
       </div>
 
       <UAlert
-        v-else-if="!tasks.length"
+        v-else-if="!tasks.length && (showUpcoming || !completedToday.length)"
         color="neutral"
         icon="i-lucide-check-circle"
         :title="t('home.allCaughtUp')"
@@ -323,6 +336,49 @@ async function confirmSkip(task: CareTask, soilStillWet: boolean) {
           </div>
         </li>
       </ul>
+
+      <div
+        v-if="!tasksLoading && !showUpcoming && completedToday.length"
+        class="space-y-3 mt-6"
+      >
+        <h2 class="text-sm font-medium text-muted">
+          {{ t('home.completedToday') }}
+        </h2>
+        <ul class="space-y-3">
+          <li
+            v-for="task in completedToday"
+            :key="task.id"
+            class="p-4 rounded-xl border border-success/30 bg-success/5"
+          >
+            <div class="flex items-start gap-3">
+              <UIcon
+                name="i-lucide-circle-check"
+                class="w-5 h-5 mt-0.5 shrink-0 text-success"
+              />
+              <div class="flex-1 min-w-0">
+                <NuxtLink
+                  :to="`/plants/${task.plant_id}`"
+                  class="font-medium hover:text-primary"
+                >
+                  {{ task.plant?.name }}
+                </NuxtLink>
+                <p class="text-sm text-muted">
+                  {{ taskLabel(task.type) }}
+                  <span v-if="fertilizeWithWater(task, tasks)"> · {{ t('care.fertilizeWithWater') }}</span>
+                  <span v-if="task.plant?.site?.name"> · {{ task.plant.site.name }}</span>
+                </p>
+              </div>
+              <UBadge
+                color="success"
+                size="sm"
+                variant="subtle"
+              >
+                {{ t('common.done') }}
+              </UBadge>
+            </div>
+          </li>
+        </ul>
+      </div>
     </template>
 
     <CareSkipWaterModal

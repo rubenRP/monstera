@@ -44,10 +44,30 @@ export function useCareTasks() {
     return deduplicateOverlappingTasks((data ?? []) as CareTask[])
   }
 
-  async function fetchTodayTasks() {
+  function todayBounds() {
+    const start = new Date()
+    start.setHours(0, 0, 0, 0)
     const end = new Date()
     end.setHours(23, 59, 59, 999)
+    return { start, end }
+  }
+
+  async function fetchTodayTasks() {
+    const { end } = todayBounds()
     return fetchPendingTasks({ dueBefore: end })
+  }
+
+  async function fetchTodayCompletedTasks() {
+    const { start, end } = todayBounds()
+    const { data, error } = await supabase
+      .from('care_tasks')
+      .select(taskSelect)
+      .eq('status', 'done')
+      .gte('completed_at', start.toISOString())
+      .lte('completed_at', end.toISOString())
+      .order('completed_at', { ascending: false })
+    if (error) throw error
+    return (data ?? []) as CareTask[]
   }
 
   async function fetchUpcomingTasks(days = 7) {
@@ -218,6 +238,7 @@ export function useCareTasks() {
 
   return {
     fetchTodayTasks,
+    fetchTodayCompletedTasks,
     fetchUpcomingTasks,
     fetchPlantPendingTasks,
     fetchCareHistory,

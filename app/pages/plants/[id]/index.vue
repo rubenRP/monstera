@@ -25,7 +25,6 @@ const healthNote = ref('')
 const activeTab = ref('mi-planta')
 
 const historyTabRef = ref<{ load: () => Promise<void> } | null>(null)
-const historyTabVisited = ref(false)
 
 const tabItems = computed<TabsItem[]>(() => [
   { label: t('plants.myPlant'), icon: 'i-lucide-leaf', slot: 'mi-planta', value: 'mi-planta' },
@@ -33,12 +32,9 @@ const tabItems = computed<TabsItem[]>(() => [
   { label: t('plants.history'), icon: 'i-lucide-history', slot: 'historial', value: 'historial' }
 ])
 
-watch(activeTab, (tab) => {
-  if (tab === 'historial' && !historyTabVisited.value) {
-    historyTabVisited.value = true
-    nextTick(() => historyTabRef.value?.load())
-  }
-})
+function refreshCareHistory() {
+  nextTick(() => historyTabRef.value?.load())
+}
 
 onMounted(async () => {
   try {
@@ -71,10 +67,7 @@ async function onCompleteTask(taskId: string) {
     await completeTask(task)
     pendingTasks.value = await fetchPlantPendingTasks(id)
     plant.value = await fetchPlant(id)
-    historyTabVisited.value = false
-    if (activeTab.value === 'historial') {
-      nextTick(() => historyTabRef.value?.load())
-    }
+    refreshCareHistory()
   } finally {
     actingTaskId.value = null
   }
@@ -110,10 +103,7 @@ async function confirmSkip(task: CareTask, soilStillWet: boolean) {
         color: 'success'
       })
     }
-    historyTabVisited.value = false
-    if (activeTab.value === 'historial') {
-      nextTick(() => historyTabRef.value?.load())
-    }
+    refreshCareHistory()
   } finally {
     actingTaskId.value = null
   }

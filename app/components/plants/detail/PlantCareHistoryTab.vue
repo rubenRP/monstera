@@ -26,7 +26,7 @@ function formatDate(iso: string | null): string {
 }
 
 function statusLabel(status: CareTask['status']): string {
-  return status === 'done' ? t('sites.historyDone') : t('sites.historySkipped')
+  return status === 'done' ? t('plants.historyDone') : t('plants.historySkipped')
 }
 
 function statusColor(status: CareTask['status']): 'success' | 'neutral' {
@@ -42,6 +42,10 @@ async function load() {
     loaded.value = true
   }
 }
+
+onMounted(() => {
+  void load()
+})
 
 defineExpose({ load })
 </script>
@@ -68,7 +72,7 @@ defineExpose({ load })
     />
 
     <ul
-      v-else
+      v-else-if="loaded"
       class="space-y-2"
     >
       <li
