@@ -148,9 +148,17 @@ export function useCareTasks() {
     return (count ?? 0) > 0
   }
 
-  async function createAdvanceTask(plantId: string, type: CareTaskType = 'water') {
-    const uid = user.value?.id
+  async function requireUserId(): Promise<string> {
+    const fromRef = user.value?.id
+    if (fromRef) return fromRef
+    const { data: { session } } = await supabase.auth.getSession()
+    const uid = session?.user?.id
     if (!uid) throw new Error('No autenticado')
+    return uid
+  }
+
+  async function createAdvanceTask(plantId: string, type: CareTaskType = 'water') {
+    const uid = await requireUserId()
 
     if (await hasPendingTaskDueToday(plantId, type)) {
       return null

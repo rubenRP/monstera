@@ -149,6 +149,11 @@ async function onAddAdvanceWater(plantId: string) {
       description: created.plant?.name,
       color: 'success'
     })
+  } catch {
+    toast.add({
+      title: t('common.error'),
+      color: 'error'
+    })
   } finally {
     addingWater.value = false
   }
