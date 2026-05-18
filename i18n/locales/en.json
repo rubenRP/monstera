@@ -71,7 +71,13 @@
     "pushRequiresPwa": "On iPhone, add Monstera to your Home Screen and open it from there to enable notifications",
     "pushDenied": "Notification permission denied",
     "pushSessionExpired": "Session expired. Sign in again and try once more",
-    "vapidHint": "Set NUXT_PUBLIC_VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY"
+    "vapidHint": "Set NUXT_PUBLIC_VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY",
+    "wateringRecalcTitle": "Recalculate outdoor watering",
+    "wateringRecalcHint": "Updates outdoor plant intervals using your home weather.",
+    "wateringRecalcAction": "Recalculate now",
+    "wateringRecalcDone": "Outdoor watering recalculated ({count})",
+    "wateringRecalcErrors": "{count} failed to update.",
+    "wateringRecalcEmpty": "No outdoor plants to recalculate"
   },
   "home": {
     "title": "Today",
@@ -419,7 +425,8 @@
     "validation": {
       "plantNameRequired": "Name is required",
       "siteNameRequired": "Site name is required",
-      "symptomsMin": "Describe symptoms with at least 3 characters"
+      "symptomsMin": "Describe symptoms with at least 3 characters",
+      "homeLocationRequired": "Set your home location before recalculating"
     }
   }
 }

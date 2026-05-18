@@ -71,7 +71,13 @@
     "pushRequiresPwa": "En iPhone, añade Monstera a la pantalla de inicio y ábrela desde ahí para activar las notificaciones",
     "pushDenied": "Permiso de notificaciones denegado",
     "pushSessionExpired": "Sesión caducada. Vuelve a iniciar sesión e inténtalo de nuevo",
-    "vapidHint": "Configura NUXT_PUBLIC_VAPID_PUBLIC_KEY y VAPID_PRIVATE_KEY"
+    "vapidHint": "Configura NUXT_PUBLIC_VAPID_PUBLIC_KEY y VAPID_PRIVATE_KEY",
+    "wateringRecalcTitle": "Recalcular riego exterior",
+    "wateringRecalcHint": "Actualiza el intervalo de riego de plantas en exterior usando el tiempo del hogar.",
+    "wateringRecalcAction": "Recalcular ahora",
+    "wateringRecalcDone": "Riego exterior recalculado ({count})",
+    "wateringRecalcErrors": "Se omitieron {count} por error.",
+    "wateringRecalcEmpty": "No hay plantas en exterior para recalcular"
   },
   "home": {
     "title": "Hoy",
@@ -419,7 +425,8 @@
     "validation": {
       "plantNameRequired": "El nombre es obligatorio",
       "siteNameRequired": "El nombre del sitio es obligatorio",
-      "symptomsMin": "Describe los síntomas con al menos 3 caracteres"
+      "symptomsMin": "Describe los síntomas con al menos 3 caracteres",
+      "homeLocationRequired": "Indica la ubicación del hogar antes de recalcular"
     }
   }
 }

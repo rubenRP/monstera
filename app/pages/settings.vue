@@ -21,6 +21,7 @@ const pushLoading = ref(false)
 const savingReminder = ref(false)
 const pushReminderTime = ref('09:00')
 const pushReminderTimezone = ref(getBrowserTimezone())
+const recalcLoading = ref(false)
 
 const localeItems = computed(() =>
   locales.value.map(l => ({ label: l.name, value: l.code }))
@@ -107,6 +108,40 @@ async function enablePush() {
     })
   } finally {
     pushLoading.value = false
+  }
+}
+
+async function recalculateExteriorWatering() {
+  recalcLoading.value = true
+  try {
+    const { data } = await supabase.auth.getSession()
+    const token = data.session?.access_token
+    if (!token) throw new Error(t('auth.notAuthenticated'))
+
+    const result = await $fetch<{ updated: number, errors: number, plants: number }>(
+      '/api/watering/recalculate-exterior',
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    )
+
+    if (result.plants === 0) {
+      toast.add({ title: t('settings.wateringRecalcEmpty'), color: 'neutral' })
+      return
+    }
+
+    toast.add({
+      title: t('settings.wateringRecalcDone', { count: result.updated }),
+      description: result.errors
+        ? t('settings.wateringRecalcErrors', { count: result.errors })
+        : undefined,
+      color: result.errors ? 'warning' : 'success'
+    })
+  } catch (e: unknown) {
+    toast.add({ title: t('common.error'), description: apiErrorMessage(e), color: 'error' })
+  } finally {
+    recalcLoading.value = false
   }
 }
 
@@ -200,6 +235,22 @@ async function onLocaleChange(value: string) {
           {{ t('common.save') }}
         </UButton>
       </div>
+    </UCard>
+
+    <UCard>
+      <template #header>
+        {{ t('settings.wateringRecalcTitle') }}
+      </template>
+      <p class="text-sm text-muted mb-3">
+        {{ t('settings.wateringRecalcHint') }}
+      </p>
+      <UButton
+        :loading="recalcLoading"
+        icon="i-lucide-refresh-ccw"
+        @click="recalculateExteriorWatering"
+      >
+        {{ t('settings.wateringRecalcAction') }}
+      </UButton>
     </UCard>
 
     <UCard>
