@@ -1,10 +1,10 @@
 import {
-    LUMINOSITY_FACTORS,
-    MAX_WATERING_INTERVAL_DAYS,
-    MIN_WATERING_INTERVAL_DAYS,
-    POT_SIZE_FACTORS,
-    SEASON_FACTORS,
-    SUBSTRATE_FACTORS
+  LUMINOSITY_FACTORS,
+  MAX_WATERING_INTERVAL_DAYS,
+  MIN_WATERING_INTERVAL_DAYS,
+  POT_SIZE_FACTORS,
+  SEASON_FACTORS,
+  SUBSTRATE_FACTORS
 } from '../../constants/care'
 import type { Luminosity, Plant, PotSize, Site, SubstrateType } from '../../types/database'
 

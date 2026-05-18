@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
-    computeWateringSchedule,
-    getSeason,
-    resolveEffectiveWateringInterval,
-    seasonFactorFor
+  computeWateringSchedule,
+  getSeason,
+  resolveEffectiveWateringInterval,
+  seasonFactorFor
 } from './adaptiveWatering'
 
 describe('getSeason', () => {

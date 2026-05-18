@@ -1,14 +1,14 @@
 import { WET_SKIP_LOOKBACK_DAYS } from '#shared/constants/care'
 import type { Plant } from '#shared/types/database'
 import {
-    computeWateringSchedule,
-    plantToAdaptiveInput,
-    type WateringFactors,
-    type WateringScheduleResult
+  computeWateringSchedule,
+  plantToAdaptiveInput,
+  type WateringFactors,
+  type WateringScheduleResult
 } from '#shared/utils/care/adaptiveWatering'
 import {
-    alignFertilizeDueAt,
-    idealFertilizeDueAt
+  alignFertilizeDueAt,
+  idealFertilizeDueAt
 } from '#shared/utils/care/alignFertilize'
 
 const PLANT_SELECT = '*, site:sites(*)'
