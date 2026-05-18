@@ -1,10 +1,10 @@
 import {
-  LUMINOSITY_FACTORS,
-  MAX_WATERING_INTERVAL_DAYS,
-  MIN_WATERING_INTERVAL_DAYS,
-  POT_SIZE_FACTORS,
-  SEASON_FACTORS,
-  SUBSTRATE_FACTORS
+    LUMINOSITY_FACTORS,
+    MAX_WATERING_INTERVAL_DAYS,
+    MIN_WATERING_INTERVAL_DAYS,
+    POT_SIZE_FACTORS,
+    SEASON_FACTORS,
+    SUBSTRATE_FACTORS
 } from '../../constants/care'
 import type { Luminosity, Plant, PotSize, Site, SubstrateType } from '../../types/database'
 
@@ -16,6 +16,7 @@ export interface WateringFactors {
   potFactor: number
   substrateFactor: number
   lightFactor: number
+  weatherFactor: number
   wetSkipCount: number
   wetDelayDays: number
 }
@@ -26,6 +27,7 @@ export interface AdaptiveWateringInput {
   substrateType: SubstrateType | null
   siteLuminosity: Luminosity | null
   homeLat: number | null
+  weatherFactor?: number
   now?: Date
   recentWetSkipCount?: number
   extraWetDelayDays?: number
@@ -77,6 +79,7 @@ export function computeWateringFactors(input: AdaptiveWateringInput): WateringFa
   const season = getSeason(now.getMonth(), input.homeLat)
   const wetSkipCount = input.recentWetSkipCount ?? 0
   const wetDelayDays = wetSkipCount + (input.extraWetDelayDays ?? 0)
+  const weatherFactor = input.weatherFactor ?? 1
 
   return {
     season,
@@ -84,6 +87,7 @@ export function computeWateringFactors(input: AdaptiveWateringInput): WateringFa
     potFactor: potSizeFactor(input.potSize),
     substrateFactor: substrateFactor(input.substrateType),
     lightFactor: lightFactor(input.siteLuminosity),
+    weatherFactor,
     wetSkipCount,
     wetDelayDays
   }
@@ -91,10 +95,10 @@ export function computeWateringFactors(input: AdaptiveWateringInput): WateringFa
 
 export function resolveEffectiveWateringInterval(
   baseDays: number,
-  factors: Pick<WateringFactors, 'seasonFactor' | 'potFactor' | 'substrateFactor' | 'lightFactor'>
+  factors: Pick<WateringFactors, 'seasonFactor' | 'potFactor' | 'substrateFactor' | 'lightFactor' | 'weatherFactor'>
 ): number {
   const raw = baseDays * factors.seasonFactor * factors.potFactor
-    * factors.substrateFactor * factors.lightFactor
+    * factors.substrateFactor * factors.lightFactor * factors.weatherFactor
   return clampWateringInterval(Math.round(raw))
 }
 
@@ -146,6 +150,7 @@ export function plantToAdaptiveInput(
     recentWetSkipCount?: number
     extraWetDelayDays?: number
     scheduleFromToday?: boolean
+    weatherFactor?: number
   }
 ): AdaptiveWateringInput & { lastWateredAt: string | null, scheduleFromToday?: boolean } {
   const base = plant.watering_base_interval_days ?? plant.watering_interval_days
@@ -155,6 +160,7 @@ export function plantToAdaptiveInput(
     substrateType: plant.substrate_type,
     siteLuminosity: plant.site?.luminosity ?? null,
     homeLat,
+    weatherFactor: options?.weatherFactor,
     now: options?.now,
     recentWetSkipCount: options?.recentWetSkipCount,
     extraWetDelayDays: options?.extraWetDelayDays,

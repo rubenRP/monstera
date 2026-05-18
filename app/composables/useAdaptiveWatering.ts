@@ -1,15 +1,15 @@
+import { WET_SKIP_LOOKBACK_DAYS } from '#shared/constants/care'
 import type { Plant } from '#shared/types/database'
 import {
-  alignFertilizeDueAt,
-  idealFertilizeDueAt
-} from '#shared/utils/care/alignFertilize'
-import {
-  computeWateringSchedule,
-  plantToAdaptiveInput,
-  type WateringFactors,
-  type WateringScheduleResult
+    computeWateringSchedule,
+    plantToAdaptiveInput,
+    type WateringFactors,
+    type WateringScheduleResult
 } from '#shared/utils/care/adaptiveWatering'
-import { WET_SKIP_LOOKBACK_DAYS } from '#shared/constants/care'
+import {
+    alignFertilizeDueAt,
+    idealFertilizeDueAt
+} from '#shared/utils/care/alignFertilize'
 
 const PLANT_SELECT = '*, site:sites(*)'
 const SYNC_STORAGE_PREFIX = 'monstera_watering_sync_'
@@ -53,6 +53,7 @@ export function useAdaptiveWatering() {
       extraWetDelayDays?: number
       scheduleFromToday?: boolean
       now?: Date
+      weatherFactor?: number
     }
   ): WateringScheduleResult {
     return computeWateringSchedule(

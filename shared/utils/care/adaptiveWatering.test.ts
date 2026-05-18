@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
-  computeWateringSchedule,
-  getSeason,
-  resolveEffectiveWateringInterval,
-  seasonFactorFor
+    computeWateringSchedule,
+    getSeason,
+    resolveEffectiveWateringInterval,
+    seasonFactorFor
 } from './adaptiveWatering'
 
 describe('getSeason', () => {
@@ -22,7 +22,8 @@ describe('resolveEffectiveWateringInterval', () => {
       seasonFactor: 1.15,
       potFactor: 1.1,
       substrateFactor: 1,
-      lightFactor: 1
+      lightFactor: 1,
+      weatherFactor: 1
     })
     expect(days).toBe(13)
   })
@@ -32,7 +33,8 @@ describe('resolveEffectiveWateringInterval', () => {
       seasonFactor: 1.15,
       potFactor: 1.15,
       substrateFactor: 1.2,
-      lightFactor: 1
+      lightFactor: 1,
+      weatherFactor: 1
     })
     expect(days).toBe(90)
   })
@@ -56,6 +58,22 @@ describe('computeWateringSchedule', () => {
     const from = new Date('2026-01-15T12:00:00Z')
     const diffDays = Math.round((due.getTime() - from.getTime()) / 86400000)
     expect(diffDays).toBeGreaterThanOrEqual(7 + 2 - 1)
+  })
+})
+
+describe('weather factor', () => {
+  it('shortens interval with dry weather factor', () => {
+    const result = computeWateringSchedule({
+      wateringBaseIntervalDays: 10,
+      potSize: null,
+      substrateType: null,
+      siteLuminosity: null,
+      homeLat: 40,
+      weatherFactor: 0.8,
+      lastWateredAt: null,
+      now: new Date('2026-03-15T12:00:00Z')
+    })
+    expect(result.effectiveIntervalDays).toBe(8)
   })
 })
 
