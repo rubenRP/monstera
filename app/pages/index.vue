@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CareTask, HealthStatus } from '#shared/types/database'
+import type { CareTask } from '#shared/types/database'
 
 const { t } = useI18n()
 const { dateLocale } = useDateLocale()
@@ -33,19 +33,6 @@ const addWaterModalOpen = ref(false)
 const addingWater = ref(false)
 const showUpcoming = ref(false)
 const tasksLoading = ref(false)
-
-const healthSummary = computed(() => {
-  const counts: Record<HealthStatus, number> = {
-    healthy: 0,
-    fair: 0,
-    sick: 0,
-    critical: 0
-  }
-  for (const p of plants.value) {
-    counts[p.health_status]++
-  }
-  return counts
-})
 
 const todayFormatted = computed(() =>
   new Date().toLocaleDateString(dateLocale.value, { weekday: 'long', day: 'numeric', month: 'long' })
@@ -190,45 +177,10 @@ async function confirmSkip(task: CareTask, soilStillWet: boolean) {
       </p>
     </div>
 
-    <UCard v-if="!loading && (healthSummary.sick > 0 || healthSummary.critical > 0 || healthSummary.fair > 0)">
-      <template #header>
-        <span class="font-medium">{{ t('home.plantSummary') }}</span>
-      </template>
-      <div class="flex flex-wrap gap-2 text-sm">
-        <UBadge
-          v-if="healthSummary.critical > 0"
-          color="error"
-        >
-          {{ healthSummary.critical === 1
-            ? t('home.healthCriticalOne')
-            : t('home.healthCriticalMany', { count: healthSummary.critical }) }}
-        </UBadge>
-        <UBadge
-          v-if="healthSummary.sick > 0"
-          color="warning"
-        >
-          {{ healthSummary.sick === 1
-            ? t('home.healthSickOne')
-            : t('home.healthSickMany', { count: healthSummary.sick }) }}
-        </UBadge>
-        <UBadge
-          v-if="healthSummary.fair > 0"
-          color="warning"
-          variant="subtle"
-        >
-          {{ healthSummary.fair === 1
-            ? t('home.healthFairOne')
-            : t('home.healthFairMany', { count: healthSummary.fair }) }}
-        </UBadge>
-        <UBadge
-          v-if="healthSummary.healthy > 0"
-          color="success"
-          variant="subtle"
-        >
-          {{ t('home.healthHealthy', { count: healthSummary.healthy }) }}
-        </UBadge>
-      </div>
-    </UCard>
+    <HomePlantSummary
+      v-if="!loading && plants.length > 0"
+      :plants="plants"
+    />
 
     <div
       v-if="loading"

@@ -28,11 +28,11 @@ const { t } = useI18n()
     />
     <div
       v-else
-      class="w-12 h-12 rounded-lg bg-green-100 dark:bg-green-900/40 flex items-center justify-center shrink-0"
+      class="w-12 h-12 rounded-lg bg-primary/15 flex items-center justify-center shrink-0"
     >
       <UIcon
         name="i-lucide-leaf"
-        class="w-6 h-6 text-green-600"
+        class="w-6 h-6 text-primary"
       />
     </div>
     <div class="min-w-0 flex-1">

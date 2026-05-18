@@ -33,13 +33,13 @@ async function sendMagicLink() {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center p-4 bg-green-50 dark:bg-green-950">
+  <div class="min-h-screen flex items-center justify-center p-4 bg-default">
     <UCard class="w-full max-w-md">
       <template #header>
         <div class="flex items-center gap-2">
-          <UIcon
-            name="i-lucide-sprout"
-            class="w-8 h-8 text-primary"
+          <AppLogo
+            size="lg"
+            class="text-primary"
           />
           <div>
             <h1 class="text-xl font-bold">

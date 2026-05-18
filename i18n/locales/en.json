@@ -82,6 +82,13 @@
   "home": {
     "title": "Today",
     "plantSummary": "Plant summary",
+    "plantTotalOne": "1 plant total",
+    "plantTotal": "{count} plants total",
+    "viewAllPlants": "View all",
+    "needsAttention": "Need attention",
+    "morePlants": "+{count} more",
+    "allHealthyMessage": "All your plants are doing well",
+    "healthDistributionAria": "Health status distribution",
     "healthCriticalOne": "1 critically ill",
     "healthCriticalMany": "{count} critically ill",
     "healthSickOne": "1 sick",

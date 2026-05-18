@@ -22,10 +22,7 @@ function isActive(path: string) {
         to="/"
         class="flex items-center gap-2 font-bold text-lg text-primary mb-8 px-2"
       >
-        <UIcon
-          name="i-lucide-sprout"
-          class="w-6 h-6"
-        />
+        <AppLogo class="text-primary" />
         Monstera
       </NuxtLink>
       <nav
@@ -67,10 +64,7 @@ function isActive(path: string) {
             to="/"
             class="flex items-center gap-2 font-bold text-lg text-primary"
           >
-            <UIcon
-              name="i-lucide-sprout"
-              class="w-6 h-6"
-            />
+            <AppLogo class="text-primary" />
             Monstera
           </NuxtLink>
           <UColorModeButton />

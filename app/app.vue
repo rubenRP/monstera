@@ -5,7 +5,7 @@ const colorMode = useColorMode()
 useLocalePersistence()
 
 const themeColor = computed(() =>
-  colorMode.value === 'dark' ? '#020617' : '#f8fafc'
+  colorMode.value === 'dark' ? '#1A2D1A' : '#F5F0E4'
 )
 
 const statusBarStyle = computed(() =>

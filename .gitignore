@@ -14,6 +14,7 @@ logs
 *.log
 
 # Misc
+.npm-cache
 .DS_Store
 .fleet
 .idea

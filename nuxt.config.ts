@@ -77,8 +77,8 @@ export default defineNuxtConfig({
       name: 'Monstera',
       short_name: 'Monstera',
       description: 'Houseplant care',
-      theme_color: '#2d6a4f',
-      background_color: '#f8faf8',
+      theme_color: '#1E5128',
+      background_color: '#F5F0E4',
       display: 'standalone',
       lang: 'es',
       icons: [

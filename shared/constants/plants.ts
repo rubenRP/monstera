@@ -1,7 +1,7 @@
 import type { HealthStatus, PotMaterial, PotSize, SubstrateType } from '../types/database'
 
 export const HEALTH_STATUS_OPTIONS: { value: HealthStatus, color: string }[] = [
-  { value: 'healthy', color: 'bg-emerald-500' },
+  { value: 'healthy', color: 'bg-green-600' },
   { value: 'fair', color: 'bg-amber-500' },
   { value: 'sick', color: 'bg-orange-500' },
   { value: 'critical', color: 'bg-red-600' }

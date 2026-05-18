@@ -1,6 +1,47 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
+/*
+ * Monstera palette
+ * Forest #1E5128 · Sage #4A8C5C · Mist #A8C5A0 · Cream #F5F0E4 · Ink #1A2D1A
+ */
+
+@theme static {
+  --font-sans: 'Public Sans', sans-serif;
+
+  --color-forest: #1E5128;
+  --color-sage: #4A8C5C;
+  --color-mist: #A8C5A0;
+  --color-cream: #F5F0E4;
+  --color-ink: #1A2D1A;
+
+  /* Primary (green) — Mist → Sage → Forest → Ink */
+  --color-green-50: #F5F8F5;
+  --color-green-100: #EDF3EA;
+  --color-green-200: #A8C5A0;
+  --color-green-300: #8FB58E;
+  --color-green-400: #6A9D74;
+  --color-green-500: #4A8C5C;
+  --color-green-600: #38704A;
+  --color-green-700: #1E5128;
+  --color-green-800: #184220;
+  --color-green-900: #14331A;
+  --color-green-950: #1A2D1A;
+
+  /* Neutral (slate) — Cream → Ink */
+  --color-slate-50: #FDFBF7;
+  --color-slate-100: #F5F0E4;
+  --color-slate-200: #E6E0D2;
+  --color-slate-300: #D5CFC0;
+  --color-slate-400: #B0AA9C;
+  --color-slate-500: #8A8476;
+  --color-slate-600: #656058;
+  --color-slate-700: #454C44;
+  --color-slate-800: #2D3B2D;
+  --color-slate-900: #1A2D1A;
+  --color-slate-950: #111C11;
+}
+
 @layer base {
   html,
   body {
@@ -8,18 +49,26 @@
   }
 }
 
-@theme static {
-  --font-sans: 'Public Sans', sans-serif;
+:root {
+  --ui-primary: var(--ui-color-primary-600);
+  --ui-bg: #F5F0E4;
+  --ui-bg-muted: var(--ui-color-neutral-100);
+  --ui-bg-elevated: #FDFCF8;
+  --ui-bg-accented: var(--ui-color-neutral-200);
+  --ui-bg-inverted: var(--ui-color-neutral-900);
+  --ui-text: var(--ui-color-neutral-800);
+  --ui-text-highlighted: #1A2D1A;
+  --ui-border: var(--ui-color-neutral-200);
+}
 
-  --color-green-50: #EFFDF5;
-  --color-green-100: #D9FBE8;
-  --color-green-200: #B3F5D1;
-  --color-green-300: #75EDAE;
-  --color-green-400: #00DC82;
-  --color-green-500: #00C16A;
-  --color-green-600: #00A155;
-  --color-green-700: #007F45;
-  --color-green-800: #016538;
-  --color-green-900: #0A5331;
-  --color-green-950: #052E16;
+.dark {
+  --ui-primary: var(--ui-color-primary-400);
+  --ui-bg: #1A2D1A;
+  --ui-bg-muted: var(--ui-color-neutral-800);
+  --ui-bg-elevated: var(--ui-color-neutral-800);
+  --ui-bg-accented: var(--ui-color-neutral-700);
+  --ui-bg-inverted: var(--ui-color-neutral-100);
+  --ui-text: var(--ui-color-neutral-200);
+  --ui-text-highlighted: var(--ui-color-neutral-50);
+  --ui-border: var(--ui-color-neutral-700);
 }
