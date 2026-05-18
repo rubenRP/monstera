@@ -7,8 +7,8 @@ import { API_ERROR_CODES } from '#shared/utils/i18n/apiErrors'
 const EXTERIOR_PLACEMENTS = new Set(['outdoor', 'semi_outdoor'])
 
 export default defineEventHandler(async (event) => {
-  const secret = getHeader(event, 'x-cron-secret')
-  if (secret !== process.env.CRON_SECRET) {
+  const vercelCron = getHeader(event, 'x-vercel-cron')
+  if (!vercelCron) {
     throwApiError(403, API_ERROR_CODES.CRON_FORBIDDEN)
   }
 
