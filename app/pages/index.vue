@@ -38,11 +38,14 @@ const todayFormatted = computed(() =>
   new Date().toLocaleDateString(dateLocale.value, { weekday: 'long', day: 'numeric', month: 'long' })
 )
 
+const todayTasksInView = computed(() => [...tasks.value, ...completedToday.value])
+
 const plantIdsWithWaterInView = computed(
-  () => new Set([
-    ...tasks.value.filter(task => task.type === 'water').map(task => task.plant_id),
-    ...completedToday.value.filter(task => task.type === 'water').map(task => task.plant_id)
-  ])
+  () => new Set(
+    todayTasksInView.value
+      .filter(task => task.type === 'water')
+      .map(task => task.plant_id)
+  )
 )
 
 const plantsForAdvanceWater = computed(() =>
@@ -305,12 +308,16 @@ async function confirmSkip(task: CareTask, soilStillWet: boolean) {
           <li
             v-for="task in completedToday"
             :key="task.id"
-            class="p-4 rounded-xl border border-success/30 bg-success/5"
+            class="p-4 rounded-xl border"
+            :class="task.status === 'done'
+              ? 'border-success/30 bg-success/5'
+              : 'border-default bg-elevated/20'"
           >
             <div class="flex items-start gap-3">
               <UIcon
-                name="i-lucide-circle-check"
-                class="w-5 h-5 mt-0.5 shrink-0 text-success"
+                :name="taskIcon(task.type)"
+                class="w-5 h-5 mt-0.5 shrink-0"
+                :class="task.status === 'done' ? 'text-success' : 'text-muted'"
               />
               <div class="flex-1 min-w-0">
                 <NuxtLink
@@ -321,17 +328,29 @@ async function confirmSkip(task: CareTask, soilStillWet: boolean) {
                 </NuxtLink>
                 <p class="text-sm text-muted">
                   {{ taskLabel(task.type) }}
-                  <span v-if="fertilizeWithWater(task, tasks)"> · {{ t('care.fertilizeWithWater') }}</span>
+                  <span v-if="fertilizeWithWater(task, todayTasksInView)"> · {{ t('care.fertilizeWithWater') }}</span>
                   <span v-if="task.plant?.site?.name"> · {{ task.plant.site.name }}</span>
                 </p>
               </div>
-              <UBadge
-                color="success"
-                size="sm"
-                variant="subtle"
-              >
-                {{ t('common.done') }}
-              </UBadge>
+              <div class="flex gap-1 shrink-0">
+                <UButton
+                  size="xs"
+                  color="primary"
+                  :icon="task.status === 'done' ? 'i-lucide-check' : undefined"
+                  disabled
+                >
+                  {{ t('common.done') }}
+                </UButton>
+                <UButton
+                  size="xs"
+                  variant="ghost"
+                  color="neutral"
+                  :icon="task.status === 'skipped' ? 'i-lucide-clock' : undefined"
+                  disabled
+                >
+                  {{ task.status === 'skipped' ? t('home.taskPostponed') : t('common.skip') }}
+                </UButton>
+              </div>
             </div>
           </li>
         </ul>

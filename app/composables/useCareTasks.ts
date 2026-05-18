@@ -62,7 +62,7 @@ export function useCareTasks() {
     const { data, error } = await supabase
       .from('care_tasks')
       .select(taskSelect)
-      .eq('status', 'done')
+      .in('status', ['done', 'skipped'])
       .gte('completed_at', start.toISOString())
       .lte('completed_at', end.toISOString())
       .order('completed_at', { ascending: false })
