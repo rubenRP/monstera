@@ -73,7 +73,7 @@ const totalLabel = computed(() =>
           <div
             class="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0"
           >
-            <AppLogo class="w-5 h-5 text-primary" />
+            <AppLogo size="sm" />
           </div>
           <div class="min-w-0">
             <p class="font-medium leading-tight">

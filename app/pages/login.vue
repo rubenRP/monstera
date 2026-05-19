@@ -37,10 +37,7 @@ async function sendMagicLink() {
     <UCard class="w-full max-w-md">
       <template #header>
         <div class="flex items-center gap-2">
-          <AppLogo
-            size="lg"
-            class="text-primary"
-          />
+          <AppLogo size="lg" />
           <div>
             <h1 class="text-xl font-bold">
               {{ t('app.title') }}

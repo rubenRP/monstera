@@ -22,7 +22,7 @@ function isActive(path: string) {
         to="/"
         class="flex items-center gap-2 font-bold text-lg text-primary mb-8 px-2"
       >
-        <AppLogo class="text-primary" />
+        <AppLogo />
         Monstera
       </NuxtLink>
       <nav
@@ -64,7 +64,7 @@ function isActive(path: string) {
             to="/"
             class="flex items-center gap-2 font-bold text-lg text-primary"
           >
-            <AppLogo class="text-primary" />
+            <AppLogo />
             Monstera
           </NuxtLink>
           <UColorModeButton />
