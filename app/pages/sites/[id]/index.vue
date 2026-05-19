@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getHealthColor } from '#shared/constants/plants'
+import { HEALTH_DOT_CLASSES } from '#shared/constants/plants'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -128,7 +128,7 @@ async function onDelete() {
           >
             <span
               class="w-2 h-8 rounded-full"
-              :class="getHealthColor(plant.health_status)"
+              :class="HEALTH_DOT_CLASSES[plant.health_status]"
             />
             <span class="font-medium">{{ plant.name }}</span>
             <span class="text-xs text-muted ml-auto">{{ healthLabel(plant.health_status) }}</span>

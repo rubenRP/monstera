@@ -1,3 +1,5 @@
+import type { SpeciesProfileDisplay, SpeciesTemperatureExtras } from './speciesDisplay'
+
 export interface SpeciesProfile {
   perenualId: number
   commonName: string
@@ -15,6 +17,10 @@ export interface SpeciesProfile {
   temperature: string
   pestsAndProblems: string
   fetchedAt: string
+  /** Structured UI blocks per care section */
+  display?: SpeciesProfileDisplay
+  /** Monthly indoor/outdoor windows and optional °C range (Cursor) */
+  temperatureExtras?: SpeciesTemperatureExtras
   /** Set when missing care sections were filled via Cursor AI */
   enrichedByAi?: boolean
 }

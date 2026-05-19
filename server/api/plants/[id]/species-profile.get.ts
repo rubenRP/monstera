@@ -1,33 +1,65 @@
 import { API_ERROR_CODES } from '#shared/utils/i18n/apiErrors'
 import type { AppLocale } from '#shared/utils/i18n/locale'
 import { normalizeSpeciesQuery } from '#shared/utils/species/normalize'
-import { isSpeciesProfileLimited } from '#shared/utils/species/profileCompleteness'
+import { shouldEnrichSpeciesProfile } from '#shared/utils/species/profileCompleteness'
+import type { SpeciesEnrichLocation } from '../../../utils/speciesCursor'
 import type { SpeciesProfile, SpeciesProfileRow } from '#shared/types/species'
-import { fetchSpeciesProfileFromPerenual } from '../../../utils/perenual'
 import {
-  enrichSpeciesProfileWithCursor,
+  buildSpeciesProfileDisplay,
+  isDisplayUsable
+} from '#shared/utils/species/buildSpeciesDisplay'
+import { mapPerenualListItem } from '#shared/utils/species/mapPerenualProfile'
+import { fetchSpeciesProfileFromPerenual, PerenualPlanLimitError } from '../../../utils/perenual'
+import {
+  generateOrEnrichSpeciesProfileWithCursor,
   generateSpeciesProfileWithCursor
 } from '../../../utils/speciesCursor'
 import type { SupabaseClient } from '@supabase/supabase-js'
+
+async function loadUserHomeLocation(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<SpeciesEnrichLocation | null> {
+  const { data } = await supabase
+    .from('user_settings')
+    .select('home_lat, home_lon')
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (data?.home_lat != null && data?.home_lon != null) {
+    return { lat: Number(data.home_lat), lon: Number(data.home_lon) }
+  }
+  return null
+}
 
 async function maybeEnrichSpeciesProfile(
   profile: SpeciesProfile,
   speciesQuery: string,
   locale: AppLocale,
   cursorApiKey: string | undefined,
-  refresh: boolean
+  refresh: boolean,
+  location: SpeciesEnrichLocation | null
 ): Promise<SpeciesProfile> {
-  if (!cursorApiKey || (profile.enrichedByAi && !refresh)) {
-    return profile
-  }
-  if (!isSpeciesProfileLimited(profile, locale)) {
+  if (!cursorApiKey || !shouldEnrichSpeciesProfile(profile, locale)) {
     return profile
   }
   try {
-    return await enrichSpeciesProfileWithCursor(profile, speciesQuery, locale, cursorApiKey)
+    return await generateOrEnrichSpeciesProfileWithCursor(
+      profile,
+      speciesQuery,
+      locale,
+      cursorApiKey,
+      location
+    )
   } catch (e) {
-    console.error('species profile enrich failed:', e)
+    console.error('species profile Cursor fill failed:', e)
     return profile
+  }
+}
+
+function finalizeSpeciesProfile(profile: SpeciesProfile, locale: AppLocale): SpeciesProfile {
+  return {
+    ...profile,
+    display: buildSpeciesProfileDisplay(profile, locale)
   }
 }
 
@@ -93,6 +125,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const speciesQuery = normalizeSpeciesQuery(plant.species)
+  const homeLocation = await loadUserHomeLocation(supabase, user.id)
 
   if (!refresh) {
     const { data: cached } = await supabase
@@ -108,12 +141,14 @@ export default defineEventHandler(async (event) => {
         speciesQuery,
         locale,
         config.cursorApiKey,
-        refresh
+        refresh,
+        homeLocation
       )
-      if (enriched !== row.profile) {
-        await upsertSpeciesProfile(supabase, speciesQuery, enriched)
+      const finalized = finalizeSpeciesProfile(enriched, locale)
+      if (enriched !== row.profile || !isDisplayUsable(row.profile.display)) {
+        await upsertSpeciesProfile(supabase, speciesQuery, finalized)
       }
-      return { profile: enriched, cached: true, speciesQuery }
+      return { profile: finalized, cached: true, speciesQuery }
     }
   }
 
@@ -121,25 +156,44 @@ export default defineEventHandler(async (event) => {
   try {
     profile = await fetchSpeciesProfileFromPerenual(speciesQuery, config.perenualApiKey, locale)
   } catch (e) {
-    const notFound = isError(e)
-      && e.statusCode === 404
-      && (e.data as { code?: string })?.code === API_ERROR_CODES.PERENUAL_SPECIES_NOT_FOUND
-    if (notFound && config.cursorApiKey) {
+    if (e instanceof PerenualPlanLimitError && config.cursorApiKey) {
       try {
+        const seed = mapPerenualListItem(e.match, locale)
         profile = await generateSpeciesProfileWithCursor(
           speciesQuery,
           locale,
-          config.cursorApiKey
+          config.cursorApiKey,
+          homeLocation,
+          seed
         )
       } catch (genErr) {
-        console.error('Cursor species generate failed:', genErr)
-        throw e
+        console.error('Cursor species generate (plan limit) failed:', genErr)
+        profile = mapPerenualListItem(e.match, locale)
       }
-    } else if (isError(e) && e.statusCode) {
-      throw e
+    } else if (e instanceof PerenualPlanLimitError) {
+      profile = mapPerenualListItem(e.match, locale)
     } else {
-      console.error('Perenual fetch failed:', e)
-      throwApiError(502, API_ERROR_CODES.PERENUAL_QUERY_FAILED)
+      const notFound = isError(e)
+        && e.statusCode === 404
+        && (e.data as { code?: string })?.code === API_ERROR_CODES.PERENUAL_SPECIES_NOT_FOUND
+      if (notFound && config.cursorApiKey) {
+        try {
+          profile = await generateSpeciesProfileWithCursor(
+            speciesQuery,
+            locale,
+            config.cursorApiKey,
+            homeLocation
+          )
+        } catch (genErr) {
+          console.error('Cursor species generate failed:', genErr)
+          throw e
+        }
+      } else if (isError(e) && e.statusCode) {
+        throw e
+      } else {
+        console.error('Perenual fetch failed:', e)
+        throwApiError(502, API_ERROR_CODES.PERENUAL_QUERY_FAILED)
+      }
     }
   }
 
@@ -148,9 +202,11 @@ export default defineEventHandler(async (event) => {
     speciesQuery,
     locale,
     config.cursorApiKey,
-    refresh
+    refresh,
+    homeLocation
   )
 
+  profile = finalizeSpeciesProfile(profile, locale)
   await upsertSpeciesProfile(supabase, speciesQuery, profile)
 
   return { profile, cached: false, speciesQuery }

@@ -332,23 +332,24 @@ async function confirmSkip(task: CareTask, soilStillWet: boolean) {
                   <span v-if="task.plant?.site?.name"> · {{ task.plant.site.name }}</span>
                 </p>
               </div>
-              <div class="flex gap-1 shrink-0">
+              <div class="shrink-0">
                 <UButton
+                  v-if="task.status === 'done'"
                   size="xs"
                   color="primary"
-                  :icon="task.status === 'done' ? 'i-lucide-check' : undefined"
+                  icon="i-lucide-check"
                   disabled
                 >
                   {{ t('common.done') }}
                 </UButton>
                 <UButton
+                  v-else
                   size="xs"
                   variant="ghost"
                   color="neutral"
-                  :icon="task.status === 'skipped' ? 'i-lucide-clock' : undefined"
                   disabled
                 >
-                  {{ task.status === 'skipped' ? t('home.taskPostponed') : t('common.skip') }}
+                  {{ t('plants.historySkipped') }}
                 </UButton>
               </div>
             </div>

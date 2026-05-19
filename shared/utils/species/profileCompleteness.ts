@@ -34,3 +34,11 @@ export function getIncompleteSpeciesFields(
 export function isSpeciesProfileLimited(profile: SpeciesProfile, locale: AppLocale): boolean {
   return getIncompleteSpeciesFields(profile, locale).length >= MIN_INCOMPLETE_FIELDS
 }
+
+export function needsTemperatureExtras(profile: SpeciesProfile): boolean {
+  return !profile.temperatureExtras?.timelines?.length
+}
+
+export function shouldEnrichSpeciesProfile(profile: SpeciesProfile, locale: AppLocale): boolean {
+  return isSpeciesProfileLimited(profile, locale) || needsTemperatureExtras(profile)
+}

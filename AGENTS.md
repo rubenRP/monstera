@@ -167,7 +167,7 @@ npx supabase db push # apply migrations
 - Do not commit `.env` or secrets.
 - RLS on all user tables; `species_profiles` is read-only for `authenticated`.
 - Photos in private bucket `plant-photos`; signed URLs on the client.
-- Push cron: `x-cron-secret` header when `CRON_SECRET` is set.
+- Push cron (Vercel): `GET /api/cron/send-daily` hourly via `vercel.json` (`x-vercel-cron`). Manual: `POST /api/push/send-daily` with `x-cron-secret` when `CRON_SECRET` is set.
 
 ## Cursor rules (detail by area)
 

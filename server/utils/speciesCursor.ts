@@ -1,9 +1,9 @@
 import { Agent } from '@cursor/sdk'
 import {
   buildSpeciesEnrichPrompt,
-  buildSpeciesGeneratePrompt,
-  extractJsonFromText
+  buildSpeciesGeneratePrompt
 } from '#shared/utils/cursor/prompts'
+import { parseAgentJson } from '#shared/utils/cursor/parseAgentJson'
 import type { SpeciesProfile } from '#shared/types/species'
 import type { AppLocale } from '#shared/utils/i18n/locale'
 import { translate } from '#shared/utils/i18n/translate'
@@ -11,7 +11,11 @@ import {
   mergeEnrichedSpeciesProfile,
   mergeGeneratedSpeciesProfile
 } from '#shared/utils/species/mergeEnrichedProfile'
-import { getIncompleteSpeciesFields } from '#shared/utils/species/profileCompleteness'
+import {
+  getIncompleteSpeciesFields,
+  isSpeciesProfileLimited,
+  needsTemperatureExtras
+} from '#shared/utils/species/profileCompleteness'
 import {
   speciesEnrichResponseSchema,
   speciesGenerateResponseSchema
@@ -40,6 +44,15 @@ function stubSpeciesProfile(speciesQuery: string, locale: AppLocale): SpeciesPro
   }
 }
 
+async function promptCursorAgent(promptText: string, apiKey: string): Promise<string> {
+  const result = await Agent.prompt(promptText, {
+    apiKey,
+    model: { id: 'composer-2' },
+    local: { cwd: process.cwd() }
+  })
+  return result.result ?? ''
+}
+
 async function parseCursorSpeciesJson<T>(
   promptText: string,
   schema: { safeParse: (data: unknown) => { success: true, data: T } | { success: false } },
@@ -47,94 +60,95 @@ async function parseCursorSpeciesJson<T>(
 ): Promise<T> {
   let resultText: string
   try {
-    const result = await Agent.prompt(promptText, {
-      apiKey,
-      model: { id: 'composer-2' },
-      local: { cwd: process.cwd() }
-    })
-    resultText = result.result ?? ''
+    resultText = await promptCursorAgent(promptText, apiKey)
   } catch (e) {
     console.error('Cursor species error:', e)
     throw e
   }
 
-  let parsed = schema.safeParse(JSON.parse(extractJsonFromText(resultText)))
+  let data = parseAgentJson(resultText)
+  let parsed = data != null ? schema.safeParse(data) : { success: false as const }
+
   if (!parsed.success) {
-    const retry = await Agent.prompt(
-      `${promptText}\n\nRespond ONLY with the JSON object, no extra text.`,
-      {
-        apiKey,
-        model: { id: 'composer-2' },
-        local: { cwd: process.cwd() }
-      }
+    const retryText = await promptCursorAgent(
+      `${promptText}\n\nRespond ONLY with valid JSON. Escape newlines inside strings. No trailing commas.`,
+      apiKey
     )
-    parsed = schema.safeParse(JSON.parse(extractJsonFromText(retry.result ?? '')))
+    data = parseAgentJson(retryText)
+    parsed = data != null ? schema.safeParse(data) : { success: false as const }
   }
+
   if (!parsed.success) {
     throw new Error('Failed to parse species Cursor response')
   }
   return parsed.data
 }
 
+export interface SpeciesEnrichLocation {
+  lat: number
+  lon: number
+}
+
 export async function generateSpeciesProfileWithCursor(
   speciesQuery: string,
   locale: AppLocale,
-  apiKey: string
+  apiKey: string,
+  location?: SpeciesEnrichLocation | null,
+  seed?: SpeciesProfile | null
 ): Promise<SpeciesProfile> {
-  const promptText = buildSpeciesGeneratePrompt(speciesQuery, locale)
+  const promptText = buildSpeciesGeneratePrompt(speciesQuery, locale, location)
+  const base = seed ?? stubSpeciesProfile(speciesQuery, locale)
   const generated = await parseCursorSpeciesJson(
     promptText,
     speciesGenerateResponseSchema,
     apiKey
   )
-  return mergeGeneratedSpeciesProfile(stubSpeciesProfile(speciesQuery, locale), generated)
+  return mergeGeneratedSpeciesProfile(base, generated, locale)
 }
 
 export async function enrichSpeciesProfileWithCursor(
   profile: SpeciesProfile,
   speciesQuery: string,
   locale: AppLocale,
-  apiKey: string
+  apiKey: string,
+  location?: SpeciesEnrichLocation | null
 ): Promise<SpeciesProfile> {
   const missingFields = getIncompleteSpeciesFields(profile, locale)
-  if (missingFields.length === 0) {
+  const includeTemperatureExtras = needsTemperatureExtras(profile)
+  if (missingFields.length === 0 && !includeTemperatureExtras) {
     return profile
   }
 
-  const promptText = buildSpeciesEnrichPrompt(speciesQuery, profile, missingFields, locale)
+  const promptText = buildSpeciesEnrichPrompt(speciesQuery, profile, missingFields, locale, {
+    includeTemperatureExtras,
+    location
+  })
 
-  let resultText: string
-  try {
-    const result = await Agent.prompt(promptText, {
-      apiKey,
-      model: { id: 'composer-2' },
-      local: { cwd: process.cwd() }
-    })
-    resultText = result.result ?? ''
-  } catch (e) {
-    console.error('Cursor species enrich error:', e)
-    throw e
-  }
-
-  let parsed = speciesEnrichResponseSchema.safeParse(
-    JSON.parse(extractJsonFromText(resultText))
+  const parsed = await parseCursorSpeciesJson(
+    promptText,
+    speciesEnrichResponseSchema,
+    apiKey
   )
-  if (!parsed.success) {
-    const retry = await Agent.prompt(
-      `${promptText}\n\nRespond ONLY with the JSON object, no extra text.`,
-      {
-        apiKey,
-        model: { id: 'composer-2' },
-        local: { cwd: process.cwd() }
-      }
-    )
-    parsed = speciesEnrichResponseSchema.safeParse(
-      JSON.parse(extractJsonFromText(retry.result ?? ''))
-    )
-  }
-  if (!parsed.success) {
-    throw new Error('Failed to parse species enrich response')
-  }
 
-  return mergeEnrichedSpeciesProfile(profile, parsed.data, locale)
+  return mergeEnrichedSpeciesProfile(profile, parsed, locale)
+}
+
+/** Full Cursor profile when enrich is unreliable (e.g. mostly empty Perenual list item) */
+export async function generateOrEnrichSpeciesProfileWithCursor(
+  profile: SpeciesProfile,
+  speciesQuery: string,
+  locale: AppLocale,
+  apiKey: string,
+  location?: SpeciesEnrichLocation | null
+): Promise<SpeciesProfile> {
+  if (isSpeciesProfileLimited(profile, locale)) {
+    return generateSpeciesProfileWithCursor(
+      speciesQuery,
+      locale,
+      apiKey,
+      location,
+      profile.perenualId > 0 ? profile : null
+    )
+  }
+  return enrichSpeciesProfileWithCursor(profile, speciesQuery, locale, apiKey, location)
 }

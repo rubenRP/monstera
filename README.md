@@ -42,7 +42,7 @@ npx supabase db push
 npx web-push generate-vapid-keys
 ```
 
-Add `NUXT_PUBLIC_VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY`. Set `CRON_SECRET` and call `POST /api/push/send-daily` with the `x-cron-secret` header **every hour** (e.g. at minute 0). Each user receives at most one reminder per day at their chosen time (Ajustes → Notificaciones); default 09:00 in the device time zone.
+Add `NUXT_PUBLIC_VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY`. On Vercel, `vercel.json` runs `GET /api/cron/send-daily` every hour (`0 * * * *`). Each user receives at most one reminder per day at their chosen time (Ajustes → Notificaciones); default 09:00 in the device time zone. For manual tests, set `CRON_SECRET` and call `POST /api/push/send-daily` with the `x-cron-secret` header.
 
 ## Development
 

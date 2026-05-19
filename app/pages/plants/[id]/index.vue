@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { TabsItem } from '@nuxt/ui'
 import type { CareTask, HealthStatus } from '#shared/types/database'
-import { getHealthColor } from '#shared/constants/plants'
+import { getHealthBadgeClasses } from '#shared/constants/plants'
 
 const { t } = useI18n()
 const { apiErrorMessage } = useApiError()
@@ -136,8 +136,8 @@ async function onDelete() {
             {{ plant.name }}
           </h1>
           <span
-            class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full text-white"
-            :class="getHealthColor(plant.health_status)"
+            class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full"
+            :class="getHealthBadgeClasses(plant.health_status)"
           >
             {{ healthLabel(plant.health_status) }}
           </span>

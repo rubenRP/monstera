@@ -1,6 +1,8 @@
 import type { SpeciesProfile } from '../../types/species'
 import type { AppLocale } from '../i18n/locale'
 import { translate } from '../i18n/translate'
+import { buildSpeciesProfileDisplay } from './buildSpeciesDisplay'
+import type { SpeciesSectionItemsMap } from './sectionItems'
 import { isUnavailableField, SPECIES_CARE_FIELD_KEYS } from './profileCompleteness'
 import type { SpeciesEnrichResponse } from './schemas'
 
@@ -32,12 +34,22 @@ export function mergeEnrichedSpeciesProfile(
     merged.scientificName = enrichment.scientificName
   }
 
+  if (enrichment.temperatureExtras?.timelines?.length) {
+    merged.temperatureExtras = enrichment.temperatureExtras
+  }
+
+  merged.display = buildSpeciesProfileDisplay(
+    { ...merged, display: undefined },
+    locale,
+    enrichment.sectionItems as SpeciesSectionItemsMap | undefined
+  )
   return merged
 }
 
 export function mergeGeneratedSpeciesProfile(
   base: SpeciesProfile,
-  generated: SpeciesEnrichResponse
+  generated: SpeciesEnrichResponse,
+  locale: AppLocale = 'es'
 ): SpeciesProfile {
   const merged: SpeciesProfile = {
     ...base,
@@ -52,6 +64,14 @@ export function mergeGeneratedSpeciesProfile(
 
   if (generated.commonName?.trim()) merged.commonName = generated.commonName.trim()
   if (generated.scientificName?.length) merged.scientificName = generated.scientificName
+  if (generated.temperatureExtras?.timelines?.length) {
+    merged.temperatureExtras = generated.temperatureExtras
+  }
 
+  merged.display = buildSpeciesProfileDisplay(
+    { ...merged, display: undefined },
+    locale,
+    generated.sectionItems as SpeciesSectionItemsMap | undefined
+  )
   return merged
 }

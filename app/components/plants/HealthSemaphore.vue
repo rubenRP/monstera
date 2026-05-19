@@ -1,5 +1,11 @@
 <script setup lang="ts">
 import type { HealthStatus } from '#shared/types/database'
+import {
+  HEALTH_ICONS,
+  HEALTH_ICON_CLASSES,
+  HEALTH_ICON_SELECTED_CLASSES,
+  HEALTH_SELECTED_CLASSES
+} from '#shared/constants/plants'
 
 const { t } = useI18n()
 const { healthOptions } = usePlantEnumLabels()
@@ -22,13 +28,17 @@ const showNote = computed(
 )
 
 const note = defineModel<string>('note', { default: '' })
+
+const iconSize = computed(() => (props.compact ? 'size-9' : 'size-11'))
+const iconGlyph = computed(() => (props.compact ? 'size-4' : 'size-5'))
 </script>
 
 <template>
-  <div class="space-y-3">
+  <motion.div
+    class="space-y-3"
+  >
     <div
-      class="flex gap-1 p-1 rounded-xl bg-elevated/50"
-      :class="compact ? 'text-xs' : 'text-sm'"
+      class="grid grid-cols-4 gap-1.5 p-1.5 rounded-2xl bg-elevated/40 border border-default"
       role="radiogroup"
       :aria-label="t('plants.healthAria')"
     >
@@ -40,20 +50,38 @@ const note = defineModel<string>('note', { default: '' })
         :aria-checked="modelValue === opt.value"
         :aria-label="t('plants.healthStatusAria', { label: opt.label })"
         :disabled="readonly"
-        class="flex-1 flex flex-col items-center gap-1 py-2 px-1 rounded-lg transition-all"
+        class="flex flex-col items-center gap-1.5 py-2.5 px-1 rounded-xl transition-all"
         :class="[
           modelValue === opt.value
-            ? `${opt.color} text-white shadow-sm`
-            : 'text-muted hover:bg-elevated',
+            ? HEALTH_SELECTED_CLASSES[opt.value]
+            : 'text-muted hover:bg-elevated/60',
           readonly ? 'cursor-default' : 'cursor-pointer'
         ]"
         @click="!readonly && emit('update:modelValue', opt.value)"
       >
+        <div
+          class="flex shrink-0 items-center justify-center rounded-full transition-all"
+          :class="[
+            iconSize,
+            modelValue === opt.value
+              ? HEALTH_ICON_SELECTED_CLASSES[opt.value]
+              : HEALTH_ICON_CLASSES[opt.value]
+          ]"
+        >
+          <UIcon
+            :name="HEALTH_ICONS[opt.value]"
+            :class="iconGlyph"
+          />
+        </div>
         <span
-          class="w-3 h-3 rounded-full shrink-0"
-          :class="modelValue === opt.value ? 'bg-white/90' : opt.color"
-        />
-        <span class="font-medium leading-tight text-center">{{ opt.label }}</span>
+          class="font-medium leading-tight text-center"
+          :class="[
+            compact ? 'text-[10px]' : 'text-xs',
+            modelValue === opt.value ? 'text-highlighted' : 'text-muted'
+          ]"
+        >
+          {{ opt.label }}
+        </span>
       </button>
     </div>
 
@@ -63,5 +91,5 @@ const note = defineModel<string>('note', { default: '' })
       :placeholder="t('plants.healthNotePlaceholder')"
       size="sm"
     />
-  </div>
+  </motion.div>
 </template>

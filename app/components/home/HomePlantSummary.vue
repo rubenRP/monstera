@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HealthStatus, Plant } from '#shared/types/database'
+import { HEALTH_ICONS, HEALTH_ICON_CLASSES } from '#shared/constants/plants'
 
 const props = defineProps<{
   plants: Plant[]
@@ -9,27 +10,6 @@ const { t } = useI18n()
 const { healthLabel } = usePlantEnumLabels()
 
 const HEALTH_ORDER: HealthStatus[] = ['critical', 'sick', 'fair', 'healthy']
-
-const HEALTH_ICONS: Record<HealthStatus, string> = {
-  critical: 'i-lucide-alert-triangle',
-  sick: 'i-lucide-bandage',
-  fair: 'i-lucide-cloud-sun',
-  healthy: 'i-lucide-heart'
-}
-
-const HEALTH_TEXT: Record<HealthStatus, string> = {
-  critical: 'text-red-700 dark:text-red-400',
-  sick: 'text-orange-700 dark:text-orange-400',
-  fair: 'text-amber-700 dark:text-amber-400',
-  healthy: 'text-green-700 dark:text-green-400'
-}
-
-const HEALTH_ICON_BG: Record<HealthStatus, string> = {
-  critical: 'bg-red-600/15',
-  sick: 'bg-orange-500/15',
-  fair: 'bg-amber-500/15',
-  healthy: 'bg-green-600/15'
-}
 
 const HEALTH_BAR_COLOR: Record<HealthStatus, string> = {
   critical: '#dc2626',
@@ -142,12 +122,11 @@ const totalLabel = computed(() =>
         >
           <div
             class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-            :class="HEALTH_ICON_BG[status]"
+            :class="HEALTH_ICON_CLASSES[status]"
           >
             <UIcon
               :name="HEALTH_ICONS[status]"
               class="w-4 h-4"
-              :class="HEALTH_TEXT[status]"
             />
           </div>
           <div class="min-w-0">

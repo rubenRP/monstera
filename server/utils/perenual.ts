@@ -1,7 +1,7 @@
 import { API_ERROR_CODES } from '#shared/utils/i18n/apiErrors'
 import { throwApiError } from './apiError'
 import type { AppLocale } from '#shared/utils/i18n/locale'
-import { mapPerenualListItem, mapPerenualProfile } from '#shared/utils/species/mapPerenualProfile'
+import { mapPerenualProfile } from '#shared/utils/species/mapPerenualProfile'
 import {
   buildPerenualSearchQueries,
   pickBestPerenualMatch,
@@ -27,6 +27,14 @@ export class PerenualApiError extends Error {
   ) {
     super(message)
     this.name = 'PerenualApiError'
+  }
+}
+
+/** Details/care guides blocked by Perenual plan — caller should use Cursor generate */
+export class PerenualPlanLimitError extends Error {
+  constructor(readonly match: PerenualSpeciesListItem) {
+    super(`Perenual plan limit for species id ${match.id}`)
+    this.name = 'PerenualPlanLimitError'
   }
 }
 
@@ -124,9 +132,9 @@ export async function fetchSpeciesProfileFromPerenual(
   } catch (e) {
     if (e instanceof PerenualApiError && isPerenualUpgradeRequired(e.status, e.body)) {
       console.warn(
-        `Perenual details unavailable for id ${match.id} (plan limit); using species-list data`
+        `Perenual details unavailable for id ${match.id} (plan limit); deferring to Cursor`
       )
-      return mapPerenualListItem(match, locale)
+      throw new PerenualPlanLimitError(match)
     }
     throw e
   }

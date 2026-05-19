@@ -122,14 +122,71 @@ JSON esperado:
 Sugiere suggestedWateringIntervalDays solo si el intervalo base actual debería cambiar de forma clara. Considera hemisferio norte: ventana sur = más luz directa. Maceta pequeña + sustrato retentivo = menos riego.`
 }
 
-export function buildSpeciesGeneratePrompt(speciesQuery: string, locale: AppLocale): string {
+const SECTION_ITEMS_JSON = `  "sectionItems": {
+    "watering": { "rows": [{ "label": "main fact", "sublabel": "category e.g. frequency" }], "info": "optional extra paragraph" },
+    "light": { "rows": [{ "label": "e.g. bright indirect", "sublabel": "preferred light" }] },
+    "humidity": { "rows": [
+      { "label": "e.g. high humidity", "sublabel": "how much humidity" },
+      { "label": "e.g. mist leaves weekly", "sublabel": "misting / method" }
+    ], "info": "optional details" },
+    "fertilizing": { "rows": [{ "label": "e.g. every 2 weeks in spring", "sublabel": "schedule" }] },
+    "soil": { "rows": [{ "label": "e.g. peat-based mix" }, { "label": "orchid bark" }] },
+    "repotting": { "rows": [{ "label": "e.g. every 2 years", "sublabel": "frequency" }] },
+    "toxicity": { "rows": [
+      { "label": "toxic / non-toxic", "sublabel": "humans" },
+      { "label": "toxic / non-toxic", "sublabel": "pets" }
+    ] },
+    "characteristics": { "rows": [{ "label": "trait", "sublabel": "type or cycle" }] },
+    "temperature": { "rows": [{ "label": "e.g. 18-24°C", "sublabel": "ideal range" }] },
+    "pestsAndProblems": { "rows": [{ "label": "pest or problem name" }] }
+  }`
+
+const TEMPERATURE_EXTRAS_JSON = `  "temperatureExtras": {
+    "idealCelsiusMin": number,
+    "idealCelsiusMax": number,
+    "timelines": [
+      {
+        "kind": "indoor" | "outdoorPot" | "outdoorGround",
+        "startMonth": 1-12,
+        "endMonth": 1-12,
+        "label": "short label e.g. year-round or mar-oct",
+        "description": "optional sentence"
+      }
+    ],
+    "locationLabel": "optional city/region name if location was provided"
+  }`
+
+function locationContextLine(
+  location: { lat: number, lon: number } | null | undefined,
+  locale: AppLocale
+): string {
+  if (!location) {
+    return locale === 'en'
+      ? 'User location: not set. Assume Northern Hemisphere temperate Europe for outdoor month windows.'
+      : 'Ubicación del usuario: no configurada. Asume Europa templada del hemisferio norte para meses en exterior.'
+  }
+  return `User home coordinates: latitude ${location.lat}, longitude ${location.lon}. Tailor outdoorPot and outdoorGround timelines to this climate.`
+}
+
+export function buildSpeciesGeneratePrompt(
+  speciesQuery: string,
+  locale: AppLocale,
+  location?: { lat: number, lon: number } | null
+): string {
   const language = locale === 'en' ? 'English' : 'Spanish'
   return `You are an indoor plant care expert. The Perenual plant database has no entry for this species. Create a practical houseplant encyclopedia entry.
 
 Species: ${speciesQuery}
 Response language: ${language} (all string values must be in ${language})
+${locationContextLine(location, locale)}
 
-Respond ONLY with valid JSON (no markdown). Each care section: 1–4 sentences for indoor cultivation.
+Respond ONLY with valid JSON (no markdown). For EVERY care section provide:
+1. A short summary string (watering, light, etc.)
+2. sectionItems.{key}.rows: 1–4 structured facts. Each row: "label" = main value, "sublabel" = category shown in UI (use the language of the response).
+3. sectionItems.{key}.info: optional paragraph for details NOT covered by rows.
+
+Examples (adapt to species): light row label "Bright indirect light", sublabel "Preferred light"; humidity rows for humidity level AND misting method.
+Include temperatureExtras with indoor + outdoor month timelines.
 
 {
   "commonName": "string",
@@ -143,7 +200,9 @@ Respond ONLY with valid JSON (no markdown). Each care section: 1–4 sentences f
   "toxicity": "string",
   "characteristics": "string",
   "temperature": "string",
-  "pestsAndProblems": "string"
+  "pestsAndProblems": "string",
+${SECTION_ITEMS_JSON},
+${TEMPERATURE_EXTRAS_JSON}
 }`
 }
 
@@ -151,7 +210,11 @@ export function buildSpeciesEnrichPrompt(
   speciesQuery: string,
   profile: SpeciesProfile,
   missingFields: SpeciesCareFieldKey[],
-  locale: AppLocale
+  locale: AppLocale,
+  options?: {
+    includeTemperatureExtras?: boolean
+    location?: { lat: number, lon: number } | null
+  }
 ): string {
   const language = locale === 'en' ? 'English' : 'Spanish'
   const sections = missingFields
@@ -168,18 +231,29 @@ export function buildSpeciesEnrichPrompt(
       : null
   ].filter(Boolean).join('\n')
 
+  const temperatureExtrasNote = options?.includeTemperatureExtras
+    ? (locale === 'en'
+        ? '\nAlso include temperatureExtras with indoor, outdoorPot, and outdoorGround month timelines (startMonth/endMonth 1–12).'
+        : '\nIncluye también temperatureExtras con timelines de meses interior, exterior en maceta y exterior en suelo (startMonth/endMonth 1–12).')
+    : ''
+
+  const locationLine = options?.includeTemperatureExtras
+    ? `\n${locationContextLine(options.location, locale)}`
+    : ''
+
   return `You are an indoor plant care expert. A plant encyclopedia returned incomplete data for this species. Complete ONLY the missing sections with practical advice for houseplant care.
 
 Species searched: ${speciesQuery}
 Response language: ${language} (all string values must be in ${language})
+${locationLine}
 
 Known data (do not repeat verbatim; use for consistency):
 ${knownLines || '(none)'}
 
 Missing sections to complete:
-${sections}
+${sections || '(none — only temperatureExtras requested)'}${temperatureExtrasNote}
 
-Respond ONLY with valid JSON (no markdown). Include only keys for sections you can fill confidently. Each value: 1–4 sentences, practical for indoor cultivation.
+Respond ONLY with valid JSON (no markdown). For each section you fill, include BOTH the summary string AND sectionItems.{key} with rows (label + sublabel) and optional info for extra details.
 
 Expected JSON shape (omit keys you cannot fill):
 {
@@ -194,14 +268,16 @@ Expected JSON shape (omit keys you cannot fill):
   "toxicity": "string",
   "characteristics": "string",
   "temperature": "string",
-  "pestsAndProblems": "string"
+  "pestsAndProblems": "string",
+${SECTION_ITEMS_JSON},
+${TEMPERATURE_EXTRAS_JSON}
 }`
 }
 
 export function extractJsonFromText(text: string): string {
   const trimmed = text.trim()
   const fenceMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/)
-  if (fenceMatch) {
+  if (fenceMatch?.[1]) {
     return fenceMatch[1].trim()
   }
   const start = trimmed.indexOf('{')

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { CareTask, HealthStatus, Plant } from '#shared/types/database'
-import type { InfoRow } from './PlantInfoRows.vue'
+import type { SpeciesDisplayIconTone } from '#shared/types/speciesDisplay'
+import { HEALTH_ICONS, HEALTH_ICON_CLASSES } from '#shared/constants/plants'
+import type { PlantInfoGridItem } from './PlantInfoGridSection.vue'
 
 const { t } = useI18n()
 const { dateLocale } = useDateLocale()
@@ -29,8 +31,11 @@ const emit = defineEmits<{
 
 const { taskLabel, taskIcon, overdueDays, overdueLabel, fertilizeWithWater } = useCareTasks()
 const { fetchHomeLat, computeScheduleForPlant, countRecentWetSkips } = useAdaptiveWatering()
+const { snapshot: weatherSnapshot, load: loadWeather } = usePlantHomeWeather()
 
 const wateringSchedule = ref<ReturnType<typeof computeScheduleForPlant> | null>(null)
+
+const empty = computed(() => t('plants.missingInfo'))
 
 async function loadWateringSchedule() {
   const homeLat = await fetchHomeLat()
@@ -42,18 +47,8 @@ async function loadWateringSchedule() {
 
 watch(() => props.plant, () => {
   void loadWateringSchedule()
+  void loadWeather()
 }, { immediate: true, deep: true })
-
-const empty = computed(() => t('common.notIndicated'))
-
-function formatDate(iso: string | null): string {
-  if (!iso) return empty.value
-  return new Date(iso).toLocaleDateString(dateLocale.value, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric'
-  })
-}
 
 function taskDueLabel(dueAt: string): string {
   const overdue = overdueDays(dueAt)
@@ -64,118 +59,225 @@ function taskDueLabel(dueAt: string): string {
   return t('care.dueInDays', { days })
 }
 
-const lightingRows = computed((): InfoRow[] => {
-  const site = props.plant.site
-  const rows: InfoRow[] = []
-  if (site) {
-    rows.push({ label: t('plants.fieldSite'), value: site.name })
-    rows.push({ label: t('plants.fieldPlacement'), value: placementLabel(site.placement) })
-    rows.push({
-      label: t('plants.fieldOrientation'),
-      value: site.window_orientation
-        ? orientationLabel(site.window_orientation)
-        : empty.value
-    })
-    rows.push({
-      label: t('plants.fieldLuminosity'),
-      value: site.luminosity ? luminosityLabel(site.luminosity) : empty.value
-    })
-    rows.push({
-      label: t('plants.fieldCeiling'),
-      value: site.has_ceiling_cover ? t('common.yes') : t('common.no')
-    })
-  } else {
-    rows.push({ label: t('plants.fieldSite'), value: empty.value })
-  }
-  rows.push({
-    label: t('plants.fieldWindowDistance'),
-    value: props.plant.window_distance_cm != null
-      ? `${props.plant.window_distance_cm} ${t('common.cm')}`
-      : empty.value
-  })
-  return rows
+function gridItem(
+  label: string,
+  sublabel: string,
+  icon: string,
+  iconTone?: SpeciesDisplayIconTone,
+  missing = false
+): PlantInfoGridItem {
+  return { label, sublabel, icon, iconTone, missing }
+}
+
+function missingItem(
+  sublabel: string,
+  icon: string,
+  iconTone?: SpeciesDisplayIconTone
+): PlantInfoGridItem {
+  return gridItem(empty.value, sublabel, icon, iconTone, true)
+}
+
+const currentMonthLabel = computed(() => {
+  return new Date().toLocaleDateString(dateLocale.value, { month: 'long' })
 })
 
-const potRows = computed((): InfoRow[] => [
-  {
-    label: t('plants.fieldSize'),
-    value: props.plant.pot_size ? potSizeLabel(props.plant.pot_size) : empty.value
-  },
-  {
-    label: t('plants.fieldDiameter'),
-    value: props.plant.pot_diameter_cm != null
-      ? `${props.plant.pot_diameter_cm} ${t('common.cm')}`
-      : empty.value
-  },
-  {
-    label: t('plants.fieldMaterial'),
-    value: props.plant.pot_material ? potMaterialLabel(props.plant.pot_material) : empty.value
-  },
-  {
-    label: t('plants.fieldDrainage'),
-    value: props.plant.has_drainage ? t('plants.drainageYes') : t('plants.drainageNo')
-  },
-  {
-    label: t('plants.fieldSubstrate'),
-    value: props.plant.substrate_type ? substrateLabel(props.plant.substrate_type) : empty.value
-  },
-  {
-    label: t('plants.fieldSubstrateNotes'),
-    value: props.plant.substrate_notes?.trim() || empty.value
+const lightItems = computed((): PlantInfoGridItem[] => {
+  const site = props.plant.site
+  const items: PlantInfoGridItem[] = []
+
+  if (site?.luminosity) {
+    items.push(gridItem(
+      luminosityLabel(site.luminosity),
+      t('plants.fieldLightLevel'),
+      'i-lucide-sun',
+      'amber'
+    ))
+  } else {
+    items.push(missingItem(t('plants.fieldLightLevel'), 'i-lucide-lightbulb', 'amber'))
   }
+
+  items.push(
+    site?.window_orientation
+      ? gridItem(
+          orientationLabel(site.window_orientation),
+          t('plants.fieldOrientation'),
+          'i-lucide-compass',
+          'amber'
+        )
+      : missingItem(t('plants.fieldOrientation'), 'i-lucide-compass', 'amber')
+  )
+
+  items.push(
+    props.plant.window_distance_cm != null
+      ? gridItem(
+          `${props.plant.window_distance_cm} ${t('common.cm')}`,
+          t('plants.fieldWindowDistance'),
+          'i-lucide-ruler',
+          'amber'
+        )
+      : missingItem(t('plants.fieldWindowDistance'), 'i-lucide-ruler', 'amber')
+  )
+
+  items.push(missingItem(t('plants.fieldGrowLight'), 'i-lucide-lamp', 'amber'))
+
+  return items
+})
+
+const potItems = computed((): PlantInfoGridItem[] => [
+  props.plant.pot_material
+    ? gridItem(
+        potMaterialLabel(props.plant.pot_material),
+        t('plants.fieldPotType'),
+        'i-lucide-flower-2',
+        'brown'
+      )
+    : missingItem(t('plants.fieldPotType'), 'i-lucide-flower-2', 'brown'),
+  props.plant.pot_diameter_cm != null
+    ? gridItem(
+        `${props.plant.pot_diameter_cm} ${t('common.cm')}`,
+        t('plants.fieldPotSize'),
+        'i-lucide-circle',
+        'brown'
+      )
+    : props.plant.pot_size
+      ? gridItem(
+          potSizeLabel(props.plant.pot_size),
+          t('plants.fieldPotSize'),
+          'i-lucide-circle',
+          'brown'
+        )
+      : missingItem(t('plants.fieldPotSize'), 'i-lucide-circle', 'brown'),
+  gridItem(
+    props.plant.has_drainage ? t('common.yes') : t('common.no'),
+    t('plants.fieldDrainage'),
+    'i-lucide-droplets',
+    'blue'
+  ),
+  props.plant.substrate_type
+    ? gridItem(
+        substrateLabel(props.plant.substrate_type),
+        t('plants.fieldSoilType'),
+        'i-lucide-mountain',
+        'brown'
+      )
+    : missingItem(t('plants.fieldSoilType'), 'i-lucide-mountain', 'brown')
 ])
 
-const plantRows = computed((): InfoRow[] => [
-  {
-    label: t('plants.species'),
-    value: props.plant.species?.trim() || empty.value
-  },
-  {
-    label: t('plants.fieldHeight'),
-    value: props.plant.height_cm != null
-      ? `${props.plant.height_cm} ${t('common.cm')}${props.plant.height_updated_at ? t('plants.heightUpdated', { date: formatDate(props.plant.height_updated_at) }) : ''}`
-      : empty.value
-  },
-  {
-    label: t('plants.fieldAge'),
-    value: props.plant.age_years != null
-      ? t('plants.ageValue', { count: props.plant.age_years })
-      : empty.value
-  },
-  {
-    label: t('plants.fieldWaterBase'),
-    value: t('plants.intervalDays', {
-      count: props.plant.watering_base_interval_days ?? props.plant.watering_interval_days
-    })
-  },
-  {
-    label: t('plants.fieldWaterEffective'),
-    value: t('plants.intervalDays', { count: props.plant.watering_interval_days })
-  },
-  {
-    label: t('plants.fieldFertilizeEvery'),
-    value: t('plants.intervalDays', { count: props.plant.fertilizing_interval_days })
-  },
-  {
-    label: t('plants.fieldLastWater'),
-    value: formatDate(props.plant.last_watered_at)
-  },
-  {
-    label: t('plants.fieldLastFertilize'),
-    value: formatDate(props.plant.last_fertilized_at)
-  }
+const plantItems = computed((): PlantInfoGridItem[] => [
+  props.plant.height_cm != null
+    ? gridItem(
+        `${props.plant.height_cm} ${t('common.cm')}`,
+        t('plants.fieldPlantSize'),
+        'i-lucide-ruler',
+        'primary'
+      )
+    : missingItem(t('plants.fieldPlantSize'), 'i-lucide-sprout', 'primary'),
+  props.plant.age_years != null
+    ? gridItem(
+        t('plants.ageValue', { count: props.plant.age_years }),
+        t('plants.fieldPlantAge'),
+        'i-lucide-cake',
+        'primary'
+      )
+    : missingItem(t('plants.fieldPlantAge'), 'i-lucide-cake', 'primary'),
+  props.plant.species?.trim()
+    ? gridItem(
+        props.plant.species.trim(),
+        t('plants.fieldPlantType'),
+        'i-lucide-leaf',
+        'primary'
+      )
+    : missingItem(t('plants.fieldPlantType'), 'i-lucide-leaf', 'primary')
 ])
+
+const siteItems = computed((): PlantInfoGridItem[] => {
+  const site = props.plant.site
+  const items: PlantInfoGridItem[] = []
+
+  if (weatherSnapshot.value?.humidityLabel) {
+    items.push(gridItem(
+      weatherSnapshot.value.humidityLabel,
+      t('plants.fieldHumidity'),
+      'i-lucide-droplets',
+      'blue'
+    ))
+  } else {
+    items.push(missingItem(t('plants.fieldHumidity'), 'i-lucide-droplets', 'blue'))
+  }
+
+  items.push(missingItem(t('plants.fieldIndoorTemp'), 'i-lucide-thermometer', 'amber'))
+
+  items.push(
+    site
+      ? gridItem(
+          placementLabel(site.placement),
+          t('plants.fieldPlacementShort'),
+          site.placement === 'indoor' ? 'i-lucide-home' : 'i-lucide-tree-pine',
+          'primary'
+        )
+      : missingItem(t('plants.fieldPlacementShort'), 'i-lucide-home', 'primary')
+  )
+
+  if (site?.name) {
+    items.push(gridItem(
+      site.name,
+      t('plants.fieldSite'),
+      'i-lucide-map-pin',
+      'neutral'
+    ))
+  }
+
+  if (site) {
+    items.push(gridItem(
+      site.has_ceiling_cover ? t('common.yes') : t('common.no'),
+      t('plants.fieldCeiling'),
+      'i-lucide-umbrella',
+      'neutral'
+    ))
+  }
+
+  return items
+})
+
+const climateItems = computed((): PlantInfoGridItem[] => {
+  const w = weatherSnapshot.value
+  return [
+    gridItem(
+      currentMonthLabel.value,
+      t('plants.fieldCurrentMonth'),
+      'i-lucide-calendar',
+      'neutral'
+    ),
+    w
+      ? gridItem(
+          w.outdoorTempLabel,
+          t('plants.fieldOutdoorTemp'),
+          'i-lucide-thermometer-sun',
+          'amber',
+          w.outdoorTempLabel === empty.value
+        )
+      : missingItem(t('plants.fieldOutdoorTemp'), 'i-lucide-thermometer-sun', 'amber'),
+    w?.hasLocation
+      ? gridItem(
+          t('plants.locationConfigured'),
+          t('plants.fieldClimate'),
+          'i-lucide-map-pin',
+          'primary'
+        )
+      : missingItem(t('plants.fieldClimate'), 'i-lucide-map-pin', 'primary')
+  ]
+})
 </script>
 
 <template>
   <div class="space-y-4">
-    <PlantsDetailPlantInfoSection
+    <PlantsDetailPlantInfoGridSection
       :title="t('plants.lighting')"
-      icon="i-lucide-sun"
+      :items="lightItems"
     >
       <p
         v-if="plant.site_id && plant.site"
-        class="text-xs text-muted mb-3"
+        class="text-xs text-muted -mt-1"
       >
         <NuxtLink
           :to="`/sites/${plant.site_id}`"
@@ -184,38 +286,59 @@ const plantRows = computed((): InfoRow[] => [
           {{ t('plants.viewSite', { name: plant.site.name }) }}
         </NuxtLink>
       </p>
-      <PlantsDetailPlantInfoRows :rows="lightingRows" />
-    </PlantsDetailPlantInfoSection>
+    </PlantsDetailPlantInfoGridSection>
 
-    <PlantsDetailPlantInfoSection
+    <PlantsDetailPlantInfoGridSection
       :title="t('plants.pot')"
-      icon="i-lucide-flower-2"
-    >
-      <PlantsDetailPlantInfoRows :rows="potRows" />
-    </PlantsDetailPlantInfoSection>
+      :items="potItems"
+    />
 
-    <PlantsDetailPlantInfoSection
+    <PlantsDetailPlantInfoGridSection
       :title="t('plants.plantSection')"
-      icon="i-lucide-leaf"
+      :items="plantItems"
     >
-      <PlantsDetailPlantInfoRows :rows="plantRows" />
-      <div class="mt-4 pt-4 border-t border-default">
-        <p class="text-sm font-medium mb-2">
-          {{ t('plants.statusLabel', { status: healthLabel(plant.health_status) }) }}
-        </p>
+      <div class="mt-4 pt-4 border-t border-default space-y-3">
+        <div class="flex items-center gap-2.5">
+          <div
+            class="flex size-9 shrink-0 items-center justify-center rounded-full"
+            :class="HEALTH_ICON_CLASSES[plant.health_status]"
+          >
+            <UIcon
+              :name="HEALTH_ICONS[plant.health_status]"
+              class="size-4"
+            />
+          </div>
+          <div>
+            <p class="text-xs text-muted">
+              {{ t('plants.healthStatus') }}
+            </p>
+            <p class="text-sm font-semibold text-highlighted">
+              {{ healthLabel(plant.health_status) }}
+            </p>
+          </div>
+        </div>
         <PlantsHealthSemaphore
           v-model="healthStatus"
           v-model:note="healthNote"
         />
         <UButton
-          class="mt-3"
           size="sm"
           @click="emit('saveHealth')"
         >
           {{ t('plants.saveHealth') }}
         </UButton>
       </div>
-    </PlantsDetailPlantInfoSection>
+    </PlantsDetailPlantInfoGridSection>
+
+    <PlantsDetailPlantInfoGridSection
+      :title="t('plants.spaceSite')"
+      :items="siteItems"
+    />
+
+    <PlantsDetailPlantInfoGridSection
+      :title="t('plants.locationClimate')"
+      :items="climateItems"
+    />
 
     <PlantsDetailWateringScheduleCard
       v-if="wateringSchedule"
@@ -224,14 +347,11 @@ const plantRows = computed((): InfoRow[] => [
       :effective-days="wateringSchedule.effectiveIntervalDays"
     />
 
-    <UCard v-if="plant.notes?.trim()">
-      <template #header>
-        <span class="font-medium">{{ t('plants.notes') }}</span>
-      </template>
-      <p class="text-sm text-muted whitespace-pre-wrap">
+    <PlantsSpeciesPlantSpeciesSectionCard v-if="plant.notes?.trim()">
+      <p class="text-sm text-toned whitespace-pre-wrap">
         {{ plant.notes }}
       </p>
-    </UCard>
+    </PlantsSpeciesPlantSpeciesSectionCard>
 
     <div
       v-if="pendingTasks.length"
@@ -289,5 +409,14 @@ const plantRows = computed((): InfoRow[] => [
         </div>
       </div>
     </div>
+
+    <UButton
+      :to="`/plants/${plant.id}/edit`"
+      block
+      size="lg"
+      class="rounded-xl"
+    >
+      {{ t('plants.changeSettings') }}
+    </UButton>
   </div>
 </template>

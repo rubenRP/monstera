@@ -1,6 +1,7 @@
 import type { SpeciesProfile } from '../../types/species'
 import type { AppLocale } from '../i18n/locale'
 import { translate } from '../i18n/translate'
+import { buildPerenualSpeciesDisplay } from './buildSpeciesDisplay'
 import type { PerenualSpeciesListItem } from './searchPerenual'
 
 export function isPerenualPlaceholderImage(url?: string | null): boolean {
@@ -155,7 +156,7 @@ export function mapPerenualProfile(
     ?? details.default_image?.medium_url
     ?? null
 
-  return {
+  const profile: SpeciesProfile = {
     perenualId: details.id,
     commonName: details.common_name ?? translate(locale, 'species.unknown'),
     scientificName: details.scientific_name ?? [],
@@ -177,6 +178,9 @@ export function mapPerenualProfile(
     pestsAndProblems: joinList(details.pest_susceptibility) || unavailable(locale),
     fetchedAt: new Date().toISOString()
   }
+
+  profile.display = buildPerenualSpeciesDisplay(details, careSections, profile, locale)
+  return profile
 }
 
 /** Minimal profile from species-list when details/care guides require a paid Perenual plan */

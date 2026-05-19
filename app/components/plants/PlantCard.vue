@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Plant } from '#shared/types/database'
-import { getHealthColor } from '#shared/constants/plants'
+import { getHealthBorderColor } from '#shared/constants/plants'
 
 defineProps<{
   plant: Plant
@@ -14,13 +14,10 @@ const { t } = useI18n()
 <template>
   <NuxtLink
     :to="`/plants/${plant.id}`"
-    class="flex items-center gap-3 p-3 rounded-xl border border-default bg-elevated/30 hover:bg-elevated/60 transition-colors"
+    class="flex items-center gap-3 p-3 rounded-xl border border-default border-l-4 bg-elevated/30 hover:bg-elevated/60 transition-colors"
+    :class="getHealthBorderColor(plant.health_status)"
+    :aria-label="t('plants.healthStatusAria', { label: healthLabel(plant.health_status) })"
   >
-    <span
-      class="w-2.5 h-10 rounded-full shrink-0"
-      :class="getHealthColor(plant.health_status)"
-      :aria-label="t('plants.healthStatusAria', { label: healthLabel(plant.health_status) })"
-    />
     <div
       v-if="photoSrc"
       class="w-12 h-12 rounded-lg bg-cover bg-center shrink-0"
