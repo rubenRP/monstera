@@ -1,11 +1,5 @@
+import { isStandalonePwa } from '~/utils/isStandalonePwa'
 import { exportPushSubscription } from '~/utils/push/exportSubscription'
-
-function isIosStandalonePwa(): boolean {
-  if (!import.meta.client) return true
-  const nav = navigator as Navigator & { standalone?: boolean }
-  if (nav.standalone) return true
-  return window.matchMedia('(display-mode: standalone)').matches
-}
 
 export function usePushNotifications() {
   const config = useRuntimeConfig()
@@ -19,7 +13,7 @@ export function usePushNotifications() {
 
     const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent)
       || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
-    if (isIos && !isIosStandalonePwa()) {
+    if (isIos && !isStandalonePwa()) {
       throw new Error(t('settings.pushRequiresPwa'))
     }
 

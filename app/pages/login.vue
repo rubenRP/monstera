@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { isStandalonePwa } from '~/utils/isStandalonePwa'
+
 definePageMeta({ layout: false })
 
 const { t, locale } = useI18n()
@@ -8,9 +10,16 @@ const emailPlaceholder = computed(() =>
   locale.value === 'en' ? 'you@email.com' : 'tu@email.com'
 )
 const email = ref('')
+const otp = ref('')
 const sent = ref(false)
 const loading = ref(false)
+const verifying = ref(false)
 const error = ref<string | null>(null)
+const inPwa = ref(false)
+
+onMounted(() => {
+  inPwa.value = isStandalonePwa()
+})
 
 async function sendMagicLink() {
   loading.value = true
@@ -24,11 +33,41 @@ async function sendMagicLink() {
     })
     if (err) throw err
     sent.value = true
+    otp.value = ''
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : t('auth.sendLinkError')
   } finally {
     loading.value = false
   }
+}
+
+async function verifyCode() {
+  const code = otp.value.replace(/\D/g, '')
+  if (code.length !== 6) {
+    error.value = t('auth.otpInvalid')
+    return
+  }
+  verifying.value = true
+  error.value = null
+  try {
+    const { error: err } = await supabase.auth.verifyOtp({
+      email: email.value,
+      token: code,
+      type: 'email'
+    })
+    if (err) throw err
+    await navigateTo('/')
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : t('auth.verifyCodeError')
+  } finally {
+    verifying.value = false
+  }
+}
+
+function resetForm() {
+  sent.value = false
+  otp.value = ''
+  error.value = null
 }
 </script>
 
@@ -55,34 +94,72 @@ async function sendMagicLink() {
         :title="error"
         class="mb-4"
       />
-      <UAlert
-        v-if="sent"
-        color="success"
-        :title="t('auth.checkEmail')"
-        :description="t('auth.magicLinkSent')"
-        class="mb-4"
-      />
 
-      <form
-        class="space-y-4"
-        @submit.prevent="sendMagicLink"
-      >
-        <UFormField :label="t('auth.email')">
-          <UInput
-            v-model="email"
-            type="email"
-            required
-            :placeholder="emailPlaceholder"
-          />
-        </UFormField>
-        <UButton
-          type="submit"
-          block
-          :loading="loading"
+      <template v-if="!sent">
+        <form
+          class="space-y-4"
+          @submit.prevent="sendMagicLink"
         >
-          {{ t('auth.sendMagicLink') }}
-        </UButton>
-      </form>
+          <UFormField :label="t('auth.email')">
+            <UInput
+              v-model="email"
+              type="email"
+              required
+              :placeholder="emailPlaceholder"
+            />
+          </UFormField>
+          <UButton
+            type="submit"
+            block
+            :loading="loading"
+          >
+            {{ t('auth.sendMagicLink') }}
+          </UButton>
+        </form>
+      </template>
+
+      <template v-else>
+        <UAlert
+          color="success"
+          :title="t('auth.checkEmail')"
+          :description="inPwa ? t('auth.magicLinkSentPwa') : t('auth.magicLinkSent')"
+          class="mb-4"
+        />
+
+        <form
+          class="space-y-4"
+          @submit.prevent="verifyCode"
+        >
+          <UFormField :label="t('auth.otpLabel')">
+            <UInput
+              v-model="otp"
+              type="text"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              maxlength="6"
+              required
+              placeholder="000000"
+              class="text-center text-lg tracking-widest font-mono"
+            />
+          </UFormField>
+          <UButton
+            type="submit"
+            block
+            :loading="verifying"
+          >
+            {{ t('auth.verifyCode') }}
+          </UButton>
+          <UButton
+            type="button"
+            variant="ghost"
+            block
+            :disabled="loading"
+            @click="resetForm"
+          >
+            {{ t('auth.useAnotherEmail') }}
+          </UButton>
+        </form>
+      </template>
     </UCard>
   </div>
 </template>

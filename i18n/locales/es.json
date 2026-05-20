@@ -40,11 +40,20 @@
   "auth": {
     "loginSubtitle": "Inicia sesión con tu email",
     "email": "Email",
-    "sendMagicLink": "Enviar enlace mágico",
+    "sendMagicLink": "Enviar código de acceso",
     "checkEmail": "Revisa tu correo",
-    "magicLinkSent": "Te hemos enviado un enlace mágico para entrar.",
+    "magicLinkSent": "Te hemos enviado un enlace y un código de 6 dígitos.",
+    "magicLinkSentPwa": "Te hemos enviado un código de 6 dígitos. Introdúcelo aquí: en iPhone el enlace del correo abre Safari y no inicia sesión en la app instalada.",
+    "otpLabel": "Código de 6 dígitos",
+    "verifyCode": "Entrar",
+    "verifyCodeError": "Código incorrecto o caducado",
+    "otpInvalid": "Introduce el código de 6 dígitos del correo",
+    "useAnotherEmail": "Usar otro email",
     "sendLinkError": "Error al enviar el enlace",
     "confirmingSession": "Confirmando sesión…",
+    "safariSessionTitle": "Sesión abierta en Safari",
+    "safariSessionHint": "El enlace ha iniciado sesión en Safari, no en la app de la pantalla de inicio. Abre Monstera desde el icono e introduce el código de 6 dígitos del mismo correo.",
+    "safariSessionAction": "Ir al inicio de sesión",
     "notAuthenticated": "No autenticado"
   },
   "settings": {
