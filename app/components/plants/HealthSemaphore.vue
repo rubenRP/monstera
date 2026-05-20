@@ -27,16 +27,14 @@ const showNote = computed(
   () => props.modelValue === 'fair' || props.modelValue === 'sick' || props.modelValue === 'critical'
 )
 
-const note = defineModel<string>('note', { default: '' })
+const note = defineModel<string | null>('note', { default: null })
 
 const iconSize = computed(() => (props.compact ? 'size-9' : 'size-11'))
 const iconGlyph = computed(() => (props.compact ? 'size-4' : 'size-5'))
 </script>
 
 <template>
-  <motion.div
-    class="space-y-3"
-  >
+  <div class="space-y-3">
     <div
       class="grid grid-cols-4 gap-1.5 p-1.5 rounded-2xl bg-elevated/40 border border-default"
       role="radiogroup"
@@ -87,9 +85,10 @@ const iconGlyph = computed(() => (props.compact ? 'size-4' : 'size-5'))
 
     <UInput
       v-if="showNote && !readonly"
-      v-model="note"
+      :model-value="note ?? undefined"
       :placeholder="t('plants.healthNotePlaceholder')"
       size="sm"
+      @update:model-value="note = ($event as string | undefined) ?? null"
     />
-  </motion.div>
+  </div>
 </template>

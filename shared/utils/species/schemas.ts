@@ -19,7 +19,9 @@ export const speciesSectionItemsSchema = z.object({
 
 const sectionItemsShape = Object.fromEntries(
   SPECIES_CARE_FIELD_KEYS.map(key => [key, speciesSectionItemsSchema.optional()])
-) as Record<(typeof SPECIES_CARE_FIELD_KEYS)[number], typeof speciesSectionItemsSchema.optional>
+) as {
+  [K in (typeof SPECIES_CARE_FIELD_KEYS)[number]]: z.ZodOptional<typeof speciesSectionItemsSchema>
+}
 
 export const speciesSectionItemsMapSchema = z.object(sectionItemsShape).partial()
 

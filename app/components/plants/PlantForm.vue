@@ -82,8 +82,9 @@ function handleSubmit() {
 
     <UFormField :label="t('plants.species')">
       <UInput
-        v-model="form.species"
+        :model-value="form.species ?? undefined"
         :placeholder="t('common.optional')"
+        @update:model-value="form.species = ($event as string | undefined) ?? null"
       />
     </UFormField>
 

@@ -43,10 +43,11 @@ const noneOption = computed(() => ({ label: t('common.none'), value: null }))
       <div class="space-y-4 pt-4">
         <UFormField :label="t('plants.fieldSite')">
           <USelect
-            v-model="form.site_id"
+            :model-value="form.site_id ?? undefined"
             :items="sites"
             :loading="loadingSites"
             :placeholder="t('plants.selectSite')"
+            @update:model-value="form.site_id = ($event as string | null | undefined) ?? null"
           />
           <p class="text-xs text-muted mt-1">
             <NuxtLink
@@ -62,30 +63,34 @@ const noneOption = computed(() => ({ label: t('common.none'), value: null }))
           :label="t('plants.windowDistance')"
         >
           <UInput
-            v-model.number="form.window_distance_cm"
+            :model-value="form.window_distance_cm ?? undefined"
             type="number"
             min="0"
             max="500"
             :placeholder="t('plants.windowDistancePlaceholder')"
+            @update:model-value="form.window_distance_cm = ($event as number | undefined) ?? null"
           />
         </UFormField>
 
         <UFormField :label="t('plants.potSizeLabel')">
           <USelect
-            v-model="form.pot_size"
+            :model-value="form.pot_size ?? undefined"
             :items="[noneOption, ...potSizeOptions]"
+            @update:model-value="form.pot_size = ($event as typeof form.pot_size) ?? null"
           />
         </UFormField>
         <UFormField :label="t('plants.potDiameterLabel')">
           <UInput
-            v-model.number="form.pot_diameter_cm"
+            :model-value="form.pot_diameter_cm ?? undefined"
             type="number"
+            @update:model-value="form.pot_diameter_cm = ($event as number | undefined) ?? null"
           />
         </UFormField>
         <UFormField :label="t('plants.potMaterialLabel')">
           <USelect
-            v-model="form.pot_material"
+            :model-value="form.pot_material ?? undefined"
             :items="[noneOption, ...potMaterialOptions]"
+            @update:model-value="form.pot_material = ($event as typeof form.pot_material) ?? null"
           />
         </UFormField>
         <UFormField>
@@ -96,29 +101,35 @@ const noneOption = computed(() => ({ label: t('common.none'), value: null }))
         </UFormField>
         <UFormField :label="t('plants.fieldSubstrate')">
           <USelect
-            v-model="form.substrate_type"
+            :model-value="form.substrate_type ?? undefined"
             :items="[noneOption, ...substrateOptions]"
+            @update:model-value="form.substrate_type = ($event as typeof form.substrate_type) ?? null"
           />
         </UFormField>
         <UFormField
           v-if="form.substrate_type === 'other'"
           :label="t('plants.substrateDetail')"
         >
-          <UTextarea v-model="form.substrate_notes" />
+          <UTextarea
+            :model-value="form.substrate_notes ?? undefined"
+            @update:model-value="form.substrate_notes = ($event as string | undefined) ?? null"
+          />
         </UFormField>
         <UFormField :label="t('plants.heightLabel')">
           <UInput
-            v-model.number="form.height_cm"
+            :model-value="form.height_cm ?? undefined"
             type="number"
             :placeholder="t('plants.heightPlaceholder')"
+            @update:model-value="form.height_cm = ($event as number | undefined) ?? null"
           />
         </UFormField>
         <UFormField :label="t('plants.fieldAge')">
           <UInput
-            v-model.number="form.age_years"
+            :model-value="form.age_years ?? undefined"
             type="number"
             min="1"
             :placeholder="t('plants.agePlaceholder')"
+            @update:model-value="form.age_years = ($event as number | undefined) ?? null"
           />
         </UFormField>
       </div>

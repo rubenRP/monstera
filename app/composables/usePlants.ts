@@ -65,12 +65,13 @@ export function usePlants() {
 
     const payload = sanitizePlantPayload(form)
 
-    const { data: plant, error } = await supabase
+    const { data, error } = await supabase
       .from('plants')
       .insert({ ...payload, user_id: uid })
       .select(PLANT_SELECT)
       .single()
-    if (error) throw error
+    if (error || !data) throw error
+    const plant = data as Plant
 
     if (photoFile) {
       const photoPath = await uploadPhoto(photoFile, plant.id)
@@ -78,14 +79,14 @@ export function usePlants() {
       plant.photo_path = photoPath
     }
 
-    await regenerateTasks(plant.id, plant as Plant)
-    return plant as Plant
+    await regenerateTasks(plant.id, plant)
+    return plant
   }
 
   async function updatePlant(id: string, form: PlantFormInput, photoFile?: File) {
-    const payload = sanitizePlantPayload(form)
-    if (photoFile) {
-      payload.photo_path = await uploadPhoto(photoFile, id)
+    const payload = {
+      ...sanitizePlantPayload(form),
+      ...(photoFile ? { photo_path: await uploadPhoto(photoFile, id) } : {})
     }
 
     const { data: plant, error } = await supabase

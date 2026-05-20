@@ -47,7 +47,7 @@ export default defineEventHandler(async (event) => {
   let resultText: string
   try {
     if (imageBase64) {
-      const agent = Agent.create({
+      const agent = await Agent.create({
         apiKey: config.cursorApiKey,
         model: { id: 'composer-2' },
         local: { cwd: process.cwd() }
