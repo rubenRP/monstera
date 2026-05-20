@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Plant } from '#shared/types/database'
+import { defaultPlantAgeUnit, formatPlantAge } from '#shared/utils/plants/formatPlantAge'
 
 const props = defineProps<{ plant: Plant }>()
 
@@ -26,7 +27,13 @@ const badges = computed(() => {
       : t('plants.badgeDistanceCm', { value: props.plant.window_distance_cm }))
   }
   if (props.plant.height_cm) items.push(`${props.plant.height_cm} ${t('common.cm')}`)
-  if (props.plant.age_years) items.push(t('plants.yearsBadge', { count: props.plant.age_years }))
+  if (props.plant.age_years) {
+    items.push(formatPlantAge(
+      props.plant.age_years,
+      defaultPlantAgeUnit(props.plant.age_years, props.plant.age_unit),
+      t
+    ))
+  }
   if (props.plant.pot_material) items.push(potMaterialLabel(props.plant.pot_material))
   if (props.plant.pot_diameter_cm) items.push(`Ø ${props.plant.pot_diameter_cm} ${t('common.cm')}`)
   if (props.plant.has_drainage) items.push(t('plants.badgeWithDrainage'))

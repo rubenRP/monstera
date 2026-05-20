@@ -5,7 +5,6 @@ import { taskOverdueDays } from '#shared/utils/care/taskDue'
 
 export function useCareTasks() {
   const supabase = useSupabaseClient()
-  const user = useSupabaseUser()
   const { rescheduleWatering, rescheduleFertilizing, countRecentWetSkips } = useAdaptiveWatering()
 
   async function dismissOverlappingPendingTasks(task: CareTask, exceptId: string) {
@@ -148,14 +147,7 @@ export function useCareTasks() {
     return (count ?? 0) > 0
   }
 
-  async function requireUserId(): Promise<string> {
-    const fromRef = user.value?.id
-    if (fromRef) return fromRef
-    const { data: { session } } = await supabase.auth.getSession()
-    const uid = session?.user?.id
-    if (!uid) throw new Error('No autenticado')
-    return uid
-  }
+  const { requireUserId } = useRequireUserId()
 
   async function createAdvanceTask(plantId: string, type: CareTaskType = 'water') {
     const uid = await requireUserId()

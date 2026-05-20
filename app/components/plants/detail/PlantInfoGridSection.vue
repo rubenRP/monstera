@@ -7,6 +7,8 @@ export interface PlantInfoGridItem {
   label: string
   sublabel: string
   missing?: boolean
+  editTo?: string
+  editLabel?: string
 }
 
 defineProps<{
@@ -26,6 +28,8 @@ defineProps<{
         :label="item.label"
         :sublabel="item.sublabel"
         :missing="item.missing"
+        :edit-to="item.editTo"
+        :edit-label="item.editLabel"
       />
     </div>
     <slot />

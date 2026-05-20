@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import type { HealthStatus, Plant } from '#shared/types/database'
 import { plantFormSchema, type PlantFormInput } from '#shared/utils/plants/schemas'
+import { suggestWateringDaysFromProfile } from '#shared/utils/care/speciesWateringHint'
+import type { SpeciesProfile } from '#shared/types/species'
+import { normalizeSpeciesQuery } from '#shared/utils/species/normalize'
 
 const { t } = useI18n()
 const { validationMessage } = useApiError()
+const supabase = useSupabaseClient()
 
 const props = defineProps<{
   initial?: Plant | null
@@ -32,12 +36,40 @@ const form = reactive<PlantFormInput>({
   substrate_type: props.initial?.substrate_type ?? null,
   substrate_notes: props.initial?.substrate_notes ?? '',
   height_cm: props.initial?.height_cm ?? null,
-  age_years: props.initial?.age_years ?? null
+  age_years: props.initial?.age_years ?? null,
+  age_unit: props.initial?.age_unit ?? 'years'
 })
 
 const photoFile = ref<File | null>(null)
 const photoPreview = ref<string | null>(null)
 const errors = ref<string | null>(null)
+const wateringTouched = ref(!!props.initial)
+const speciesProfileForSuggest = ref<SpeciesProfile | null>(null)
+
+async function loadSpeciesSuggestion() {
+  const query = form.species?.trim()
+  if (!query) {
+    speciesProfileForSuggest.value = null
+    return
+  }
+  const normalized = normalizeSpeciesQuery(query)
+  const { data } = await supabase
+    .from('species_profiles')
+    .select('profile')
+    .eq('species_query', normalized)
+    .maybeSingle()
+  speciesProfileForSuggest.value = (data?.profile as SpeciesProfile | undefined) ?? null
+  if (!props.initial && !wateringTouched.value) {
+    const days = suggestWateringDaysFromProfile(speciesProfileForSuggest.value)
+    if (days != null) {
+      form.watering_base_interval_days = days
+    }
+  }
+}
+
+watch(() => form.species, () => {
+  void loadSpeciesSuggestion()
+}, { immediate: true })
 
 function onPhotoChange(e: Event) {
   const input = e.target as HTMLInputElement
@@ -45,6 +77,15 @@ function onPhotoChange(e: Event) {
   if (!file) return
   photoFile.value = file
   photoPreview.value = URL.createObjectURL(file)
+}
+
+function applyWateringSuggestion(days: number) {
+  form.watering_base_interval_days = days
+  wateringTouched.value = true
+}
+
+function onWateringInput() {
+  wateringTouched.value = true
 }
 
 function handleSubmit() {
@@ -88,6 +129,12 @@ function handleSubmit() {
       />
     </UFormField>
 
+    <PlantsPlantVarietyReference
+      :species="form.species"
+      :plant-id="initial?.id"
+      @apply-suggestion="applyWateringSuggestion"
+    />
+
     <UFormField :label="t('plants.photo')">
       <input
         type="file"
@@ -102,38 +149,50 @@ function handleSubmit() {
       >
     </UFormField>
 
-    <div>
-      <p class="text-sm font-medium mb-2">
+    <section
+      id="section-health"
+      class="space-y-3"
+    >
+      <h2 class="text-sm font-semibold text-highlighted">
         {{ t('plants.healthStatus') }}
-      </p>
+      </h2>
       <PlantsHealthSemaphore
         v-model="form.health_status"
         v-model:note="form.health_status_note"
       />
-    </div>
-
-    <div class="grid grid-cols-2 gap-4">
-      <UFormField :label="t('plants.waterBaseEvery')">
-        <UInput
-          v-model.number="form.watering_base_interval_days"
-          type="number"
-          min="1"
-          max="90"
-        />
-        <template #hint>
-          {{ t('plants.waterBaseHint') }}
-        </template>
-      </UFormField>
-      <UFormField :label="t('plants.fertilizeEvery')">
-        <UInput
-          v-model.number="form.fertilizing_interval_days"
-          type="number"
-          min="1"
-        />
-      </UFormField>
-    </div>
+    </section>
 
     <PlantsPlantEnvironmentForm v-model:form="form" />
+
+    <section
+      id="section-care"
+      class="space-y-4"
+    >
+      <h2 class="text-sm font-semibold text-highlighted">
+        {{ t('plants.formSectionCare') }}
+      </h2>
+      <div class="grid grid-cols-2 gap-4">
+        <UFormField :label="t('plants.waterBaseEvery')">
+          <UInput
+            v-model.number="form.watering_base_interval_days"
+            type="number"
+            min="1"
+            max="90"
+            @input="onWateringInput"
+          />
+          <template #hint>
+            {{ t('plants.waterBaseHint') }}
+          </template>
+        </UFormField>
+        <UFormField :label="t('plants.fertilizeEvery')">
+          <UInput
+            v-model.number="form.fertilizing_interval_days"
+            type="number"
+            min="1"
+          />
+        </UFormField>
+      </div>
+    </section>
 
     <UFormField :label="t('plants.notes')">
       <UTextarea v-model="form.notes" />

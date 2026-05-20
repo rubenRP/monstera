@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { VALIDATION_KEYS } from '../i18n/validationKeys'
 
 export const healthStatusSchema = z.enum(['healthy', 'fair', 'sick', 'critical'])
+export const plantAgeUnitSchema = z.enum(['months', 'years'])
 export const placementSchema = z.enum(['indoor', 'outdoor', 'semi_outdoor'])
 export const windowOrientationSchema = z.enum(['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'])
 export const potSizeSchema = z.enum(['xs', 's', 'm', 'l', 'xl'])
@@ -27,7 +28,19 @@ export const plantFormSchema = z.object({
   substrate_type: substrateTypeSchema.optional().nullable(),
   substrate_notes: z.string().optional().nullable(),
   height_cm: z.coerce.number().positive().max(1000).optional().nullable(),
-  age_years: z.coerce.number().int().positive().max(200).optional().nullable()
+  age_years: z.coerce.number().int().positive().optional().nullable(),
+  age_unit: plantAgeUnitSchema.optional().nullable()
+}).superRefine((data, ctx) => {
+  if (data.age_years == null) return
+  const unit = data.age_unit ?? 'years'
+  const max = unit === 'months' ? 1200 : 200
+  if (data.age_years > max) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: VALIDATION_KEYS.PLANT_AGE_MAX,
+      path: ['age_years']
+    })
+  }
 })
 
 export type PlantFormInput = z.infer<typeof plantFormSchema>

@@ -16,11 +16,15 @@ const SYNC_STORAGE_PREFIX = 'monstera_watering_sync_'
 
 export function useAdaptiveWatering() {
   const supabase = useSupabaseClient()
-  const user = useSupabaseUser()
+  const { requireUserId } = useRequireUserId()
 
   async function fetchHomeLat(): Promise<number | null> {
-    const uid = user.value?.id
-    if (!uid) return null
+    let uid: string
+    try {
+      uid = await requireUserId()
+    } catch {
+      return null
+    }
     const { data } = await supabase
       .from('user_settings')
       .select('home_lat')
@@ -29,6 +33,8 @@ export function useAdaptiveWatering() {
     const lat = data?.home_lat
     return lat != null ? Number(lat) : null
   }
+
+  const { weatherFactorForPlant } = usePlantWeatherFactor()
 
   async function countRecentWetSkips(plantId: string): Promise<number> {
     const since = new Date()
@@ -45,7 +51,7 @@ export function useAdaptiveWatering() {
     return count ?? 0
   }
 
-  function computeScheduleForPlant(
+  async function computeScheduleForPlant(
     plant: Plant,
     homeLat: number | null,
     options?: {
@@ -55,9 +61,13 @@ export function useAdaptiveWatering() {
       now?: Date
       weatherFactor?: number
     }
-  ): WateringScheduleResult {
+  ): Promise<WateringScheduleResult> {
+    let weatherFactor = options?.weatherFactor
+    if (weatherFactor == null) {
+      weatherFactor = await weatherFactorForPlant(plant.site?.placement)
+    }
     return computeWateringSchedule(
-      plantToAdaptiveInput(plant, homeLat, options)
+      plantToAdaptiveInput(plant, homeLat, { ...options, weatherFactor })
     )
   }
 
@@ -79,7 +89,7 @@ export function useAdaptiveWatering() {
     const homeLat = await fetchHomeLat()
     const wetCount = options?.wetSkipCountOverride
       ?? await countRecentWetSkips(plantId)
-    const schedule = computeScheduleForPlant(plant as Plant, homeLat, {
+    const schedule = await computeScheduleForPlant(plant as Plant, homeLat, {
       recentWetSkipCount: wetCount,
       extraWetDelayDays: options?.extraWetDelayDays,
       scheduleFromToday: options?.scheduleFromToday
@@ -106,8 +116,7 @@ export function useAdaptiveWatering() {
       wetSkipCountOverride?: number
     }
   ): Promise<WateringScheduleResult> {
-    const uid = user.value?.id
-    if (!uid) throw new Error('No autenticado')
+    const uid = await requireUserId()
 
     const { schedule } = await recalculatePlantWatering(plantId, options)
 
@@ -137,8 +146,7 @@ export function useAdaptiveWatering() {
     plantId: string,
     options?: { nextWaterDueAt?: string }
   ): Promise<void> {
-    const uid = user.value?.id
-    if (!uid) throw new Error('No autenticado')
+    const uid = await requireUserId()
 
     const { plant, schedule } = await recalculatePlantWatering(plantId)
     const waterDueAt = options?.nextWaterDueAt ?? schedule.nextDueAt
@@ -181,8 +189,12 @@ export function useAdaptiveWatering() {
   }
 
   async function syncFertilizeAlignmentOnce(): Promise<void> {
-    const uid = user.value?.id
-    if (!uid || !import.meta.client) return
+    if (!import.meta.client) return
+    try {
+      await requireUserId()
+    } catch {
+      return
+    }
 
     const storageKey = 'monstera_fert_water_align_v1'
     if (localStorage.getItem(storageKey)) return
@@ -198,8 +210,12 @@ export function useAdaptiveWatering() {
   }
 
   async function syncAllIfSeasonChanged(): Promise<void> {
-    const uid = user.value?.id
-    if (!uid) return
+    let uid: string
+    try {
+      uid = await requireUserId()
+    } catch {
+      return
+    }
 
     const now = new Date()
     const monthKey = `${now.getFullYear()}-${now.getMonth()}`

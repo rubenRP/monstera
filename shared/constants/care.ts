@@ -1,4 +1,4 @@
-import type { Luminosity, PotSize, SubstrateType } from '../types/database'
+import type { HealthStatus, Luminosity, Placement, PotSize, SubstrateType } from '../types/database'
 
 export const MAX_WATERING_INTERVAL_DAYS = 90
 export const MIN_WATERING_INTERVAL_DAYS = 1
@@ -35,3 +35,29 @@ export const LUMINOSITY_FACTORS: Record<Luminosity, number> = {
   high: 0.9,
   direct_sun: 0.9
 }
+
+export const HEALTH_FACTORS: Record<HealthStatus, number> = {
+  healthy: 1,
+  fair: 0.95,
+  sick: 0.85,
+  critical: 0.85
+}
+
+export const PLACEMENT_FACTORS: Record<Placement, number> = {
+  indoor: 1,
+  semi_outdoor: 0.95,
+  outdoor: 0.9
+}
+
+export const WINDOW_DISTANCE_NEAR_CM = 50
+export const WINDOW_DISTANCE_FAR_CM = 200
+export const WINDOW_DISTANCE_NEAR_FACTOR = 0.95
+export const WINDOW_DISTANCE_FAR_FACTOR = 1.05
+
+export const DRAINAGE_FACTOR_WITH = 1
+export const DRAINAGE_FACTOR_WITHOUT = 0.9
+
+export const POT_DIAMETER_SMALL_CM = 12
+export const POT_DIAMETER_LARGE_CM = 25
+export const POT_DIAMETER_SMALL_FACTOR = 0.95
+export const POT_DIAMETER_LARGE_FACTOR = 1.08

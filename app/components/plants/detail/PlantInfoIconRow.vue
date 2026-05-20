@@ -7,6 +7,8 @@ const props = defineProps<{
   label: string
   sublabel: string
   missing?: boolean
+  editTo?: string
+  editLabel?: string
 }>()
 
 const toneClasses: Record<SpeciesDisplayIconTone, string> = {
@@ -50,6 +52,13 @@ const iconBg = computed(() => {
       <p class="text-sm text-muted mt-0.5">
         {{ sublabel }}
       </p>
+      <NuxtLink
+        v-if="missing && editTo"
+        :to="editTo"
+        class="text-xs text-primary underline mt-1 inline-block"
+      >
+        {{ editLabel }}
+      </NuxtLink>
     </div>
   </div>
 </template>

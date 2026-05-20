@@ -1,8 +1,15 @@
 <script setup lang="ts">
 import type { CareTask, HealthStatus, Plant } from '#shared/types/database'
-import type { SpeciesDisplayIconTone } from '#shared/types/speciesDisplay'
+import type { WateringScheduleResult } from '#shared/utils/care/adaptiveWatering'
 import { HEALTH_ICONS, HEALTH_ICON_CLASSES } from '#shared/constants/plants'
+import {
+  countPlantCompleteness,
+  editSectionHash,
+  type PlantFormSection
+} from '#shared/utils/plants/plantCompleteness'
 import type { PlantInfoGridItem } from './PlantInfoGridSection.vue'
+import type { SpeciesDisplayIconTone } from '#shared/types/speciesDisplay'
+import { defaultPlantAgeUnit, formatPlantAge } from '#shared/utils/plants/formatPlantAge'
 
 const { t } = useI18n()
 const { dateLocale } = useDateLocale()
@@ -33,14 +40,18 @@ const { taskLabel, taskIcon, overdueDays, overdueLabel, fertilizeWithWater } = u
 const { fetchHomeLat, computeScheduleForPlant, countRecentWetSkips } = useAdaptiveWatering()
 const { snapshot: weatherSnapshot, load: loadWeather } = usePlantHomeWeather()
 
-const wateringSchedule = ref<ReturnType<typeof computeScheduleForPlant> | null>(null)
+const wateringSchedule = ref<WateringScheduleResult | null>(null)
 
 const empty = computed(() => t('plants.missingInfo'))
+const editBase = computed(() => `/plants/${props.plant.id}/edit`)
+const addLabel = computed(() => t('plants.addInSettings'))
+
+const completeness = computed(() => countPlantCompleteness(props.plant))
 
 async function loadWateringSchedule() {
   const homeLat = await fetchHomeLat()
   const wetCount = await countRecentWetSkips(props.plant.id)
-  wateringSchedule.value = computeScheduleForPlant(props.plant, homeLat, {
+  wateringSchedule.value = await computeScheduleForPlant(props.plant, homeLat, {
     recentWetSkipCount: wetCount
   })
 }
@@ -64,17 +75,42 @@ function gridItem(
   sublabel: string,
   icon: string,
   iconTone?: SpeciesDisplayIconTone,
-  missing = false
+  missing = false,
+  editTo?: string
 ): PlantInfoGridItem {
-  return { label, sublabel, icon, iconTone, missing }
+  return {
+    label,
+    sublabel,
+    icon,
+    iconTone,
+    missing,
+    editTo: missing ? editTo : undefined,
+    editLabel: missing ? addLabel.value : undefined
+  }
 }
 
 function missingItem(
   sublabel: string,
   icon: string,
+  iconTone?: SpeciesDisplayIconTone,
+  section?: PlantFormSection
+): PlantInfoGridItem {
+  const to = section
+    ? `${editBase.value}#section-${editSectionHash(section)}`
+    : editBase.value
+  return gridItem(empty.value, sublabel, icon, iconTone, true, to)
+}
+
+function missingSiteField(
+  sublabel: string,
+  icon: string,
   iconTone?: SpeciesDisplayIconTone
 ): PlantInfoGridItem {
-  return gridItem(empty.value, sublabel, icon, iconTone, true)
+  const siteId = props.plant.site_id
+  const to = siteId
+    ? `/sites/${siteId}/edit`
+    : `${editBase.value}#section-light`
+  return gridItem(empty.value, sublabel, icon, iconTone, true, to)
 }
 
 const currentMonthLabel = computed(() => {
@@ -93,7 +129,9 @@ const lightItems = computed((): PlantInfoGridItem[] => {
       'amber'
     ))
   } else {
-    items.push(missingItem(t('plants.fieldLightLevel'), 'i-lucide-lightbulb', 'amber'))
+    items.push(site
+      ? missingSiteField(t('plants.fieldLightLevel'), 'i-lucide-lightbulb', 'amber')
+      : missingItem(t('plants.fieldLightLevel'), 'i-lucide-lightbulb', 'amber', 'light'))
   }
 
   items.push(
@@ -104,7 +142,9 @@ const lightItems = computed((): PlantInfoGridItem[] => {
           'i-lucide-compass',
           'amber'
         )
-      : missingItem(t('plants.fieldOrientation'), 'i-lucide-compass', 'amber')
+      : site
+        ? missingSiteField(t('plants.fieldOrientation'), 'i-lucide-compass', 'amber')
+        : missingItem(t('plants.fieldOrientation'), 'i-lucide-compass', 'amber', 'light')
   )
 
   items.push(
@@ -115,10 +155,8 @@ const lightItems = computed((): PlantInfoGridItem[] => {
           'i-lucide-ruler',
           'amber'
         )
-      : missingItem(t('plants.fieldWindowDistance'), 'i-lucide-ruler', 'amber')
+      : missingItem(t('plants.fieldWindowDistance'), 'i-lucide-ruler', 'amber', 'light')
   )
-
-  items.push(missingItem(t('plants.fieldGrowLight'), 'i-lucide-lamp', 'amber'))
 
   return items
 })
@@ -131,7 +169,7 @@ const potItems = computed((): PlantInfoGridItem[] => [
         'i-lucide-flower-2',
         'brown'
       )
-    : missingItem(t('plants.fieldPotType'), 'i-lucide-flower-2', 'brown'),
+    : missingItem(t('plants.fieldPotType'), 'i-lucide-flower-2', 'brown', 'pot'),
   props.plant.pot_diameter_cm != null
     ? gridItem(
         `${props.plant.pot_diameter_cm} ${t('common.cm')}`,
@@ -146,7 +184,7 @@ const potItems = computed((): PlantInfoGridItem[] => [
           'i-lucide-circle',
           'brown'
         )
-      : missingItem(t('plants.fieldPotSize'), 'i-lucide-circle', 'brown'),
+      : missingItem(t('plants.fieldPotSize'), 'i-lucide-circle', 'brown', 'pot'),
   gridItem(
     props.plant.has_drainage ? t('common.yes') : t('common.no'),
     t('plants.fieldDrainage'),
@@ -160,7 +198,7 @@ const potItems = computed((): PlantInfoGridItem[] => [
         'i-lucide-mountain',
         'brown'
       )
-    : missingItem(t('plants.fieldSoilType'), 'i-lucide-mountain', 'brown')
+    : missingItem(t('plants.fieldSoilType'), 'i-lucide-mountain', 'brown', 'pot')
 ])
 
 const plantItems = computed((): PlantInfoGridItem[] => [
@@ -171,15 +209,19 @@ const plantItems = computed((): PlantInfoGridItem[] => [
         'i-lucide-ruler',
         'primary'
       )
-    : missingItem(t('plants.fieldPlantSize'), 'i-lucide-sprout', 'primary'),
+    : missingItem(t('plants.fieldPlantSize'), 'i-lucide-sprout', 'primary', 'plant'),
   props.plant.age_years != null
     ? gridItem(
-        t('plants.ageValue', { count: props.plant.age_years }),
+        formatPlantAge(
+          props.plant.age_years,
+          defaultPlantAgeUnit(props.plant.age_years, props.plant.age_unit),
+          t
+        ),
         t('plants.fieldPlantAge'),
         'i-lucide-cake',
         'primary'
       )
-    : missingItem(t('plants.fieldPlantAge'), 'i-lucide-cake', 'primary'),
+    : missingItem(t('plants.fieldPlantAge'), 'i-lucide-cake', 'primary', 'plant'),
   props.plant.species?.trim()
     ? gridItem(
         props.plant.species.trim(),
@@ -187,25 +229,34 @@ const plantItems = computed((): PlantInfoGridItem[] => [
         'i-lucide-leaf',
         'primary'
       )
-    : missingItem(t('plants.fieldPlantType'), 'i-lucide-leaf', 'primary')
+    : missingItem(t('plants.fieldPlantType'), 'i-lucide-leaf', 'primary', 'plant')
 ])
+
+function homeComfortItem(
+  label: string | undefined,
+  sublabel: string,
+  icon: string
+): PlantInfoGridItem {
+  const w = weatherSnapshot.value
+  const settingsLink = '/settings'
+  const configureLabel = t('plants.configureHomeLocation')
+  if (label && label !== empty.value) {
+    return gridItem(label, sublabel, icon, 'blue')
+  }
+  return {
+    ...gridItem(empty.value, sublabel, icon, 'blue', true),
+    editTo: w?.hasLocation === false ? settingsLink : undefined,
+    editLabel: w?.hasLocation === false ? configureLabel : addLabel.value
+  }
+}
 
 const siteItems = computed((): PlantInfoGridItem[] => {
   const site = props.plant.site
-  const items: PlantInfoGridItem[] = []
-
-  if (weatherSnapshot.value?.humidityLabel) {
-    items.push(gridItem(
-      weatherSnapshot.value.humidityLabel,
-      t('plants.fieldHumidity'),
-      'i-lucide-droplets',
-      'blue'
-    ))
-  } else {
-    items.push(missingItem(t('plants.fieldHumidity'), 'i-lucide-droplets', 'blue'))
-  }
-
-  items.push(missingItem(t('plants.fieldIndoorTemp'), 'i-lucide-thermometer', 'amber'))
+  const w = weatherSnapshot.value
+  const items: PlantInfoGridItem[] = [
+    homeComfortItem(w?.indoorTempLabel, t('plants.fieldHomeIndoorTemp'), 'i-lucide-thermometer'),
+    homeComfortItem(w?.humidityLabel, t('plants.fieldHomeHumidity'), 'i-lucide-droplets')
+  ]
 
   items.push(
     site
@@ -215,7 +266,7 @@ const siteItems = computed((): PlantInfoGridItem[] => {
           site.placement === 'indoor' ? 'i-lucide-home' : 'i-lucide-tree-pine',
           'primary'
         )
-      : missingItem(t('plants.fieldPlacementShort'), 'i-lucide-home', 'primary')
+      : missingItem(t('plants.fieldPlacementShort'), 'i-lucide-home', 'primary', 'light')
   )
 
   if (site?.name) {
@@ -241,6 +292,8 @@ const siteItems = computed((): PlantInfoGridItem[] => {
 
 const climateItems = computed((): PlantInfoGridItem[] => {
   const w = weatherSnapshot.value
+  const settingsLink = '/settings'
+  const configureLabel = t('plants.configureHomeLocation')
   return [
     gridItem(
       currentMonthLabel.value,
@@ -254,9 +307,13 @@ const climateItems = computed((): PlantInfoGridItem[] => {
           t('plants.fieldOutdoorTemp'),
           'i-lucide-thermometer-sun',
           'amber',
-          w.outdoorTempLabel === empty.value
+          w.outdoorTempLabel === empty.value,
+          w.outdoorTempLabel === empty.value && !w.hasLocation ? settingsLink : `${editBase.value}`
         )
-      : missingItem(t('plants.fieldOutdoorTemp'), 'i-lucide-thermometer-sun', 'amber'),
+      : (() => {
+          const item = missingItem(t('plants.fieldOutdoorTemp'), 'i-lucide-thermometer-sun', 'amber')
+          return { ...item, editTo: settingsLink, editLabel: configureLabel }
+        })(),
     w?.hasLocation
       ? gridItem(
           t('plants.locationConfigured'),
@@ -264,13 +321,59 @@ const climateItems = computed((): PlantInfoGridItem[] => {
           'i-lucide-map-pin',
           'primary'
         )
-      : missingItem(t('plants.fieldClimate'), 'i-lucide-map-pin', 'primary')
+      : (() => {
+          const item = missingItem(t('plants.fieldClimate'), 'i-lucide-map-pin', 'primary')
+          return { ...item, editTo: settingsLink, editLabel: configureLabel }
+        })()
   ]
 })
 </script>
 
 <template>
   <div class="space-y-4">
+    <UAlert
+      v-if="completeness.plantMissingCount > 0"
+      color="warning"
+      variant="soft"
+      :title="t('plants.completenessBanner', { count: completeness.plantMissingCount })"
+    />
+    <UAlert
+      v-if="completeness.missingSite"
+      color="info"
+      variant="soft"
+      :title="t('plants.completenessSite')"
+    >
+      <template #description>
+        <NuxtLink
+          :to="`${editBase}#section-light`"
+          class="text-primary underline text-sm"
+        >
+          {{ t('plants.addInSettings') }}
+        </NuxtLink>
+      </template>
+    </UAlert>
+    <UAlert
+      v-if="weatherSnapshot && !weatherSnapshot.hasLocation"
+      color="info"
+      variant="soft"
+      :title="t('plants.completenessHome')"
+    >
+      <template #description>
+        <NuxtLink
+          to="/settings"
+          class="text-primary underline text-sm"
+        >
+          {{ t('plants.configureHomeLocation') }}
+        </NuxtLink>
+      </template>
+    </UAlert>
+
+    <PlantsPlantVarietyReference
+      v-if="plant.species?.trim()"
+      :species="plant.species"
+      :plant-id="plant.id"
+    />
+
     <PlantsDetailPlantInfoGridSection
       :title="t('plants.lighting')"
       :items="lightItems"
@@ -333,7 +436,17 @@ const climateItems = computed((): PlantInfoGridItem[] => {
     <PlantsDetailPlantInfoGridSection
       :title="t('plants.spaceSite')"
       :items="siteItems"
-    />
+    >
+      <p class="text-xs text-muted -mt-1">
+        {{ t('plants.homeComfortHint') }}
+        <NuxtLink
+          to="/settings"
+          class="text-primary underline ml-1"
+        >
+          {{ t('nav.settings') }}
+        </NuxtLink>
+      </p>
+    </PlantsDetailPlantInfoGridSection>
 
     <PlantsDetailPlantInfoGridSection
       :title="t('plants.locationClimate')"

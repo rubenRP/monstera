@@ -34,6 +34,16 @@ const activeFactors = computed(() => {
   if (substrate) items.push({ key: 'substrate', label: substrate })
   const light = factorLabel('light', f.lightFactor)
   if (light) items.push({ key: 'light', label: light })
+  const weather = factorLabel('weather', f.weatherFactor)
+  if (weather) items.push({ key: 'weather', label: weather })
+  const health = factorLabel('health', f.healthFactor)
+  if (health) items.push({ key: 'health', label: health })
+  const placement = factorLabel('placement', f.placementFactor)
+  if (placement) items.push({ key: 'placement', label: placement })
+  const distance = factorLabel('distance', f.distanceFactor)
+  if (distance) items.push({ key: 'distance', label: distance })
+  const drainage = factorLabel('drainage', f.drainageFactor)
+  if (drainage) items.push({ key: 'drainage', label: drainage })
   if (f.wetDelayDays > 0) {
     items.push({
       key: 'wet',
@@ -41,6 +51,11 @@ const activeFactors = computed(() => {
     })
   }
   return items
+})
+
+const showExteriorWeatherHint = computed(() => {
+  const p = props.plant.site?.placement
+  return (p === 'outdoor' || p === 'semi_outdoor') && props.factors.weatherFactor === 1
 })
 </script>
 
@@ -63,6 +78,12 @@ const activeFactors = computed(() => {
         {{ item.label }}
       </li>
     </ul>
+    <p
+      v-if="showExteriorWeatherHint"
+      class="mt-2 text-xs text-warning"
+    >
+      {{ t('care.exteriorWeatherHint') }}
+    </p>
     <UButton
       class="mt-3"
       variant="link"

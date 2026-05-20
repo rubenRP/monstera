@@ -15,6 +15,7 @@ export type HealthStatus = 'healthy' | 'fair' | 'sick' | 'critical'
 export type CareTaskType = 'water' | 'fertilize'
 export type CareTaskStatus = 'pending' | 'done' | 'skipped'
 export type CareTaskSkipReason = 'soil_wet'
+export type PlantAgeUnit = 'months' | 'years'
 
 export interface Site {
   id: string
@@ -57,6 +58,7 @@ export interface Plant {
   height_cm: number | null
   height_updated_at: string | null
   age_years: number | null
+  age_unit: PlantAgeUnit | null
   created_at: string
   updated_at: string
 }

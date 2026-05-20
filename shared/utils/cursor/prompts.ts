@@ -62,7 +62,9 @@ function plantContext(plant: Plant): string {
     plant.pot_material ? `Material maceta: ${plant.pot_material}` : null,
     plant.has_drainage != null ? `Drenaje: ${plant.has_drainage ? 'sí' : 'no'}` : null,
     plant.substrate_type ? `Sustrato: ${plant.substrate_type}` : null,
-    plant.age_years ? `Antigüedad: ${plant.age_years} años` : null,
+    plant.age_years
+      ? `Antigüedad: ${plant.age_years} ${plant.age_unit === 'months' ? 'meses' : 'años'}`
+      : null,
     plant.substrate_notes ? `Notas sustrato: ${plant.substrate_notes}` : null,
     plant.height_cm ? `Altura: ${plant.height_cm} cm` : null
   ]

@@ -5,6 +5,7 @@ import type {
   CareTaskType,
   HealthStatus,
   Luminosity,
+  PlantAgeUnit,
   Placement,
   PotMaterial,
   PotSize,
@@ -44,6 +45,7 @@ export interface Database {
           height_cm: number | null
           height_updated_at: string | null
           age_years: number | null
+          age_unit: PlantAgeUnit | null
           created_at: string
           updated_at: string
         }
@@ -73,6 +75,7 @@ export interface Database {
           height_cm?: number | null
           height_updated_at?: string | null
           age_years?: number | null
+          age_unit?: PlantAgeUnit | null
           created_at?: string
           updated_at?: string
         }
@@ -102,6 +105,7 @@ export interface Database {
           height_cm?: number | null
           height_updated_at?: string | null
           age_years?: number | null
+          age_unit?: PlantAgeUnit | null
           created_at?: string
           updated_at?: string
         }

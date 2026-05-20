@@ -1,25 +1,41 @@
+import {
+  estimateIndoorComfortHumidityPercent,
+  estimateIndoorComfortTempC
+} from '#shared/utils/weather/indoorComfort'
+
 export interface PlantHomeWeatherSnapshot {
   outdoorTempLabel: string
+  indoorTempLabel: string
   humidityLabel: string
   hasLocation: boolean
 }
 
 export function usePlantHomeWeather() {
   const supabase = useSupabaseClient()
-  const user = useSupabaseUser()
+  const { requireUserId } = useRequireUserId()
   const { t } = useI18n()
 
   const snapshot = ref<PlantHomeWeatherSnapshot | null>(null)
   const loading = ref(false)
 
+  function humidityLabelFromPercent(value: number): string {
+    if (value >= 60) return t('plants.humidityHigh')
+    if (value >= 40) return t('plants.humidityNormal')
+    return t('plants.humidityLow')
+  }
+
   async function load() {
-    const uid = user.value?.id
-    if (!uid) {
-      snapshot.value = null
-      return
-    }
     loading.value = true
+    const missing = t('plants.missingInfo')
     try {
+      let uid: string
+      try {
+        uid = await requireUserId()
+      } catch {
+        snapshot.value = null
+        return
+      }
+
       const { data } = await supabase
         .from('user_settings')
         .select('home_lat, home_lon')
@@ -32,8 +48,9 @@ export function usePlantHomeWeather() {
       if (lat == null || lon == null) {
         snapshot.value = {
           hasLocation: false,
-          outdoorTempLabel: t('plants.missingInfo'),
-          humidityLabel: t('plants.missingInfo')
+          outdoorTempLabel: missing,
+          indoorTempLabel: missing,
+          humidityLabel: missing
         }
         return
       }
@@ -49,8 +66,9 @@ export function usePlantHomeWeather() {
       if (!res.ok) {
         snapshot.value = {
           hasLocation: true,
-          outdoorTempLabel: t('plants.missingInfo'),
-          humidityLabel: t('plants.missingInfo')
+          outdoorTempLabel: missing,
+          indoorTempLabel: missing,
+          humidityLabel: missing
         }
         return
       }
@@ -58,27 +76,29 @@ export function usePlantHomeWeather() {
       const json = await res.json() as {
         current?: { temperature_2m?: number, relative_humidity_2m?: number }
       }
-      const temp = json.current?.temperature_2m
-      const humidity = json.current?.relative_humidity_2m
+      const outdoorTemp = json.current?.temperature_2m
+      const outdoorHumidity = json.current?.relative_humidity_2m
+
+      const indoorTemp = estimateIndoorComfortTempC(new Date().getMonth(), lat)
+      const indoorHumidity = outdoorHumidity != null
+        ? estimateIndoorComfortHumidityPercent(outdoorHumidity)
+        : null
 
       snapshot.value = {
         hasLocation: true,
-        outdoorTempLabel: temp != null
-          ? `${Math.round(temp)}°C`
-          : t('plants.missingInfo'),
-        humidityLabel: humidity != null
-          ? t('plants.humidityLevelValue', { level: humidityLabelFromPercent(humidity) })
-          : t('plants.missingInfo')
+        outdoorTempLabel: outdoorTemp != null
+          ? `${Math.round(outdoorTemp)}°C`
+          : missing,
+        indoorTempLabel: indoorTemp != null
+          ? `${indoorTemp}°C`
+          : missing,
+        humidityLabel: indoorHumidity != null
+          ? t('plants.humidityLevelValue', { level: humidityLabelFromPercent(indoorHumidity) })
+          : missing
       }
     } finally {
       loading.value = false
     }
-  }
-
-  function humidityLabelFromPercent(value: number): string {
-    if (value >= 60) return t('plants.humidityHigh')
-    if (value >= 40) return t('plants.humidityNormal')
-    return t('plants.humidityLow')
   }
 
   return { snapshot, loading, load }

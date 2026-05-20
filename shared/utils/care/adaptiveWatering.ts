@@ -1,12 +1,32 @@
 import {
+  DRAINAGE_FACTOR_WITH,
+  DRAINAGE_FACTOR_WITHOUT,
+  HEALTH_FACTORS,
   LUMINOSITY_FACTORS,
   MAX_WATERING_INTERVAL_DAYS,
   MIN_WATERING_INTERVAL_DAYS,
+  PLACEMENT_FACTORS,
+  POT_DIAMETER_LARGE_CM,
+  POT_DIAMETER_LARGE_FACTOR,
+  POT_DIAMETER_SMALL_CM,
+  POT_DIAMETER_SMALL_FACTOR,
   POT_SIZE_FACTORS,
   SEASON_FACTORS,
-  SUBSTRATE_FACTORS
+  SUBSTRATE_FACTORS,
+  WINDOW_DISTANCE_FAR_CM,
+  WINDOW_DISTANCE_FAR_FACTOR,
+  WINDOW_DISTANCE_NEAR_CM,
+  WINDOW_DISTANCE_NEAR_FACTOR
 } from '../../constants/care'
-import type { Luminosity, Plant, PotSize, Site, SubstrateType } from '../../types/database'
+import type {
+  HealthStatus,
+  Luminosity,
+  Placement,
+  Plant,
+  PotSize,
+  Site,
+  SubstrateType
+} from '../../types/database'
 
 export type Season = keyof typeof SEASON_FACTORS
 
@@ -17,6 +37,11 @@ export interface WateringFactors {
   substrateFactor: number
   lightFactor: number
   weatherFactor: number
+  healthFactor: number
+  placementFactor: number
+  distanceFactor: number
+  drainageFactor: number
+  potVolumeFactor: number
   wetSkipCount: number
   wetDelayDays: number
 }
@@ -24,8 +49,13 @@ export interface WateringFactors {
 export interface AdaptiveWateringInput {
   wateringBaseIntervalDays: number
   potSize: PotSize | null
+  potDiameterCm: number | null
   substrateType: SubstrateType | null
   siteLuminosity: Luminosity | null
+  sitePlacement: Placement | null
+  healthStatus: HealthStatus
+  windowDistanceCm: number | null
+  hasDrainage: boolean
   homeLat: number | null
   weatherFactor?: number
   now?: Date
@@ -60,6 +90,15 @@ export function potSizeFactor(potSize: PotSize | null): number {
   return POT_SIZE_FACTORS[potSize]
 }
 
+export function potDiameterFactor(potDiameterCm: number | null, potSize: PotSize | null): number {
+  if (potDiameterCm != null) {
+    if (potDiameterCm <= POT_DIAMETER_SMALL_CM) return POT_DIAMETER_SMALL_FACTOR
+    if (potDiameterCm >= POT_DIAMETER_LARGE_CM) return POT_DIAMETER_LARGE_FACTOR
+    return 1
+  }
+  return potSizeFactor(potSize)
+}
+
 export function substrateFactor(substrateType: SubstrateType | null): number {
   if (!substrateType) return 1
   return SUBSTRATE_FACTORS[substrateType]
@@ -68,6 +107,26 @@ export function substrateFactor(substrateType: SubstrateType | null): number {
 export function lightFactor(luminosity: Luminosity | null): number {
   if (!luminosity) return 1
   return LUMINOSITY_FACTORS[luminosity]
+}
+
+export function healthFactor(status: HealthStatus): number {
+  return HEALTH_FACTORS[status]
+}
+
+export function placementFactor(placement: Placement | null): number {
+  if (!placement) return 1
+  return PLACEMENT_FACTORS[placement] ?? 1
+}
+
+export function windowDistanceFactor(distanceCm: number | null): number {
+  if (distanceCm == null) return 1
+  if (distanceCm <= WINDOW_DISTANCE_NEAR_CM) return WINDOW_DISTANCE_NEAR_FACTOR
+  if (distanceCm >= WINDOW_DISTANCE_FAR_CM) return WINDOW_DISTANCE_FAR_FACTOR
+  return 1
+}
+
+export function drainageFactor(hasDrainage: boolean): number {
+  return hasDrainage ? DRAINAGE_FACTOR_WITH : DRAINAGE_FACTOR_WITHOUT
 }
 
 export function clampWateringInterval(days: number): number {
@@ -80,14 +139,20 @@ export function computeWateringFactors(input: AdaptiveWateringInput): WateringFa
   const wetSkipCount = input.recentWetSkipCount ?? 0
   const wetDelayDays = wetSkipCount + (input.extraWetDelayDays ?? 0)
   const weatherFactor = input.weatherFactor ?? 1
+  const potVolumeFactor = potDiameterFactor(input.potDiameterCm, input.potSize)
 
   return {
     season,
     seasonFactor: SEASON_FACTORS[season],
-    potFactor: potSizeFactor(input.potSize),
+    potFactor: potVolumeFactor,
     substrateFactor: substrateFactor(input.substrateType),
     lightFactor: lightFactor(input.siteLuminosity),
     weatherFactor,
+    healthFactor: healthFactor(input.healthStatus),
+    placementFactor: placementFactor(input.sitePlacement),
+    distanceFactor: windowDistanceFactor(input.windowDistanceCm),
+    drainageFactor: drainageFactor(input.hasDrainage),
+    potVolumeFactor,
     wetSkipCount,
     wetDelayDays
   }
@@ -95,10 +160,23 @@ export function computeWateringFactors(input: AdaptiveWateringInput): WateringFa
 
 export function resolveEffectiveWateringInterval(
   baseDays: number,
-  factors: Pick<WateringFactors, 'seasonFactor' | 'potFactor' | 'substrateFactor' | 'lightFactor' | 'weatherFactor'>
+  factors: Pick<
+    WateringFactors,
+    | 'seasonFactor'
+    | 'potFactor'
+    | 'substrateFactor'
+    | 'lightFactor'
+    | 'weatherFactor'
+    | 'healthFactor'
+    | 'placementFactor'
+    | 'distanceFactor'
+    | 'drainageFactor'
+  >
 ): number {
   const raw = baseDays * factors.seasonFactor * factors.potFactor
     * factors.substrateFactor * factors.lightFactor * factors.weatherFactor
+    * factors.healthFactor * factors.placementFactor * factors.distanceFactor
+    * factors.drainageFactor
   return clampWateringInterval(Math.round(raw))
 }
 
@@ -157,8 +235,13 @@ export function plantToAdaptiveInput(
   return {
     wateringBaseIntervalDays: base,
     potSize: plant.pot_size,
+    potDiameterCm: plant.pot_diameter_cm != null ? Number(plant.pot_diameter_cm) : null,
     substrateType: plant.substrate_type,
     siteLuminosity: plant.site?.luminosity ?? null,
+    sitePlacement: plant.site?.placement ?? null,
+    healthStatus: plant.health_status,
+    windowDistanceCm: plant.window_distance_cm,
+    hasDrainage: plant.has_drainage,
     homeLat,
     weatherFactor: options?.weatherFactor,
     now: options?.now,

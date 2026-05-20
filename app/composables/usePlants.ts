@@ -6,7 +6,7 @@ const PLANT_SELECT = '*, site:sites(*)'
 
 export function usePlants() {
   const supabase = useSupabaseClient()
-  const user = useSupabaseUser()
+  const { requireUserId } = useRequireUserId()
   const { rescheduleWatering } = useAdaptiveWatering()
 
   async function fetchPlants(filterStatus?: HealthStatus | 'all') {
@@ -39,8 +39,7 @@ export function usePlants() {
   }
 
   async function uploadPhoto(file: File, plantId: string): Promise<string> {
-    const uid = user.value?.id
-    if (!uid) throw new Error('No autenticado')
+    const uid = await requireUserId()
     const ext = file.name.split('.').pop() ?? 'jpg'
     const path = `${uid}/${plantId}/${Date.now()}.${ext}`
     const { error } = await supabase.storage.from('plant-photos').upload(path, file, {
@@ -60,8 +59,7 @@ export function usePlants() {
   }
 
   async function createPlant(form: PlantFormInput, photoFile?: File) {
-    const uid = user.value?.id
-    if (!uid) throw new Error('No autenticado')
+    const uid = await requireUserId()
 
     const payload = sanitizePlantPayload(form)
 
@@ -101,12 +99,13 @@ export function usePlants() {
       .single()
     if (error) throw error
 
-    await supabase
+    const { error: delFertError } = await supabase
       .from('care_tasks')
       .delete()
       .eq('plant_id', id)
       .eq('status', 'pending')
       .eq('type', 'fertilize')
+    if (delFertError) throw delFertError
 
     await regenerateTasks(id, plant as Plant)
     return plant as Plant
@@ -154,7 +153,8 @@ export function usePlants() {
       substrate_notes: form.substrate_notes || null,
       height_cm: form.height_cm ?? null,
       height_updated_at: form.height_cm ? new Date().toISOString() : null,
-      age_years: form.age_years ?? null
+      age_years: form.age_years ?? null,
+      age_unit: form.age_years != null ? (form.age_unit ?? 'years') : null
     }
   }
 

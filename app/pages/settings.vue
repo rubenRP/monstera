@@ -9,13 +9,14 @@ import {
 const { t, locales, locale, setLocale } = useI18n()
 const supabase = useSupabaseClient()
 const user = useSupabaseUser()
+const { requireUserId } = useRequireUserId()
 const config = useRuntimeConfig()
 const toast = useToast()
 const { apiErrorMessage } = useApiError()
 const { subscribe } = usePushNotifications()
 
-const homeLat = ref(Number(config.public.homeLat))
-const homeLon = ref(Number(config.public.homeLon))
+const homeLat = ref(String(config.public.homeLat))
+const homeLon = ref(String(config.public.homeLon))
 const saving = ref(false)
 const pushLoading = ref(false)
 const savingReminder = ref(false)
@@ -28,15 +29,19 @@ const localeItems = computed(() =>
 )
 
 onMounted(async () => {
-  const userId = user.value?.id
-  if (!userId) return
+  let userId: string
+  try {
+    userId = await requireUserId()
+  } catch {
+    return
+  }
   const { data } = await supabase
     .from('user_settings')
     .select('home_lat, home_lon, locale, push_reminder_time, push_reminder_timezone')
     .eq('user_id', userId)
     .maybeSingle()
-  if (data?.home_lat) homeLat.value = Number(data.home_lat)
-  if (data?.home_lon) homeLon.value = Number(data.home_lon)
+  if (data?.home_lat != null) homeLat.value = String(data.home_lat)
+  if (data?.home_lon != null) homeLon.value = String(data.home_lon)
   if (data?.push_reminder_time) {
     pushReminderTime.value = reminderTimeToInputValue(data.push_reminder_time)
   }
@@ -45,18 +50,43 @@ onMounted(async () => {
   }
 })
 
+function parseCoordinate(value: string): number | null {
+  const trimmed = value.trim().replace(',', '.')
+  if (!trimmed) return null
+  const n = Number(trimmed)
+  if (!Number.isFinite(n)) return null
+  return n
+}
+
 async function saveLocation() {
-  const userId = user.value?.id
-  if (!userId) return
+  let userId: string
+  try {
+    userId = await requireUserId()
+  } catch {
+    toast.add({ title: t('auth.notAuthenticated'), color: 'error' })
+    return
+  }
+
+  const lat = parseCoordinate(homeLat.value)
+  const lon = parseCoordinate(homeLon.value)
+  if (lat == null || lon == null || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+    toast.add({ title: t('settings.coordsInvalid'), color: 'error' })
+    return
+  }
+
   saving.value = true
   try {
-    await supabase.from('user_settings').upsert({
+    const { error } = await supabase.from('user_settings').upsert({
       user_id: userId,
-      home_lat: homeLat.value,
-      home_lon: homeLon.value,
+      home_lat: lat,
+      home_lon: lon,
       locale: locale.value as AppLocale,
       updated_at: new Date().toISOString()
-    })
+    }, { onConflict: 'user_id' })
+    if (error) throw error
+
+    homeLat.value = String(lat)
+    homeLon.value = String(lon)
     toast.add({ title: t('settings.locationSaved'), color: 'success' })
   } catch (e: unknown) {
     toast.add({ title: t('common.error'), description: apiErrorMessage(e), color: 'error' })
@@ -66,17 +96,23 @@ async function saveLocation() {
 }
 
 async function savePushReminder() {
-  const userId = user.value?.id
-  if (!userId) return
+  let userId: string
+  try {
+    userId = await requireUserId()
+  } catch {
+    toast.add({ title: t('auth.notAuthenticated'), color: 'error' })
+    return
+  }
   savingReminder.value = true
   pushReminderTimezone.value = getBrowserTimezone()
   try {
-    await supabase.from('user_settings').upsert({
+    const { error } = await supabase.from('user_settings').upsert({
       user_id: userId,
       push_reminder_time: reminderTimeFromInput(pushReminderTime.value),
       push_reminder_timezone: pushReminderTimezone.value,
       updated_at: new Date().toISOString()
-    })
+    }, { onConflict: 'user_id' })
+    if (error) throw error
     toast.add({ title: t('settings.pushReminderSaved'), color: 'success' })
   } catch (e: unknown) {
     toast.add({ title: t('common.error'), description: apiErrorMessage(e), color: 'error' })
@@ -89,16 +125,15 @@ async function enablePush() {
   pushLoading.value = true
   try {
     await subscribe()
-    const userId = user.value?.id
-    if (userId) {
-      pushReminderTimezone.value = getBrowserTimezone()
-      await supabase.from('user_settings').upsert({
-        user_id: userId,
-        push_reminder_time: reminderTimeFromInput(pushReminderTime.value),
-        push_reminder_timezone: pushReminderTimezone.value,
-        updated_at: new Date().toISOString()
-      })
-    }
+    const userId = await requireUserId()
+    pushReminderTimezone.value = getBrowserTimezone()
+    const { error } = await supabase.from('user_settings').upsert({
+      user_id: userId,
+      push_reminder_time: reminderTimeFromInput(pushReminderTime.value),
+      push_reminder_timezone: pushReminderTimezone.value,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id' })
+    if (error) throw error
     toast.add({ title: t('settings.pushEnabled'), color: 'success' })
   } catch (e: unknown) {
     toast.add({
@@ -151,9 +186,10 @@ async function signOut() {
 }
 
 function useGeolocation() {
-  navigator.geolocation?.getCurrentPosition((pos) => {
-    homeLat.value = pos.coords.latitude
-    homeLon.value = pos.coords.longitude
+  if (!navigator.geolocation) return
+  navigator.geolocation.getCurrentPosition((pos) => {
+    homeLat.value = String(pos.coords.latitude)
+    homeLon.value = String(pos.coords.longitude)
   })
 }
 
@@ -207,16 +243,18 @@ async function onLocaleChange(value: string) {
       <div class="grid grid-cols-2 gap-3 mb-3">
         <UFormField :label="t('settings.latitude')">
           <UInput
-            v-model.number="homeLat"
-            type="number"
-            step="any"
+            v-model="homeLat"
+            type="text"
+            inputmode="decimal"
+            placeholder="40.4168"
           />
         </UFormField>
         <UFormField :label="t('settings.longitude')">
           <UInput
-            v-model.number="homeLon"
-            type="number"
-            step="any"
+            v-model="homeLon"
+            type="text"
+            inputmode="decimal"
+            placeholder="-3.7038"
           />
         </UFormField>
       </div>
@@ -229,6 +267,7 @@ async function onLocaleChange(value: string) {
           {{ t('settings.useMyLocation') }}
         </UButton>
         <UButton
+          type="button"
           :loading="saving"
           @click="saveLocation"
         >
