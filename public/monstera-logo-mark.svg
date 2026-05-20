@@ -4,9 +4,9 @@
       <circle cx="256" cy="256" r="256"/>
     </clipPath>
     <linearGradient id="mark-leaf-fill" x1="320" y1="25" x2="140" y2="440" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#FFFFFF"/>
-      <stop offset="0.12" stop-color="#F5F0E4"/>
-      <stop offset="1" stop-color="#F5F0E4"/>
+      <stop offset="0" stop-color="#4A8C5C"/>
+      <stop offset="0.12" stop-color="#38704A"/>
+      <stop offset="1" stop-color="#1E5128"/>
     </linearGradient>
   </defs>
   <g clip-path="url(#mark-clip)">
