@@ -5,18 +5,31 @@ import sharp from 'sharp'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const faviconSvg = readFileSync(join(root, 'public/favicon.svg'))
+const appIconSvg = readFileSync(join(root, 'public/app-icon.svg'))
 
-const outputs = [
+const faviconOutputs = [
   { path: 'public/favicon-16x16.png', size: 16 },
-  { path: 'public/favicon-32x32.png', size: 32 },
+  { path: 'public/favicon-32x32.png', size: 32 }
+]
+
+const appIconOutputs = [
   { path: 'public/apple-touch-icon.png', size: 180 },
   { path: 'public/icons/icon-180.png', size: 180 },
   { path: 'public/icons/icon-192.png', size: 192 },
   { path: 'public/icons/icon-512.png', size: 512 }
 ]
 
-for (const { path, size } of outputs) {
+for (const { path, size } of faviconOutputs) {
   const buffer = await sharp(faviconSvg).resize(size, size).png().toBuffer()
+  writeFileSync(join(root, path), buffer)
+  console.log(`wrote ${path} (${size}x${size})`)
+}
+
+for (const { path, size } of appIconOutputs) {
+  const buffer = await sharp(appIconSvg)
+    .resize(size, size)
+    .png()
+    .toBuffer()
   writeFileSync(join(root, path), buffer)
   console.log(`wrote ${path} (${size}x${size})`)
 }
