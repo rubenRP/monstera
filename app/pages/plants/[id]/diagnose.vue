@@ -21,6 +21,11 @@ const suggestedStatus = ref<HealthStatus | null>(null)
 
 onMounted(async () => {
   const p = await fetchPlant(id)
+  if (p.archived_at) {
+    toast.add({ title: t('plants.archivedReadOnly'), color: 'warning' })
+    await navigateTo(`/plants/${id}`)
+    return
+  }
   plantName.value = p.name
 })
 

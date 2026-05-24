@@ -22,7 +22,11 @@ export function useCareTasks() {
     if (error) throw error
   }
 
-  const taskSelect = '*, plant:plants(id, name, photo_path, health_status, site:sites(id, name))'
+  const taskSelect = '*, plant:plants(id, name, photo_path, health_status, archived_at, site:sites(id, name))'
+
+  function filterActivePlantTasks(tasks: CareTask[]): CareTask[] {
+    return tasks.filter(t => !t.plant?.archived_at)
+  }
 
   async function fetchPendingTasks(options?: { plantId?: string, dueBefore?: Date }) {
     let query = supabase
@@ -40,7 +44,7 @@ export function useCareTasks() {
 
     const { data, error } = await query
     if (error) throw error
-    return deduplicateOverlappingTasks((data ?? []) as CareTask[])
+    return deduplicateOverlappingTasks(filterActivePlantTasks((data ?? []) as CareTask[]))
   }
 
   function todayBounds() {
@@ -66,7 +70,7 @@ export function useCareTasks() {
       .lte('completed_at', end.toISOString())
       .order('completed_at', { ascending: false })
     if (error) throw error
-    return (data ?? []) as CareTask[]
+    return filterActivePlantTasks((data ?? []) as CareTask[])
   }
 
   async function fetchUpcomingTasks(days = 7) {
@@ -101,7 +105,7 @@ export function useCareTasks() {
       .lte('due_at', end.toISOString())
       .order('due_at')
     if (error) throw error
-    return deduplicateOverlappingTasks((data ?? []) as CareTask[])
+    return deduplicateOverlappingTasks(filterActivePlantTasks((data ?? []) as CareTask[]))
   }
 
   async function completeTask(task: CareTask) {
@@ -191,7 +195,7 @@ export function useCareTasks() {
         scheduleFromToday: true,
         wetSkipCountOverride: wetCount
       })
-      return schedule.effectiveIntervalDays
+      return schedule?.effectiveIntervalDays
     }
 
     await rescheduleFertilizing(task.plant_id)

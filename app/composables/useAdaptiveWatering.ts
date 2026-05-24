@@ -115,7 +115,14 @@ export function useAdaptiveWatering() {
       scheduleFromToday?: boolean
       wetSkipCountOverride?: number
     }
-  ): Promise<WateringScheduleResult> {
+  ): Promise<WateringScheduleResult | null> {
+    const { data: row } = await supabase
+      .from('plants')
+      .select('archived_at')
+      .eq('id', plantId)
+      .maybeSingle()
+    if (row?.archived_at) return null
+
     const uid = await requireUserId()
 
     const { schedule } = await recalculatePlantWatering(plantId, options)
@@ -146,6 +153,13 @@ export function useAdaptiveWatering() {
     plantId: string,
     options?: { nextWaterDueAt?: string }
   ): Promise<void> {
+    const { data: row } = await supabase
+      .from('plants')
+      .select('archived_at')
+      .eq('id', plantId)
+      .maybeSingle()
+    if (row?.archived_at) return
+
     const uid = await requireUserId()
 
     const { plant, schedule } = await recalculatePlantWatering(plantId)
@@ -199,7 +213,10 @@ export function useAdaptiveWatering() {
     const storageKey = 'monstera_fert_water_align_v1'
     if (localStorage.getItem(storageKey)) return
 
-    const { data: plants, error } = await supabase.from('plants').select('id')
+    const { data: plants, error } = await supabase
+      .from('plants')
+      .select('id')
+      .is('archived_at', null)
     if (error) throw error
 
     for (const row of plants ?? []) {
@@ -224,7 +241,10 @@ export function useAdaptiveWatering() {
       return
     }
 
-    const { data: plants, error } = await supabase.from('plants').select('id')
+    const { data: plants, error } = await supabase
+      .from('plants')
+      .select('id')
+      .is('archived_at', null)
     if (error) throw error
 
     for (const row of plants ?? []) {

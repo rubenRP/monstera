@@ -8,16 +8,27 @@ const plants = ref<Awaited<ReturnType<typeof fetchPlants>>>([])
 const photoUrls = ref<Record<string, string>>({})
 const loading = ref(true)
 const filter = ref<HealthStatus | 'all'>('all')
+const listTab = ref<'active' | 'archived'>('active')
+
+const tabItems = computed(() => [
+  { label: t('plants.tabActive'), value: 'active' },
+  { label: t('plants.tabArchived'), value: 'archived' }
+])
 
 const filterItems = computed(() => [
   { label: t('plants.filterAll'), value: 'all' },
   ...healthOptions.value.map(o => ({ label: o.label, value: o.value }))
 ])
 
+const showHealthFilter = computed(() => listTab.value === 'active')
+
 async function load() {
   loading.value = true
   try {
-    plants.value = await fetchPlants(filter.value === 'all' ? undefined : filter.value)
+    plants.value = await fetchPlants({
+      archived: listTab.value,
+      filterStatus: showHealthFilter.value && filter.value !== 'all' ? filter.value : undefined
+    })
     const { getSignedPhotoUrl } = usePlants()
     const urls: Record<string, string> = {}
     await Promise.all(
@@ -35,7 +46,7 @@ async function load() {
   }
 }
 
-watch(filter, load)
+watch([filter, listTab], load)
 onMounted(load)
 </script>
 
@@ -51,6 +62,7 @@ onMounted(load)
         </p>
       </div>
       <UButton
+        v-if="listTab === 'active'"
         to="/plants/new"
         icon="i-lucide-plus"
         size="sm"
@@ -59,7 +71,14 @@ onMounted(load)
       </UButton>
     </div>
 
+    <UTabs
+      v-model="listTab"
+      :items="tabItems"
+      class="w-full"
+    />
+
     <USelect
+      v-if="showHealthFilter"
       v-model="filter"
       :items="filterItems"
       class="w-full"
@@ -78,8 +97,8 @@ onMounted(load)
 
     <UAlert
       v-else-if="!plants.length"
-      :title="t('plants.emptyTitle')"
-      :description="t('plants.emptyDescription')"
+      :title="listTab === 'archived' ? t('plants.emptyArchivedTitle') : t('plants.emptyTitle')"
+      :description="listTab === 'archived' ? t('plants.emptyArchivedDescription') : t('plants.emptyDescription')"
       icon="i-lucide-leaf"
     />
 
@@ -94,6 +113,7 @@ onMounted(load)
         <PlantsPlantCard
           :plant="plant"
           :photo-src="photoUrls[plant.id]"
+          :archived="listTab === 'archived'"
         />
       </li>
     </ul>

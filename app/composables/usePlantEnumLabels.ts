@@ -1,5 +1,6 @@
-import type { HealthStatus, PotMaterial, PotSize, SubstrateType } from '#shared/types/database'
+import type { HealthStatus, PlantArchiveReason, PotMaterial, PotSize, SubstrateType } from '#shared/types/database'
 import {
+  ARCHIVE_REASON_OPTIONS,
   HEALTH_STATUS_OPTIONS,
   POT_MATERIAL_OPTIONS,
   POT_SIZE_OPTIONS,
@@ -53,6 +54,17 @@ export function usePlantEnumLabels() {
     return t(`enums.substrate.${value}`)
   }
 
+  function archiveReasonLabel(reason: PlantArchiveReason): string {
+    return t(`enums.archive.${reason}`)
+  }
+
+  const archiveReasonOptions = computed(() =>
+    ARCHIVE_REASON_OPTIONS.map(o => ({
+      ...o,
+      label: t(`enums.archive.${o.value}`)
+    }))
+  )
+
   return {
     healthOptions,
     potMaterialOptions,
@@ -61,6 +73,8 @@ export function usePlantEnumLabels() {
     healthLabel,
     potMaterialLabel,
     potSizeLabel,
-    substrateLabel
+    substrateLabel,
+    archiveReasonLabel,
+    archiveReasonOptions
   }
 }

@@ -52,6 +52,7 @@ export default defineEventHandler(async (event) => {
     .from('plants')
     .select('*, site:sites(*)')
     .eq('user_id', user.id)
+    .is('archived_at', null)
   if (plantError) throw plantError
 
   const exteriorPlants = (plants ?? []).filter((plant) => {

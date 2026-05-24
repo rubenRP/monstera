@@ -2,6 +2,7 @@ export const API_ERROR_CODES = {
   AUTH_UNAUTHORIZED: 'auth.unauthorized',
   AUTH_INVALID_SESSION: 'auth.invalidSession',
   PLANT_NOT_FOUND: 'plant.notFound',
+  PLANT_ARCHIVED: 'plant.archived',
   PLANT_ID_REQUIRED: 'plant.idRequired',
   PLANT_SPECIES_REQUIRED: 'plant.speciesRequired',
   AI_SERVICE_UNAVAILABLE: 'ai.serviceUnavailable',

@@ -45,6 +45,14 @@ export const plantFormSchema = z.object({
 
 export type PlantFormInput = z.infer<typeof plantFormSchema>
 
+export const plantArchiveReasonSchema = z.enum(['died', 'gifted'])
+
+export const archivePlantSchema = z.object({
+  reason: plantArchiveReasonSchema
+})
+
+export type ArchivePlantInput = z.infer<typeof archivePlantSchema>
+
 export const diagnoseRequestSchema = z.object({
   plantId: z.string().uuid(),
   symptoms: z.string().min(3, VALIDATION_KEYS.SYMPTOMS_MIN),

@@ -1,7 +1,7 @@
 import type { Site } from '#shared/types/database'
 import type { SiteFormInput } from '#shared/utils/sites/schemas'
 
-const SITE_SELECT = '*, plants(id, name, health_status, photo_path)'
+const SITE_SELECT = '*, plants(id, name, health_status, photo_path, archived_at)'
 
 export function useSites() {
   const supabase = useSupabaseClient()
@@ -13,7 +13,7 @@ export function useSites() {
       .select(SITE_SELECT)
       .order('name')
     if (error) throw error
-    return (data ?? []) as Site[]
+    return ((data ?? []) as Site[]).map(filterActiveSitePlants)
   }
 
   async function fetchSite(id: string) {
@@ -23,7 +23,14 @@ export function useSites() {
       .eq('id', id)
       .single()
     if (error) throw error
-    return data as Site
+    return filterActiveSitePlants(data as Site)
+  }
+
+  function filterActiveSitePlants(site: Site): Site {
+    return {
+      ...site,
+      plants: site.plants?.filter(p => !p.archived_at)
+    }
   }
 
   async function createSite(form: SiteFormInput) {

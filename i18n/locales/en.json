@@ -131,6 +131,20 @@
     "updated": "Plant updated",
     "saveFailed": "Could not save",
     "deleteConfirm": "Delete this plant?",
+    "deleteConfirmArchived": "Permanently delete this archived plant? Care history will be lost.",
+    "archive": "Archive",
+    "archiveTitle": "Archive plant",
+    "archiveDescription": "The plant will leave your active collection. Care history will be kept.",
+    "archiveReasonDied": "Dead or due to illness",
+    "archiveReasonGifted": "I gave it away",
+    "archiveSuccess": "Plant archived",
+    "archivedBanner": "Archived: {reason}",
+    "archivedOn": "Archived on {date}",
+    "archivedReadOnly": "This plant is archived and cannot be edited",
+    "tabActive": "Active",
+    "tabArchived": "Archived",
+    "emptyArchivedTitle": "No archived plants",
+    "emptyArchivedDescription": "Plants you archive because they died, got sick, or were gifted will appear here.",
     "myPlant": "My plant",
     "variety": "Variety",
     "history": "History",
@@ -446,6 +460,10 @@
     "monthDec": "Dec"
   },
   "enums": {
+    "archive": {
+      "died": "Dead / illness",
+      "gifted": "Gifted"
+    },
     "health": {
       "healthy": "Healthy",
       "fair": "Fair",
@@ -513,6 +531,7 @@
       "auth.unauthorized": "Unauthorized",
       "auth.invalidSession": "Invalid session",
       "plant.notFound": "Plant not found",
+      "plant.archived": "This plant is archived",
       "plant.idRequired": "Plant ID required",
       "plant.speciesRequired": "Add the plant species in the edit form to see the variety profile",
       "ai.serviceUnavailable": "AI service not configured",

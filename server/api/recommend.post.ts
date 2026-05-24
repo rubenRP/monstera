@@ -43,6 +43,10 @@ export default defineEventHandler(async (event) => {
     throwApiError(404, API_ERROR_CODES.PLANT_NOT_FOUND)
   }
 
+  if (plant.archived_at) {
+    throwApiError(400, API_ERROR_CODES.PLANT_ARCHIVED)
+  }
+
   let lat = latitude
   let lon = longitude
   if (lat == null || lon == null) {

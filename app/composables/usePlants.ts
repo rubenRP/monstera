@@ -1,4 +1,4 @@
-import type { HealthStatus, Plant } from '#shared/types/database'
+import type { HealthStatus, Plant, PlantArchiveReason } from '#shared/types/database'
 import { HEALTH_STATUS_ORDER } from '#shared/constants/plants'
 import type { PlantFormInput } from '#shared/utils/plants/schemas'
 
@@ -9,14 +9,29 @@ export function usePlants() {
   const { requireUserId } = useRequireUserId()
   const { rescheduleWatering } = useAdaptiveWatering()
 
-  async function fetchPlants(filterStatus?: HealthStatus | 'all') {
+  type FetchPlantsOptions = {
+    filterStatus?: HealthStatus | 'all'
+    archived?: 'active' | 'archived'
+  }
+
+  async function fetchPlants(options?: FetchPlantsOptions | HealthStatus | 'all') {
+    const opts: FetchPlantsOptions = typeof options === 'string' || options === undefined
+      ? { filterStatus: options, archived: 'active' }
+      : { archived: 'active', ...options }
+
     let query = supabase
       .from('plants')
       .select(PLANT_SELECT)
       .order('name')
 
-    if (filterStatus && filterStatus !== 'all') {
-      query = query.eq('health_status', filterStatus)
+    if (opts.archived === 'archived') {
+      query = query.not('archived_at', 'is', null)
+    } else {
+      query = query.is('archived_at', null)
+    }
+
+    if (opts.filterStatus && opts.filterStatus !== 'all') {
+      query = query.eq('health_status', opts.filterStatus)
     }
 
     const { data, error } = await query
@@ -81,7 +96,38 @@ export function usePlants() {
     return plant
   }
 
+  async function archivePlant(id: string, reason: PlantArchiveReason) {
+    const now = new Date().toISOString()
+    const { error: plantError } = await supabase
+      .from('plants')
+      .update({
+        archived_at: now,
+        archive_reason: reason,
+        updated_at: now
+      })
+      .eq('id', id)
+      .is('archived_at', null)
+    if (plantError) throw plantError
+
+    const { error: taskError } = await supabase
+      .from('care_tasks')
+      .update({ status: 'skipped', completed_at: now })
+      .eq('plant_id', id)
+      .eq('status', 'pending')
+    if (taskError) throw taskError
+  }
+
   async function updatePlant(id: string, form: PlantFormInput, photoFile?: File) {
+    const { data: existing, error: fetchError } = await supabase
+      .from('plants')
+      .select('archived_at')
+      .eq('id', id)
+      .single()
+    if (fetchError) throw fetchError
+    if (existing?.archived_at) {
+      throw new Error('PLANT_ARCHIVED')
+    }
+
     const payload = {
       ...sanitizePlantPayload(form),
       ...(photoFile ? { photo_path: await uploadPhoto(photoFile, id) } : {})
@@ -112,6 +158,16 @@ export function usePlants() {
   }
 
   async function updateHealthStatus(id: string, status: HealthStatus, note?: string | null) {
+    const { data: existing, error: fetchError } = await supabase
+      .from('plants')
+      .select('archived_at')
+      .eq('id', id)
+      .single()
+    if (fetchError) throw fetchError
+    if (existing?.archived_at) {
+      throw new Error('PLANT_ARCHIVED')
+    }
+
     const { error } = await supabase
       .from('plants')
       .update({
@@ -164,6 +220,7 @@ export function usePlants() {
     createPlant,
     updatePlant,
     updateHealthStatus,
+    archivePlant,
     deletePlant,
     uploadPhoto,
     getSignedPhotoUrl,

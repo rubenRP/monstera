@@ -5,9 +5,10 @@ import { getHealthBorderColor } from '#shared/constants/plants'
 defineProps<{
   plant: Plant
   photoSrc?: string | null
+  archived?: boolean
 }>()
 
-const { healthLabel } = usePlantEnumLabels()
+const { healthLabel, archiveReasonLabel } = usePlantEnumLabels()
 const { t } = useI18n()
 </script>
 
@@ -15,7 +16,9 @@ const { t } = useI18n()
   <NuxtLink
     :to="`/plants/${plant.id}`"
     class="flex items-center gap-3 p-3 rounded-xl border border-default border-l-4 bg-elevated/30 hover:bg-elevated/60 transition-colors"
-    :class="getHealthBorderColor(plant.health_status)"
+    :class="[
+      archived ? 'opacity-70 border-l-neutral-400' : getHealthBorderColor(plant.health_status)
+    ]"
     :aria-label="t('plants.healthStatusAria', { label: healthLabel(plant.health_status) })"
   >
     <div
@@ -33,7 +36,15 @@ const { t } = useI18n()
       />
     </div>
     <div class="min-w-0 flex-1">
-      <p class="font-semibold truncate">{{ plant.name }}</p>
+      <div class="flex items-center gap-2 flex-wrap">
+        <p class="font-semibold truncate">{{ plant.name }}</p>
+        <span
+          v-if="archived && plant.archive_reason"
+          class="text-xs font-medium px-2 py-0.5 rounded-full bg-neutral-500/15 text-muted shrink-0"
+        >
+          {{ archiveReasonLabel(plant.archive_reason) }}
+        </span>
+      </div>
       <p
         v-if="plant.species"
         class="text-sm text-muted truncate"

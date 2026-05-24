@@ -25,6 +25,7 @@ const props = defineProps<{
   plant: Plant
   pendingTasks: CareTask[]
   actingTaskId: string | null
+  readOnly?: boolean
 }>()
 
 const healthStatus = defineModel<HealthStatus>('healthStatus', { required: true })
@@ -420,16 +421,18 @@ const climateItems = computed((): PlantInfoGridItem[] => {
             </p>
           </div>
         </div>
-        <PlantsHealthSemaphore
-          v-model="healthStatus"
-          v-model:note="healthNote"
-        />
-        <UButton
-          size="sm"
-          @click="emit('saveHealth')"
-        >
-          {{ t('plants.saveHealth') }}
-        </UButton>
+        <template v-if="!readOnly">
+          <PlantsHealthSemaphore
+            v-model="healthStatus"
+            v-model:note="healthNote"
+          />
+          <UButton
+            size="sm"
+            @click="emit('saveHealth')"
+          >
+            {{ t('plants.saveHealth') }}
+          </UButton>
+        </template>
       </div>
     </PlantsDetailPlantInfoGridSection>
 
@@ -467,7 +470,7 @@ const climateItems = computed((): PlantInfoGridItem[] => {
     </PlantsSpeciesPlantSpeciesSectionCard>
 
     <div
-      v-if="pendingTasks.length"
+      v-if="!readOnly && pendingTasks.length"
       class="space-y-2"
     >
       <h2 class="font-semibold text-sm">
@@ -524,6 +527,7 @@ const climateItems = computed((): PlantInfoGridItem[] => {
     </div>
 
     <UButton
+      v-if="!readOnly"
       :to="`/plants/${plant.id}/edit`"
       block
       size="lg"

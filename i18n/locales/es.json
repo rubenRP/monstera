@@ -131,6 +131,20 @@
     "updated": "Planta actualizada",
     "saveFailed": "No se pudo guardar",
     "deleteConfirm": "¿Eliminar esta planta?",
+    "deleteConfirmArchived": "¿Eliminar permanentemente esta planta archivada? Se perderá el historial.",
+    "archive": "Archivar",
+    "archiveTitle": "Archivar planta",
+    "archiveDescription": "La planta dejará de aparecer en tu colección activa. El historial de cuidados se conservará.",
+    "archiveReasonDied": "Planta muerta o por enfermedad",
+    "archiveReasonGifted": "La regalé",
+    "archiveSuccess": "Planta archivada",
+    "archivedBanner": "Archivada: {reason}",
+    "archivedOn": "Archivada el {date}",
+    "archivedReadOnly": "Esta planta está archivada y no se puede editar",
+    "tabActive": "Activas",
+    "tabArchived": "Archivadas",
+    "emptyArchivedTitle": "Sin plantas archivadas",
+    "emptyArchivedDescription": "Las plantas que archives por muerte, enfermedad o regalo aparecerán aquí.",
     "myPlant": "Mi planta",
     "variety": "Variedad",
     "history": "Historial",
@@ -446,6 +460,10 @@
     "monthDec": "dic"
   },
   "enums": {
+    "archive": {
+      "died": "Muerta / enfermedad",
+      "gifted": "Regalada"
+    },
     "health": {
       "healthy": "Bien",
       "fair": "Regular",
@@ -513,6 +531,7 @@
       "auth.unauthorized": "No autorizado",
       "auth.invalidSession": "Sesión inválida",
       "plant.notFound": "Planta no encontrada",
+      "plant.archived": "Esta planta está archivada",
       "plant.idRequired": "ID de planta requerido",
       "plant.speciesRequired": "Añade la especie de la planta en el formulario de edición para ver la ficha de variedad",
       "ai.serviceUnavailable": "Servicio de IA no configurado",

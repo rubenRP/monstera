@@ -13,6 +13,11 @@ const toast = useToast()
 
 onMounted(async () => {
   plant.value = await fetchPlant(id)
+  if (plant.value.archived_at) {
+    toast.add({ title: t('plants.archivedReadOnly'), color: 'warning' })
+    await navigateTo(`/plants/${id}`)
+    return
+  }
   loading.value = false
 })
 

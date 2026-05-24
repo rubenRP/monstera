@@ -1,18 +1,20 @@
 <script setup lang="ts">
 import type { TabsItem } from '@nuxt/ui'
-import type { CareTask, HealthStatus } from '#shared/types/database'
+import type { CareTask, HealthStatus, PlantArchiveReason } from '#shared/types/database'
 import { getHealthBadgeClasses } from '#shared/constants/plants'
 
 const { t } = useI18n()
 const { apiErrorMessage } = useApiError()
-const { healthLabel } = usePlantEnumLabels()
+const { healthLabel, archiveReasonLabel } = usePlantEnumLabels()
+const { dateLocale } = useDateLocale()
 const route = useRoute()
 const id = route.params.id as string
-const { fetchPlant, updateHealthStatus, deletePlant } = usePlants()
+const { fetchPlant, updateHealthStatus, deletePlant, archivePlant } = usePlants()
 const { fetchPlantPendingTasks, completeTask, skipTask } = useCareTasks()
 const toast = useToast()
 
 const skipWaterModalOpen = ref(false)
+const archiveModalOpen = ref(false)
 const taskToSkip = ref<CareTask | null>(null)
 
 const plant = ref<Awaited<ReturnType<typeof fetchPlant>> | null>(null)
@@ -25,6 +27,33 @@ const healthNote = ref('')
 const activeTab = ref('mi-planta')
 
 const historyTabRef = ref<{ load: () => Promise<void> } | null>(null)
+
+const isArchived = computed(() => !!plant.value?.archived_at)
+
+const archivedOnLabel = computed(() => {
+  if (!plant.value?.archived_at) return ''
+  return new Date(plant.value.archived_at).toLocaleDateString(dateLocale.value, {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  })
+})
+
+const menuItems = computed(() => {
+  const items: Array<{ label: string, icon: string, to?: string, onSelect?: () => void }> = []
+  if (!isArchived.value) {
+    items.push(
+      { label: t('common.edit'), icon: 'i-lucide-pencil', to: `/plants/${id}/edit` },
+      { label: t('plants.archive'), icon: 'i-lucide-archive', onSelect: () => { archiveModalOpen.value = true } }
+    )
+  }
+  items.push({
+    label: t('common.delete'),
+    icon: 'i-lucide-trash',
+    onSelect: onDelete
+  })
+  return [items]
+})
 
 const tabItems = computed<TabsItem[]>(() => [
   { label: t('plants.myPlant'), icon: 'i-lucide-leaf', slot: 'mi-planta', value: 'mi-planta' },
@@ -41,7 +70,9 @@ onMounted(async () => {
     plant.value = await fetchPlant(id)
     healthStatus.value = plant.value.health_status
     healthNote.value = plant.value.health_status_note ?? ''
-    pendingTasks.value = await fetchPlantPendingTasks(id)
+    if (!plant.value.archived_at) {
+      pendingTasks.value = await fetchPlantPendingTasks(id)
+    }
   } finally {
     loading.value = false
   }
@@ -109,8 +140,22 @@ async function confirmSkip(task: CareTask, soilStillWet: boolean) {
   }
 }
 
+async function onArchiveConfirm(reason: PlantArchiveReason) {
+  archiveModalOpen.value = false
+  try {
+    await archivePlant(id, reason)
+    toast.add({ title: t('plants.archiveSuccess'), color: 'success' })
+    await navigateTo('/plants')
+  } catch (e: unknown) {
+    toast.add({ title: t('common.error'), description: apiErrorMessage(e), color: 'error' })
+  }
+}
+
 async function onDelete() {
-  if (!confirm(t('plants.deleteConfirm'))) return
+  const msg = isArchived.value
+    ? t('plants.deleteConfirmArchived')
+    : t('plants.deleteConfirm')
+  if (!confirm(msg)) return
   await deletePlant(id)
   await navigateTo('/plants')
 }
@@ -149,12 +194,7 @@ async function onDelete() {
           {{ plant.species }}
         </p>
       </div>
-      <UDropdownMenu
-        :items="[[
-          { label: t('common.edit'), icon: 'i-lucide-pencil', to: `/plants/${id}/edit` },
-          { label: t('common.delete'), icon: 'i-lucide-trash', onSelect: onDelete }
-        ]]"
-      >
+      <UDropdownMenu :items="menuItems">
         <UButton
           icon="i-lucide-more-vertical"
           variant="ghost"
@@ -163,6 +203,15 @@ async function onDelete() {
       </UDropdownMenu>
     </div>
 
+    <UAlert
+      v-if="isArchived && plant.archive_reason"
+      color="neutral"
+      variant="subtle"
+      icon="i-lucide-archive"
+      :title="t('plants.archivedBanner', { reason: archiveReasonLabel(plant.archive_reason) })"
+      :description="t('plants.archivedOn', { date: archivedOnLabel })"
+    />
+
     <img
       v-if="photoUrl"
       :src="photoUrl"
@@ -170,7 +219,10 @@ async function onDelete() {
       class="w-full h-40 object-cover rounded-xl"
     >
 
-    <div class="grid grid-cols-2 gap-2">
+    <div
+      v-if="!isArchived"
+      class="grid grid-cols-2 gap-2"
+    >
       <UButton
         :to="`/plants/${id}/diagnose`"
         block
@@ -203,6 +255,7 @@ async function onDelete() {
           :plant="plant"
           :pending-tasks="pendingTasks"
           :acting-task-id="actingTaskId"
+          :read-only="isArchived"
           @save-health="saveHealth"
           @complete-task="onCompleteTask"
           @skip-task="onSkipClick"
@@ -228,6 +281,11 @@ async function onDelete() {
       v-model:open="skipWaterModalOpen"
       v-model:task="taskToSkip"
       @confirm="onSkipWaterConfirm"
+    />
+
+    <PlantsPlantArchiveModal
+      v-model:open="archiveModalOpen"
+      @confirm="onArchiveConfirm"
     />
   </div>
 </template>

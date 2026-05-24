@@ -17,6 +17,7 @@ export default defineEventHandler(async (event) => {
   const { data: plants, error: plantError } = await supabase
     .from('plants')
     .select('*, site:sites(*)')
+    .is('archived_at', null)
   if (plantError) throw plantError
 
   const exteriorPlants = (plants ?? []).filter((plant) => {

@@ -12,6 +12,7 @@ export type SubstrateType
     | 'peat'
     | 'other'
 export type HealthStatus = 'healthy' | 'fair' | 'sick' | 'critical'
+export type PlantArchiveReason = 'died' | 'gifted'
 export type CareTaskType = 'water' | 'fertilize'
 export type CareTaskStatus = 'pending' | 'done' | 'skipped'
 export type CareTaskSkipReason = 'soil_wet'
@@ -28,7 +29,7 @@ export interface Site {
   notes: string
   created_at: string
   updated_at: string
-  plants?: Pick<Plant, 'id' | 'name' | 'health_status' | 'photo_path'>[]
+  plants?: Pick<Plant, 'id' | 'name' | 'health_status' | 'photo_path' | 'archived_at'>[]
 }
 
 export interface Plant {
@@ -59,6 +60,8 @@ export interface Plant {
   height_updated_at: string | null
   age_years: number | null
   age_unit: PlantAgeUnit | null
+  archived_at: string | null
+  archive_reason: PlantArchiveReason | null
   created_at: string
   updated_at: string
 }
@@ -73,7 +76,7 @@ export interface CareTask {
   status: CareTaskStatus
   skip_reason: CareTaskSkipReason | null
   created_at: string
-  plant?: Pick<Plant, 'id' | 'name' | 'photo_path' | 'health_status' | 'site_id'> & {
+  plant?: Pick<Plant, 'id' | 'name' | 'photo_path' | 'health_status' | 'archived_at' | 'site_id'> & {
     site?: Pick<Site, 'id' | 'name'> | null
   }
 }

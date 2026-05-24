@@ -19,16 +19,20 @@ export async function sendDailyPushReminders(
 
   const { data: tasks } = await supabase
     .from('care_tasks')
-    .select('user_id, plant:plants(name)')
+    .select('user_id, plant:plants(name, archived_at)')
     .eq('status', 'pending')
     .lte('due_at', endOfToday.toISOString())
 
-  if (!tasks?.length) {
+  const activeTasks = (tasks ?? []).filter(
+    t => !(t.plant as { archived_at?: string | null } | null)?.archived_at
+  )
+
+  if (!activeTasks.length) {
     return { sent: 0 }
   }
 
   const byUser = new Map<string, number>()
-  for (const t of tasks) {
+  for (const t of activeTasks) {
     byUser.set(t.user_id, (byUser.get(t.user_id) ?? 0) + 1)
   }
 

@@ -6,6 +6,7 @@ import type {
   HealthStatus,
   Luminosity,
   PlantAgeUnit,
+  PlantArchiveReason,
   Placement,
   PotMaterial,
   PotSize,
@@ -46,6 +47,8 @@ export interface Database {
           height_updated_at: string | null
           age_years: number | null
           age_unit: PlantAgeUnit | null
+          archived_at: string | null
+          archive_reason: PlantArchiveReason | null
           created_at: string
           updated_at: string
         }
@@ -76,6 +79,8 @@ export interface Database {
           height_updated_at?: string | null
           age_years?: number | null
           age_unit?: PlantAgeUnit | null
+          archived_at?: string | null
+          archive_reason?: PlantArchiveReason | null
           created_at?: string
           updated_at?: string
         }
@@ -106,6 +111,8 @@ export interface Database {
           height_updated_at?: string | null
           age_years?: number | null
           age_unit?: PlantAgeUnit | null
+          archived_at?: string | null
+          archive_reason?: PlantArchiveReason | null
           created_at?: string
           updated_at?: string
         }
@@ -323,6 +330,7 @@ export interface Database {
       pot_material: PotMaterial
       substrate_type: SubstrateType
       health_status: HealthStatus
+      plant_archive_reason: PlantArchiveReason
       care_task_type: CareTaskType
       care_task_status: CareTaskStatus
     }

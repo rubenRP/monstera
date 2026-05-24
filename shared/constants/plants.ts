@@ -1,4 +1,9 @@
-import type { HealthStatus, PotMaterial, PotSize, SubstrateType } from '../types/database'
+import type { HealthStatus, PlantArchiveReason, PotMaterial, PotSize, SubstrateType } from '../types/database'
+
+export const ARCHIVE_REASON_OPTIONS: { value: PlantArchiveReason }[] = [
+  { value: 'died' },
+  { value: 'gifted' }
+]
 
 export const HEALTH_STATUS_OPTIONS: { value: HealthStatus, color: string }[] = [
   { value: 'healthy', color: 'bg-green-600' },
