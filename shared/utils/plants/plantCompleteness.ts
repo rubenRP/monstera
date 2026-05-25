@@ -1,4 +1,5 @@
 import type { Plant } from '../../types/database'
+import { usesWindowDistance } from '../sites/placement'
 
 export type PlantFormSection = 'plant' | 'pot' | 'light' | 'care'
 
@@ -36,8 +37,7 @@ export function countPlantCompleteness(plant: Plant): PlantCompletenessResult {
     if (!site?.window_orientation && (site?.placement === 'indoor' || site?.placement === 'semi_outdoor')) {
       sections.light++
     }
-    if (plant.window_distance_cm == null
-      && (site?.placement === 'indoor' || site?.placement === 'semi_outdoor')) {
+    if (plant.window_distance_cm == null && usesWindowDistance(site?.placement)) {
       sections.light++
     }
   }

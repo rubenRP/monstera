@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { CareTask, HealthStatus, Plant } from '#shared/types/database'
 import type { WateringScheduleResult } from '#shared/utils/care/adaptiveWatering'
+import { usesWindowDistance } from '#shared/utils/sites/placement'
 import { HEALTH_ICONS, HEALTH_ICON_CLASSES } from '#shared/constants/plants'
 import {
   countPlantCompleteness,
@@ -148,16 +149,18 @@ const lightItems = computed((): PlantInfoGridItem[] => {
         : missingItem(t('plants.fieldOrientation'), 'i-lucide-compass', 'amber', 'light')
   )
 
-  items.push(
-    props.plant.window_distance_cm != null
-      ? gridItem(
-          `${props.plant.window_distance_cm} ${t('common.cm')}`,
-          t('plants.fieldWindowDistance'),
-          'i-lucide-ruler',
-          'amber'
-        )
-      : missingItem(t('plants.fieldWindowDistance'), 'i-lucide-ruler', 'amber', 'light')
-  )
+  if (usesWindowDistance(site?.placement)) {
+    items.push(
+      props.plant.window_distance_cm != null
+        ? gridItem(
+            `${props.plant.window_distance_cm} ${t('common.cm')}`,
+            t('plants.fieldWindowDistance'),
+            'i-lucide-ruler',
+            'amber'
+          )
+        : missingItem(t('plants.fieldWindowDistance'), 'i-lucide-ruler', 'amber', 'light')
+    )
+  }
 
   return items
 })

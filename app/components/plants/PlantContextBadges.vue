@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Plant } from '#shared/types/database'
 import { defaultPlantAgeUnit, formatPlantAge } from '#shared/utils/plants/formatPlantAge'
+import { usesWindowDistance } from '#shared/utils/sites/placement'
 
 const props = defineProps<{ plant: Plant }>()
 
@@ -20,7 +21,7 @@ const badges = computed(() => {
     if (site.luminosity) items.push(luminosityLabel(site.luminosity))
     if (site.has_ceiling_cover) items.push(t('sites.withCeiling'))
   }
-  if (props.plant.window_distance_cm != null) {
+  if (props.plant.window_distance_cm != null && usesWindowDistance(site?.placement)) {
     const m = props.plant.window_distance_cm / 100
     items.push(m >= 1
       ? t('plants.badgeDistanceM', { value: m.toFixed(1) })

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Site } from '#shared/types/database'
 import type { PlantFormInput } from '#shared/utils/plants/schemas'
+import { usesWindowDistance } from '#shared/utils/sites/placement'
 
 const { t } = useI18n()
 const { potSizeOptions, potMaterialOptions, substrateOptions } = usePlantEnumLabels()
@@ -32,9 +33,13 @@ const linkedSite = computed(() => {
 })
 
 const showDistance = computed(() => {
-  const placement = linkedSite.value?.placement
-  return !!form.value.site_id
-    && (placement === 'indoor' || placement === 'semi_outdoor' || placement == null)
+  return !!form.value.site_id && usesWindowDistance(linkedSite.value?.placement)
+})
+
+watch(() => linkedSite.value?.placement, (placement) => {
+  if (!usesWindowDistance(placement)) {
+    form.value.window_distance_cm = null
+  }
 })
 
 const showOrientationOnSite = computed(() => {

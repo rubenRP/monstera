@@ -9,12 +9,14 @@ const { healthLabel, archiveReasonLabel } = usePlantEnumLabels()
 const { dateLocale } = useDateLocale()
 const route = useRoute()
 const id = route.params.id as string
-const { fetchPlant, updateHealthStatus, deletePlant, archivePlant } = usePlants()
+const { fetchPlant, updateHealthStatus, deletePlant, archivePlant, movePlantToSite } = usePlants()
 const { fetchPlantPendingTasks, completeTask, skipTask } = useCareTasks()
 const toast = useToast()
 
 const skipWaterModalOpen = ref(false)
 const archiveModalOpen = ref(false)
+const moveSiteModalOpen = ref(false)
+const moveSiteLoading = ref(false)
 const taskToSkip = ref<CareTask | null>(null)
 
 const plant = ref<Awaited<ReturnType<typeof fetchPlant>> | null>(null)
@@ -44,6 +46,7 @@ const menuItems = computed(() => {
   if (!isArchived.value) {
     items.push(
       { label: t('common.edit'), icon: 'i-lucide-pencil', to: `/plants/${id}/edit` },
+      { label: t('plants.moveSite'), icon: 'i-lucide-map-pin', onSelect: () => { moveSiteModalOpen.value = true } },
       { label: t('plants.archive'), icon: 'i-lucide-archive', onSelect: () => { archiveModalOpen.value = true } }
     )
   }
@@ -137,6 +140,29 @@ async function confirmSkip(task: CareTask, soilStillWet: boolean) {
     refreshCareHistory()
   } finally {
     actingTaskId.value = null
+  }
+}
+
+async function onMoveSiteConfirm(siteId: string | null) {
+  if (!plant.value) return
+  moveSiteLoading.value = true
+  try {
+    const updated = await movePlantToSite(plant.value.id, siteId)
+    plant.value = updated
+    pendingTasks.value = await fetchPlantPendingTasks(id)
+    moveSiteModalOpen.value = false
+    const siteName = updated.site?.name
+    toast.add({
+      title: siteName
+        ? t('plants.moveSiteSuccess', { site: siteName })
+        : t('plants.moveSiteSuccessNoSite'),
+      color: 'success'
+    })
+    refreshCareHistory()
+  } catch (e: unknown) {
+    toast.add({ title: t('common.error'), description: apiErrorMessage(e), color: 'error' })
+  } finally {
+    moveSiteLoading.value = false
   }
 }
 
@@ -286,6 +312,14 @@ async function onDelete() {
     <PlantsPlantArchiveModal
       v-model:open="archiveModalOpen"
       @confirm="onArchiveConfirm"
+    />
+
+    <PlantsPlantMoveSiteModal
+      v-if="plant"
+      v-model:open="moveSiteModalOpen"
+      :plant="plant"
+      :loading="moveSiteLoading"
+      @confirm="onMoveSiteConfirm"
     />
   </div>
 </template>

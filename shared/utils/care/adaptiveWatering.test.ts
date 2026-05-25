@@ -130,9 +130,14 @@ describe('plant environment factors', () => {
     expect(placementFactor('outdoor')).toBe(0.9)
   })
 
-  it('adjusts for window distance', () => {
-    expect(windowDistanceFactor(30)).toBe(0.95)
-    expect(windowDistanceFactor(250)).toBe(1.05)
+  it('adjusts for window distance indoors', () => {
+    expect(windowDistanceFactor(30, 'indoor')).toBe(0.95)
+    expect(windowDistanceFactor(250, 'indoor')).toBe(1.05)
+  })
+
+  it('ignores window distance for outdoor and terrace', () => {
+    expect(windowDistanceFactor(30, 'outdoor')).toBe(1)
+    expect(windowDistanceFactor(30, 'semi_outdoor')).toBe(1)
   })
 
   it('shortens interval without drainage', () => {

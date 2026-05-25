@@ -27,6 +27,7 @@ import type {
   Site,
   SubstrateType
 } from '../../types/database'
+import { usesWindowDistance } from '../sites/placement'
 
 export type Season = keyof typeof SEASON_FACTORS
 
@@ -118,7 +119,11 @@ export function placementFactor(placement: Placement | null): number {
   return PLACEMENT_FACTORS[placement] ?? 1
 }
 
-export function windowDistanceFactor(distanceCm: number | null): number {
+export function windowDistanceFactor(
+  distanceCm: number | null,
+  placement?: Placement | null
+): number {
+  if (!usesWindowDistance(placement)) return 1
   if (distanceCm == null) return 1
   if (distanceCm <= WINDOW_DISTANCE_NEAR_CM) return WINDOW_DISTANCE_NEAR_FACTOR
   if (distanceCm >= WINDOW_DISTANCE_FAR_CM) return WINDOW_DISTANCE_FAR_FACTOR
@@ -150,7 +155,7 @@ export function computeWateringFactors(input: AdaptiveWateringInput): WateringFa
     weatherFactor,
     healthFactor: healthFactor(input.healthStatus),
     placementFactor: placementFactor(input.sitePlacement),
-    distanceFactor: windowDistanceFactor(input.windowDistanceCm),
+    distanceFactor: windowDistanceFactor(input.windowDistanceCm, input.sitePlacement),
     drainageFactor: drainageFactor(input.hasDrainage),
     potVolumeFactor,
     wetSkipCount,

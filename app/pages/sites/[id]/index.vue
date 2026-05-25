@@ -1,15 +1,22 @@
 <script setup lang="ts">
+import type { Plant } from '#shared/types/database'
 import { HEALTH_DOT_CLASSES } from '#shared/constants/plants'
 
 const { t } = useI18n()
+const { apiErrorMessage } = useApiError()
 const route = useRoute()
 const id = route.params.id as string
 const { fetchSite, deleteSite } = useSites()
+const { movePlantToSite } = usePlants()
 const { placementLabel, orientationLabel, luminosityLabel } = useSiteEnumLabels()
 const { healthLabel } = usePlantEnumLabels()
+const toast = useToast()
 
 const site = ref<Awaited<ReturnType<typeof fetchSite>> | null>(null)
 const loading = ref(true)
+const moveSiteModalOpen = ref(false)
+const moveSiteLoading = ref(false)
+const plantToMove = ref<Pick<Plant, 'id' | 'name' | 'site_id'> | null>(null)
 
 onMounted(async () => {
   try {
@@ -23,6 +30,33 @@ async function onDelete() {
   if (!confirm(t('sites.deleteConfirm'))) return
   await deleteSite(id)
   await navigateTo('/sites')
+}
+
+function openMoveModal(plant: NonNullable<NonNullable<typeof site.value>['plants']>[number]) {
+  plantToMove.value = { id: plant.id, name: plant.name, site_id: id }
+  moveSiteModalOpen.value = true
+}
+
+async function onMoveSiteConfirm(siteId: string | null) {
+  if (!plantToMove.value) return
+  moveSiteLoading.value = true
+  try {
+    const updated = await movePlantToSite(plantToMove.value.id, siteId)
+    site.value = await fetchSite(id)
+    moveSiteModalOpen.value = false
+    plantToMove.value = null
+    const siteName = updated.site?.name
+    toast.add({
+      title: siteName
+        ? t('plants.moveSiteSuccess', { site: siteName })
+        : t('plants.moveSiteSuccessNoSite'),
+      color: 'success'
+    })
+  } catch (e: unknown) {
+    toast.add({ title: t('common.error'), description: apiErrorMessage(e), color: 'error' })
+  } finally {
+    moveSiteLoading.value = false
+  }
 }
 </script>
 
@@ -121,20 +155,37 @@ async function onDelete() {
         <li
           v-for="plant in site.plants"
           :key="plant.id"
+          class="flex items-center gap-2 p-3 rounded-lg border border-default"
         >
           <NuxtLink
             :to="`/plants/${plant.id}`"
-            class="flex items-center gap-3 p-3 rounded-lg border border-default hover:bg-elevated/50"
+            class="flex flex-1 items-center gap-3 min-w-0 hover:opacity-80"
           >
             <span
-              class="w-2 h-8 rounded-full"
+              class="w-2 h-8 rounded-full shrink-0"
               :class="HEALTH_DOT_CLASSES[plant.health_status]"
             />
-            <span class="font-medium">{{ plant.name }}</span>
-            <span class="text-xs text-muted ml-auto">{{ healthLabel(plant.health_status) }}</span>
+            <span class="font-medium truncate">{{ plant.name }}</span>
+            <span class="text-xs text-muted ml-auto shrink-0">{{ healthLabel(plant.health_status) }}</span>
           </NuxtLink>
+          <UButton
+            icon="i-lucide-map-pin"
+            variant="ghost"
+            color="neutral"
+            size="sm"
+            :aria-label="t('plants.moveSite')"
+            @click="openMoveModal(plant)"
+          />
         </li>
       </ul>
     </div>
+
+    <PlantsPlantMoveSiteModal
+      v-if="plantToMove"
+      v-model:open="moveSiteModalOpen"
+      :plant="plantToMove"
+      :loading="moveSiteLoading"
+      @confirm="onMoveSiteConfirm"
+    />
   </div>
 </template>

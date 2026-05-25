@@ -1,6 +1,7 @@
 import type { HealthStatus, Plant, PlantArchiveReason } from '#shared/types/database'
 import { HEALTH_STATUS_ORDER } from '#shared/constants/plants'
 import type { PlantFormInput } from '#shared/utils/plants/schemas'
+import { usesWindowDistance } from '#shared/utils/sites/placement'
 
 const PLANT_SELECT = '*, site:sites(*)'
 
@@ -184,6 +185,57 @@ export function usePlants() {
     if (error) throw error
   }
 
+  async function movePlantToSite(plantId: string, siteId: string | null) {
+    const targetSiteId = siteId ?? null
+
+    const { data: existing, error: fetchError } = await supabase
+      .from('plants')
+      .select('archived_at, site_id')
+      .eq('id', plantId)
+      .single()
+    if (fetchError) throw fetchError
+    if (existing?.archived_at) {
+      throw new Error('PLANT_ARCHIVED')
+    }
+
+    const currentSiteId = existing?.site_id ?? null
+    if (currentSiteId === targetSiteId) {
+      const { data: plant, error } = await supabase
+        .from('plants')
+        .select(PLANT_SELECT)
+        .eq('id', plantId)
+        .single()
+      if (error) throw error
+      return plant as Plant
+    }
+
+    let clearWindowDistance = !targetSiteId
+    if (targetSiteId) {
+      const { data: site, error: siteError } = await supabase
+        .from('sites')
+        .select('placement')
+        .eq('id', targetSiteId)
+        .single()
+      if (siteError) throw siteError
+      clearWindowDistance = !usesWindowDistance(site?.placement)
+    }
+
+    const { data: plant, error } = await supabase
+      .from('plants')
+      .update({
+        site_id: targetSiteId,
+        ...(clearWindowDistance ? { window_distance_cm: null } : {}),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', plantId)
+      .select(PLANT_SELECT)
+      .single()
+    if (error) throw error
+
+    await regenerateTasks(plantId, plant as Plant)
+    return plant as Plant
+  }
+
   async function regenerateTasks(plantId: string, _plant: Plant) {
     await rescheduleWatering(plantId)
   }
@@ -221,6 +273,7 @@ export function usePlants() {
     updatePlant,
     updateHealthStatus,
     archivePlant,
+    movePlantToSite,
     deletePlant,
     uploadPhoto,
     getSignedPhotoUrl,
