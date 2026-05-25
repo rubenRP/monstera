@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import type { CareTask, HealthStatus, Plant } from '#shared/types/database'
+import type { SpeciesProfile } from '#shared/types/species'
 import type { WateringScheduleResult } from '#shared/utils/care/adaptiveWatering'
+import {
+  evaluateGrowthConditions,
+  growthConditionsEditTarget
+} from '#shared/utils/plants/growthConditions'
 import { usesWindowDistance } from '#shared/utils/sites/placement'
 import { HEALTH_ICONS, HEALTH_ICON_CLASSES } from '#shared/constants/plants'
 import {
@@ -41,14 +46,49 @@ const emit = defineEmits<{
 const { taskLabel, taskIcon, overdueDays, overdueLabel, fertilizeWithWater } = useCareTasks()
 const { fetchHomeLat, computeScheduleForPlant, countRecentWetSkips } = useAdaptiveWatering()
 const { snapshot: weatherSnapshot, load: loadWeather } = usePlantHomeWeather()
+const { fetchSpeciesProfile } = useSpeciesProfile()
 
 const wateringSchedule = ref<WateringScheduleResult | null>(null)
+const speciesProfile = ref<SpeciesProfile | null>(null)
 
 const empty = computed(() => t('plants.missingInfo'))
 const editBase = computed(() => `/plants/${props.plant.id}/edit`)
 const addLabel = computed(() => t('plants.addInSettings'))
 
 const completeness = computed(() => countPlantCompleteness(props.plant))
+
+const growthConditions = computed(() => evaluateGrowthConditions({
+  siteId: props.plant.site_id,
+  site: props.plant.site,
+  windowDistanceCm: props.plant.window_distance_cm,
+  homeHumidityPercent: weatherSnapshot.value?.homeHumidityPercent ?? null,
+  speciesProfile: speciesProfile.value
+}))
+
+const growthConditionMessages = computed(() =>
+  growthConditions.value.reasons.map(code => t(`plants.growthConditions.${code}`))
+)
+
+const growthConditionsEditLink = computed(() =>
+  growthConditionsEditTarget(
+    growthConditions.value.reasons,
+    props.plant.site_id,
+    editBase.value
+  )
+)
+
+async function loadSpeciesProfile() {
+  if (!props.plant.species?.trim()) {
+    speciesProfile.value = null
+    return
+  }
+  try {
+    const res = await fetchSpeciesProfile(props.plant.id)
+    speciesProfile.value = res.profile
+  } catch {
+    speciesProfile.value = null
+  }
+}
 
 async function loadWateringSchedule() {
   const homeLat = await fetchHomeLat()
@@ -61,6 +101,7 @@ async function loadWateringSchedule() {
 watch(() => props.plant, () => {
   void loadWateringSchedule()
   void loadWeather()
+  void loadSpeciesProfile()
 }, { immediate: true, deep: true })
 
 function taskDueLabel(dueAt: string): string {
@@ -372,6 +413,30 @@ const climateItems = computed((): PlantInfoGridItem[] => {
       </template>
     </UAlert>
 
+    <UAlert
+      v-if="growthConditions.level === 'warn'"
+      color="warning"
+      variant="soft"
+      :title="t('plants.growthConditionsTitle')"
+    >
+      <template #description>
+        <ul class="list-disc pl-4 text-sm space-y-1">
+          <li
+            v-for="(msg, i) in growthConditionMessages"
+            :key="i"
+          >
+            {{ msg }}
+          </li>
+        </ul>
+        <NuxtLink
+          :to="growthConditionsEditLink"
+          class="text-primary underline text-sm mt-2 inline-block"
+        >
+          {{ t('plants.growthConditionsEdit') }}
+        </NuxtLink>
+      </template>
+    </UAlert>
+
     <PlantsPlantVarietyReference
       v-if="plant.species?.trim()"
       :species="plant.species"
@@ -382,6 +447,11 @@ const climateItems = computed((): PlantInfoGridItem[] => {
       :title="t('plants.lighting')"
       :items="lightItems"
     >
+      <PlantsPlantContextBadges
+        class="mb-2"
+        :plant="plant"
+        :warning-codes="growthConditions.reasons"
+      />
       <p
         v-if="plant.site_id && plant.site"
         class="text-xs text-muted -mt-1"

@@ -7,6 +7,8 @@ export interface PlantHomeWeatherSnapshot {
   outdoorTempLabel: string
   indoorTempLabel: string
   humidityLabel: string
+  /** Estimated indoor relative humidity (%) when location is configured */
+  homeHumidityPercent: number | null
   hasLocation: boolean
 }
 
@@ -50,7 +52,8 @@ export function usePlantHomeWeather() {
           hasLocation: false,
           outdoorTempLabel: missing,
           indoorTempLabel: missing,
-          humidityLabel: missing
+          humidityLabel: missing,
+          homeHumidityPercent: null
         }
         return
       }
@@ -68,7 +71,8 @@ export function usePlantHomeWeather() {
           hasLocation: true,
           outdoorTempLabel: missing,
           indoorTempLabel: missing,
-          humidityLabel: missing
+          humidityLabel: missing,
+          homeHumidityPercent: null
         }
         return
       }
@@ -94,7 +98,8 @@ export function usePlantHomeWeather() {
           : missing,
         humidityLabel: indoorHumidity != null
           ? t('plants.humidityLevelValue', { level: humidityLabelFromPercent(indoorHumidity) })
-          : missing
+          : missing,
+        homeHumidityPercent: indoorHumidity
       }
     } finally {
       loading.value = false

@@ -1,9 +1,15 @@
 <script setup lang="ts">
 import type { Plant } from '#shared/types/database'
+import type { GrowthWarningCode } from '#shared/utils/plants/growthConditions'
 import { defaultPlantAgeUnit, formatPlantAge } from '#shared/utils/plants/formatPlantAge'
 import { usesWindowDistance } from '#shared/utils/sites/placement'
 
-const props = defineProps<{ plant: Plant }>()
+const props = defineProps<{
+  plant: Plant
+  warningCodes?: GrowthWarningCode[]
+}>()
+
+const showWarning = computed(() => (props.warningCodes?.length ?? 0) > 0)
 
 const { t } = useI18n()
 const { potMaterialLabel, potSizeLabel, substrateLabel } = usePlantEnumLabels()
@@ -49,9 +55,18 @@ const badges = computed(() => {
 
 <template>
   <div
-    v-if="badges.length"
+    v-if="showWarning || badges.length"
     class="flex flex-wrap gap-1.5"
   >
+    <UBadge
+      v-if="showWarning"
+      color="warning"
+      variant="subtle"
+      size="sm"
+      icon="i-lucide-triangle-alert"
+    >
+      {{ t('plants.growthConditionsBadge') }}
+    </UBadge>
     <UBadge
       v-for="(b, i) in badges"
       :key="i"

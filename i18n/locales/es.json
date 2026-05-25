@@ -287,7 +287,21 @@
     "completenessSite": "Vincula un sitio para completar luz y ubicación",
     "completenessHome": "Configura la ubicación del hogar para clima y humedad",
     "addInSettings": "Añadir en ajustes",
-    "configureHomeLocation": "Configurar ubicación"
+    "configureHomeLocation": "Configurar ubicación",
+    "growthConditionsTitle": "Las condiciones de crecimiento podrían mejorar",
+    "growthConditionsBadge": "Entorno mejorable",
+    "growthConditionsEdit": "Ajustar ubicación",
+    "growthConditions": {
+      "light_too_low": "La luz en este sitio puede ser insuficiente para esta variedad",
+      "light_too_high": "La luz en este sitio puede ser excesiva para esta variedad",
+      "window_too_far": "La planta está lejos de la ventana para sus necesidades de luz",
+      "humidity_too_low": "La humedad estimada del hogar puede ser baja para esta variedad",
+      "humidity_too_high": "La humedad estimada del hogar puede ser alta para esta variedad",
+      "placement_outdoor_risk": "Esta variedad suele cultivarse en interior",
+      "placement_exposure": "El sol exterior pleno puede ser demasiado para una planta de sombra",
+      "generic_low_light_far": "Poca luz y lejos de la ventana pueden limitar el crecimiento",
+      "generic_direct_sun": "Sol directo en interior puede quemar hojas — valora luz filtrada"
+    }
   },
   "sites": {
     "title": "Sitios",

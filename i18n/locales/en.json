@@ -287,7 +287,21 @@
     "completenessSite": "Link a site to complete light and placement",
     "completenessHome": "Set home location for climate and humidity",
     "addInSettings": "Add in settings",
-    "configureHomeLocation": "Set location"
+    "configureHomeLocation": "Set location",
+    "growthConditionsTitle": "Growing conditions could be improved",
+    "growthConditionsBadge": "Room to improve",
+    "growthConditionsEdit": "Adjust location",
+    "growthConditions": {
+      "light_too_low": "Light at this site may be too low for this variety",
+      "light_too_high": "Light at this site may be too strong for this variety",
+      "window_too_far": "This plant is far from the window for its light needs",
+      "humidity_too_low": "Estimated home humidity may be too low for this variety",
+      "humidity_too_high": "Estimated home humidity may be too high for this variety",
+      "placement_outdoor_risk": "This variety is usually kept indoors",
+      "placement_exposure": "Full outdoor sun may be too harsh for a shade-loving variety",
+      "generic_low_light_far": "Low light and far from the window may limit growth",
+      "generic_direct_sun": "Direct sun indoors can scorch leaves — consider filtered light"
+    }
   },
   "sites": {
     "title": "Sites",
