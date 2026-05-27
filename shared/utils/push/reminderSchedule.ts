@@ -38,9 +38,12 @@ export function getLocalDateTimeParts(date: Date, timeZone: string) {
   const get = (type: Intl.DateTimeFormatPartTypes) =>
     parts.find(part => part.type === type)?.value ?? '00'
 
+  let hour = Number(get('hour'))
+  if (hour === 24) hour = 0
+
   return {
     dateStr: `${get('year')}-${get('month')}-${get('day')}`,
-    hour: Number(get('hour')),
+    hour,
     minute: Number(get('minute'))
   }
 }

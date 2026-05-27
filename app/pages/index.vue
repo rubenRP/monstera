@@ -14,12 +14,15 @@ const {
   skipTask,
   taskLabel,
   taskIcon,
+  requiresCheckInModal,
   overdueDays,
   overdueLabel,
   taskDueLabel,
   fertilizeWithWater
 } = useCareTasks()
+const { submitCheckIn } = usePlantCheckIns()
 const { fetchPlants } = usePlants()
+const { apiErrorMessage } = useApiError()
 const toast = useToast()
 
 const tasks = ref<Awaited<ReturnType<typeof fetchTodayTasks>>>([])
@@ -28,7 +31,10 @@ const plants = ref<Awaited<ReturnType<typeof fetchPlants>>>([])
 const loading = ref(true)
 const acting = ref<string | null>(null)
 const skipWaterModalOpen = ref(false)
+const checkInModalOpen = ref(false)
 const taskToSkip = ref<CareTask | null>(null)
+const taskToCheckIn = ref<CareTask | null>(null)
+const checkInModalRef = ref<{ setSaving: (v: boolean) => void } | null>(null)
 const addWaterModalOpen = ref(false)
 const addingWater = ref(false)
 const showUpcoming = ref(false)
@@ -97,11 +103,38 @@ watch(showUpcoming, (value) => {
 async function markDone(taskId: string) {
   const task = tasks.value.find(t => t.id === taskId)
   if (!task) return
+  if (requiresCheckInModal(task.type)) {
+    taskToCheckIn.value = task
+    checkInModalOpen.value = true
+    return
+  }
   acting.value = taskId
   try {
     await completeTask(task)
     await reloadTasks()
   } finally {
+    acting.value = null
+  }
+}
+
+async function onCheckInSubmit(
+  form: import('#shared/utils/checkIn/schemas').CheckInFormInput,
+  photo?: File
+) {
+  const task = taskToCheckIn.value
+  if (!task) return
+  acting.value = task.id
+  checkInModalRef.value?.setSaving(true)
+  try {
+    await submitCheckIn(task, form, photo)
+    checkInModalOpen.value = false
+    taskToCheckIn.value = null
+    await reloadTasks()
+    toast.add({ title: t('checkIn.saved'), color: 'success' })
+  } catch (e: unknown) {
+    toast.add({ title: t('common.error'), description: apiErrorMessage(e), color: 'error' })
+  } finally {
+    checkInModalRef.value?.setSaving(false)
     acting.value = null
   }
 }
@@ -369,6 +402,13 @@ async function confirmSkip(task: CareTask, soilStillWet: boolean) {
       :plants="plantsForAdvanceWater"
       :loading="addingWater"
       @submit="onAddAdvanceWater"
+    />
+
+    <CareCheckInModal
+      ref="checkInModalRef"
+      v-model:open="checkInModalOpen"
+      v-model:task="taskToCheckIn"
+      @submit="onCheckInSubmit"
     />
   </div>
 </template>

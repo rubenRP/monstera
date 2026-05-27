@@ -13,7 +13,7 @@ export type SubstrateType
     | 'other'
 export type HealthStatus = 'healthy' | 'fair' | 'sick' | 'critical'
 export type PlantArchiveReason = 'died' | 'gifted'
-export type CareTaskType = 'water' | 'fertilize'
+export type CareTaskType = 'water' | 'fertilize' | 'check_in'
 export type CareTaskStatus = 'pending' | 'done' | 'skipped'
 export type CareTaskSkipReason = 'soil_wet'
 export type PlantAgeUnit = 'months' | 'years'
@@ -47,6 +47,8 @@ export interface Plant {
   fertilizing_interval_days: number
   last_watered_at: string | null
   last_fertilized_at: string | null
+  check_in_interval_days: number
+  last_check_in_at: string | null
   site_id: string | null
   site?: Site | null
   window_distance_cm: number | null
@@ -79,6 +81,23 @@ export interface CareTask {
   plant?: Pick<Plant, 'id' | 'name' | 'photo_path' | 'health_status' | 'archived_at' | 'site_id'> & {
     site?: Pick<Site, 'id' | 'name'> | null
   }
+}
+
+export interface PlantCheckIn {
+  id: string
+  plant_id: string
+  user_id: string
+  care_task_id: string | null
+  health_status: HealthStatus
+  health_status_note: string | null
+  height_cm: number | null
+  new_leaves: boolean
+  dropped_leaves: boolean
+  flowering: boolean
+  size_changed: boolean
+  notes: string | null
+  photo_path: string | null
+  created_at: string
 }
 
 export interface Diagnosis {

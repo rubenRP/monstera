@@ -5,7 +5,12 @@ import { taskOverdueDays } from '#shared/utils/care/taskDue'
 
 export function useCareTasks() {
   const supabase = useSupabaseClient()
-  const { rescheduleWatering, rescheduleFertilizing, countRecentWetSkips } = useAdaptiveWatering()
+  const {
+    rescheduleWatering,
+    rescheduleFertilizing,
+    rescheduleCheckIn,
+    countRecentWetSkips
+  } = useAdaptiveWatering()
 
   async function dismissOverlappingPendingTasks(task: CareTask, exceptId: string) {
     const end = new Date()
@@ -128,12 +133,17 @@ export function useCareTasks() {
       return
     }
 
-    await supabase
-      .from('plants')
-      .update({ last_fertilized_at: now })
-      .eq('id', task.plant_id)
+    if (task.type === 'fertilize') {
+      await supabase
+        .from('plants')
+        .update({ last_fertilized_at: now })
+        .eq('id', task.plant_id)
 
-    await rescheduleFertilizing(task.plant_id)
+      await rescheduleFertilizing(task.plant_id)
+      return
+    }
+
+    throw new Error('CHECK_IN_REQUIRES_MODAL')
   }
 
   async function hasPendingTaskDueToday(plantId: string, type: CareTaskType) {
@@ -198,17 +208,30 @@ export function useCareTasks() {
       return schedule?.effectiveIntervalDays
     }
 
-    await rescheduleFertilizing(task.plant_id)
+    if (task.type === 'fertilize') {
+      await rescheduleFertilizing(task.plant_id)
+      return
+    }
+
+    await rescheduleCheckIn(task.plant_id, { scheduleFromToday: true })
   }
 
   const { t } = useI18n()
 
   function taskLabel(type: CareTaskType) {
-    return type === 'water' ? t('care.taskWater') : t('care.taskFertilize')
+    if (type === 'water') return t('care.taskWater')
+    if (type === 'fertilize') return t('care.taskFertilize')
+    return t('care.taskCheckIn')
   }
 
   function taskIcon(type: CareTaskType) {
-    return type === 'water' ? 'i-lucide-droplets' : 'i-lucide-flask-conical'
+    if (type === 'water') return 'i-lucide-droplets'
+    if (type === 'fertilize') return 'i-lucide-flask-conical'
+    return 'i-lucide-clipboard-check'
+  }
+
+  function requiresCheckInModal(type: CareTaskType) {
+    return type === 'check_in'
   }
 
   function overdueDays(dueAt: string) {
@@ -253,6 +276,7 @@ export function useCareTasks() {
     skipTask,
     taskLabel,
     taskIcon,
+    requiresCheckInModal,
     overdueDays,
     overdueLabel,
     taskDueLabel,

@@ -27,6 +27,7 @@ const form = reactive<PlantFormInput>({
   watering_base_interval_days: props.initial?.watering_base_interval_days
     ?? props.initial?.watering_interval_days ?? 7,
   fertilizing_interval_days: props.initial?.fertilizing_interval_days ?? 30,
+  check_in_interval_days: props.initial?.check_in_interval_days ?? 30,
   site_id: props.initial?.site_id ?? null,
   window_distance_cm: props.initial?.window_distance_cm ?? null,
   pot_size: props.initial?.pot_size ?? null,
@@ -189,6 +190,14 @@ function handleSubmit() {
             v-model.number="form.fertilizing_interval_days"
             type="number"
             min="1"
+          />
+        </UFormField>
+        <UFormField :label="t('plants.checkInEvery')">
+          <UInput
+            v-model.number="form.check_in_interval_days"
+            type="number"
+            min="7"
+            max="180"
           />
         </UFormField>
       </div>

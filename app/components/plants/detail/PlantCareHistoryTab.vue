@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import type { CareTask } from '#shared/types/database'
+import {
+  mergeCareHistory,
+  usePlantCheckIns,
+  type CareHistoryEntry
+} from '~/composables/usePlantCheckIns'
 
 const props = defineProps<{
   plantId: string
@@ -8,9 +12,10 @@ const props = defineProps<{
 const { t } = useI18n()
 const { dateLocale } = useDateLocale()
 const { fetchCareHistory, taskLabel, taskIcon } = useCareTasks()
+const { fetchCheckInHistory, observationSummary } = usePlantCheckIns()
 
 const loading = ref(false)
-const history = ref<CareTask[]>([])
+const history = ref<CareHistoryEntry[]>([])
 const loaded = ref(false)
 
 function formatDate(iso: string | null): string {
@@ -25,18 +30,43 @@ function formatDate(iso: string | null): string {
   })
 }
 
-function statusLabel(status: CareTask['status']): string {
-  return status === 'done' ? t('plants.historyDone') : t('plants.historySkipped')
+function statusLabel(entry: CareHistoryEntry): string {
+  if (entry.kind === 'check_in') return t('plants.historyCheckIn')
+  return entry.task.status === 'done' ? t('plants.historyDone') : t('plants.historySkipped')
 }
 
-function statusColor(status: CareTask['status']): 'success' | 'neutral' {
-  return status === 'done' ? 'success' : 'neutral'
+function statusColor(entry: CareHistoryEntry): 'success' | 'neutral' {
+  if (entry.kind === 'check_in') return 'success'
+  return entry.task.status === 'done' ? 'success' : 'neutral'
+}
+
+function entryIcon(entry: CareHistoryEntry): string {
+  if (entry.kind === 'check_in') return 'i-lucide-clipboard-check'
+  return taskIcon(entry.task.type)
+}
+
+function entryTitle(entry: CareHistoryEntry): string {
+  if (entry.kind === 'check_in') return t('care.taskCheckIn')
+  return taskLabel(entry.task.type)
+}
+
+function entrySubtitle(entry: CareHistoryEntry): string {
+  if (entry.kind === 'check_in') {
+    const parts = observationSummary(entry.checkIn)
+    if (parts.length) return parts.join(' · ')
+    return entry.checkIn.notes?.trim() || ''
+  }
+  return ''
 }
 
 async function load() {
   loading.value = true
   try {
-    history.value = await fetchCareHistory(props.plantId)
+    const [tasks, checkIns] = await Promise.all([
+      fetchCareHistory(props.plantId),
+      fetchCheckInHistory(props.plantId)
+    ])
+    history.value = mergeCareHistory(tasks, checkIns)
   } finally {
     loading.value = false
     loaded.value = true
@@ -76,28 +106,34 @@ defineExpose({ load })
       class="space-y-2"
     >
       <li
-        v-for="task in history"
-        :key="task.id"
+        v-for="entry in history"
+        :key="entry.kind === 'check_in' ? entry.checkIn.id : entry.task.id"
         class="flex items-center gap-3 p-3 rounded-lg border border-default"
       >
         <UIcon
-          :name="taskIcon(task.type)"
-          class="w-5 h-5 text-primary shrink-0"
+          :name="entryIcon(entry)"
+          class="w-5 h-5 shrink-0 text-primary"
         />
         <div class="flex-1 min-w-0">
           <p class="text-sm font-medium">
-            {{ taskLabel(task.type) }}
+            {{ entryTitle(entry) }}
+          </p>
+          <p
+            v-if="entrySubtitle(entry)"
+            class="text-xs text-muted truncate"
+          >
+            {{ entrySubtitle(entry) }}
           </p>
           <p class="text-xs text-muted">
-            {{ formatDate(task.completed_at) }}
+            {{ formatDate(entry.at) }}
           </p>
         </div>
         <UBadge
-          :color="statusColor(task.status)"
-          size="sm"
+          :color="statusColor(entry)"
           variant="subtle"
+          size="sm"
         >
-          {{ statusLabel(task.status) }}
+          {{ statusLabel(entry) }}
         </UBadge>
       </li>
     </ul>

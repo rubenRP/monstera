@@ -10,6 +10,7 @@ import {
   alignFertilizeDueAt,
   idealFertilizeDueAt
 } from '#shared/utils/care/alignFertilize'
+import { idealCheckInDueAt } from '#shared/utils/care/checkInSchedule'
 
 const PLANT_SELECT = '*, site:sites(*)'
 const SYNC_STORAGE_PREFIX = 'monstera_watering_sync_'
@@ -193,6 +194,56 @@ export function useAdaptiveWatering() {
     if (insError) throw insError
   }
 
+  async function rescheduleCheckIn(
+    plantId: string,
+    options?: { scheduleFromToday?: boolean }
+  ): Promise<void> {
+    const { data: row } = await supabase
+      .from('plants')
+      .select('archived_at, last_check_in_at, check_in_interval_days, created_at')
+      .eq('id', plantId)
+      .maybeSingle()
+    if (row?.archived_at) return
+
+    const uid = await requireUserId()
+
+    const interval = row?.check_in_interval_days ?? 30
+    let due: Date
+    if (options?.scheduleFromToday) {
+      due = new Date()
+      due.setDate(due.getDate() + interval)
+    } else {
+      const anchor = row?.last_check_in_at
+        ? new Date(row.last_check_in_at)
+        : (row?.created_at ? new Date(row.created_at) : new Date())
+      due = idealCheckInDueAt(
+        row?.last_check_in_at ? anchor : null,
+        interval,
+        anchor
+      )
+      if (due.getTime() < Date.now()) {
+        due = new Date()
+      }
+    }
+
+    const { error: delError } = await supabase
+      .from('care_tasks')
+      .delete()
+      .eq('plant_id', plantId)
+      .eq('type', 'check_in')
+      .eq('status', 'pending')
+    if (delError) throw delError
+
+    const { error: insError } = await supabase.from('care_tasks').insert({
+      plant_id: plantId,
+      user_id: uid,
+      type: 'check_in',
+      due_at: due.toISOString(),
+      status: 'pending'
+    })
+    if (insError) throw insError
+  }
+
   async function applySuggestedBaseInterval(plantId: string, baseDays: number): Promise<void> {
     const { error } = await supabase
       .from('plants')
@@ -221,6 +272,7 @@ export function useAdaptiveWatering() {
 
     for (const row of plants ?? []) {
       await rescheduleWatering(row.id)
+      await rescheduleCheckIn(row.id)
     }
 
     localStorage.setItem(storageKey, '1')
@@ -249,6 +301,7 @@ export function useAdaptiveWatering() {
 
     for (const row of plants ?? []) {
       await rescheduleWatering(row.id)
+      await rescheduleCheckIn(row.id)
     }
 
     if (import.meta.client) {
@@ -263,6 +316,7 @@ export function useAdaptiveWatering() {
     recalculatePlantWatering,
     rescheduleWatering,
     rescheduleFertilizing,
+    rescheduleCheckIn,
     applySuggestedBaseInterval,
     syncFertilizeAlignmentOnce,
     syncAllIfSeasonChanged

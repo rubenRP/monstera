@@ -586,7 +586,6 @@ const climateItems = computed((): PlantInfoGridItem[] => {
             {{ t('common.done') }}
           </UButton>
           <UButton
-            v-if="task.type === 'water'"
             size="sm"
             variant="soft"
             color="neutral"

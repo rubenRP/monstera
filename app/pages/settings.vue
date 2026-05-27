@@ -131,6 +131,7 @@ async function enablePush() {
       user_id: userId,
       push_reminder_time: reminderTimeFromInput(pushReminderTime.value),
       push_reminder_timezone: pushReminderTimezone.value,
+      push_reminder_last_sent_on: null,
       updated_at: new Date().toISOString()
     }, { onConflict: 'user_id' })
     if (error) throw error

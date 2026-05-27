@@ -10,10 +10,19 @@ const { dateLocale } = useDateLocale()
 const route = useRoute()
 const id = route.params.id as string
 const { fetchPlant, updateHealthStatus, deletePlant, archivePlant, movePlantToSite } = usePlants()
-const { fetchPlantPendingTasks, completeTask, skipTask } = useCareTasks()
+const {
+  fetchPlantPendingTasks,
+  completeTask,
+  skipTask,
+  requiresCheckInModal
+} = useCareTasks()
+const { submitCheckIn } = usePlantCheckIns()
 const toast = useToast()
 
 const skipWaterModalOpen = ref(false)
+const checkInModalOpen = ref(false)
+const taskToCheckIn = ref<CareTask | null>(null)
+const checkInModalRef = ref<{ setSaving: (v: boolean) => void } | null>(null)
 const archiveModalOpen = ref(false)
 const moveSiteModalOpen = ref(false)
 const moveSiteLoading = ref(false)
@@ -96,6 +105,11 @@ async function saveHealth() {
 async function onCompleteTask(taskId: string) {
   const task = pendingTasks.value.find(t => t.id === taskId)
   if (!task) return
+  if (requiresCheckInModal(task.type)) {
+    taskToCheckIn.value = task
+    checkInModalOpen.value = true
+    return
+  }
   actingTaskId.value = taskId
   try {
     await completeTask(task)
@@ -103,6 +117,32 @@ async function onCompleteTask(taskId: string) {
     plant.value = await fetchPlant(id)
     refreshCareHistory()
   } finally {
+    actingTaskId.value = null
+  }
+}
+
+async function onCheckInSubmit(
+  form: import('#shared/utils/checkIn/schemas').CheckInFormInput,
+  photo?: File
+) {
+  const task = taskToCheckIn.value
+  if (!task) return
+  actingTaskId.value = task.id
+  checkInModalRef.value?.setSaving(true)
+  try {
+    await submitCheckIn(task, form, photo)
+    checkInModalOpen.value = false
+    taskToCheckIn.value = null
+    pendingTasks.value = await fetchPlantPendingTasks(id)
+    plant.value = await fetchPlant(id)
+    healthStatus.value = plant.value.health_status
+    healthNote.value = plant.value.health_status_note ?? ''
+    refreshCareHistory()
+    toast.add({ title: t('checkIn.saved'), color: 'success' })
+  } catch (e: unknown) {
+    toast.add({ title: t('common.error'), description: apiErrorMessage(e), color: 'error' })
+  } finally {
+    checkInModalRef.value?.setSaving(false)
     actingTaskId.value = null
   }
 }
@@ -307,6 +347,13 @@ async function onDelete() {
       v-model:open="skipWaterModalOpen"
       v-model:task="taskToSkip"
       @confirm="onSkipWaterConfirm"
+    />
+
+    <CareCheckInModal
+      ref="checkInModalRef"
+      v-model:open="checkInModalOpen"
+      v-model:task="taskToCheckIn"
+      @submit="onCheckInSubmit"
     />
 
     <PlantsPlantArchiveModal

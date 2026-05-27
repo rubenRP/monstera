@@ -8,7 +8,7 @@ const PLANT_SELECT = '*, site:sites(*)'
 export function usePlants() {
   const supabase = useSupabaseClient()
   const { requireUserId } = useRequireUserId()
-  const { rescheduleWatering } = useAdaptiveWatering()
+  const { rescheduleWatering, rescheduleCheckIn } = useAdaptiveWatering()
 
   type FetchPlantsOptions = {
     filterStatus?: HealthStatus | 'all'
@@ -238,6 +238,7 @@ export function usePlants() {
 
   async function regenerateTasks(plantId: string, _plant: Plant) {
     await rescheduleWatering(plantId)
+    await rescheduleCheckIn(plantId)
   }
 
   function sanitizePlantPayload(form: PlantFormInput) {
@@ -251,6 +252,7 @@ export function usePlants() {
       watering_base_interval_days: base,
       watering_interval_days: base,
       fertilizing_interval_days: form.fertilizing_interval_days,
+      check_in_interval_days: form.check_in_interval_days,
       site_id: form.site_id || null,
       window_distance_cm: form.window_distance_cm ?? null,
       pot_size: form.pot_size || null,

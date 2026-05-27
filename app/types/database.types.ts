@@ -35,6 +35,8 @@ export interface Database {
           fertilizing_interval_days: number
           last_watered_at: string | null
           last_fertilized_at: string | null
+          check_in_interval_days: number
+          last_check_in_at: string | null
           site_id: string | null
           window_distance_cm: number | null
           pot_size: PotSize | null
@@ -67,6 +69,8 @@ export interface Database {
           fertilizing_interval_days?: number
           last_watered_at?: string | null
           last_fertilized_at?: string | null
+          check_in_interval_days?: number
+          last_check_in_at?: string | null
           site_id?: string | null
           window_distance_cm?: number | null
           pot_size?: PotSize | null
@@ -99,6 +103,8 @@ export interface Database {
           fertilizing_interval_days?: number
           last_watered_at?: string | null
           last_fertilized_at?: string | null
+          check_in_interval_days?: number
+          last_check_in_at?: string | null
           site_id?: string | null
           window_distance_cm?: number | null
           pot_size?: PotSize | null
@@ -150,6 +156,57 @@ export interface Database {
           completed_at?: string | null
           status?: CareTaskStatus
           skip_reason?: CareTaskSkipReason | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      plant_check_ins: {
+        Row: {
+          id: string
+          plant_id: string
+          user_id: string
+          care_task_id: string | null
+          health_status: HealthStatus
+          health_status_note: string | null
+          height_cm: number | null
+          new_leaves: boolean
+          dropped_leaves: boolean
+          flowering: boolean
+          size_changed: boolean
+          notes: string | null
+          photo_path: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          plant_id: string
+          user_id: string
+          care_task_id?: string | null
+          health_status: HealthStatus
+          health_status_note?: string | null
+          height_cm?: number | null
+          new_leaves?: boolean
+          dropped_leaves?: boolean
+          flowering?: boolean
+          size_changed?: boolean
+          notes?: string | null
+          photo_path?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          plant_id?: string
+          user_id?: string
+          care_task_id?: string | null
+          health_status?: HealthStatus
+          health_status_note?: string | null
+          height_cm?: number | null
+          new_leaves?: boolean
+          dropped_leaves?: boolean
+          flowering?: boolean
+          size_changed?: boolean
+          notes?: string | null
+          photo_path?: string | null
           created_at?: string
         }
         Relationships: []

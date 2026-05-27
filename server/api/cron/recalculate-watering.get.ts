@@ -2,6 +2,7 @@ import { WET_SKIP_LOOKBACK_DAYS } from '#shared/constants/care'
 import type { Plant } from '#shared/types/database'
 import { computeWateringSchedule, plantToAdaptiveInput } from '#shared/utils/care/adaptiveWatering'
 import { alignFertilizeDueAt, idealFertilizeDueAt } from '#shared/utils/care/alignFertilize'
+import { upsertPendingCheckInTask } from '../../utils/care/checkInTask'
 import { API_ERROR_CODES } from '#shared/utils/i18n/apiErrors'
 
 const EXTERIOR_PLACEMENTS = new Set(['outdoor', 'semi_outdoor'])
@@ -182,6 +183,14 @@ export default defineEventHandler(async (event) => {
           status: 'pending'
         })
       if (insFertilizeError) throw insFertilizeError
+
+      await upsertPendingCheckInTask(supabase, {
+        id: plant.id,
+        user_id: plant.user_id,
+        last_check_in_at: plant.last_check_in_at,
+        check_in_interval_days: plant.check_in_interval_days ?? 30,
+        created_at: plant.created_at
+      })
 
       updated++
     } catch (e) {

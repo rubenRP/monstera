@@ -7,15 +7,29 @@ import {
   type PushReminderSettings
 } from '#shared/utils/push/reminderSchedule'
 
+function endOfUtcDay(date: Date): Date {
+  return new Date(Date.UTC(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate(),
+    23, 59, 59, 999
+  ))
+}
+
+function isExpiredPushSubscription(error: unknown): boolean {
+  const statusCode = (error as { statusCode?: number }).statusCode
+  return statusCode === 410 || statusCode === 404
+}
+
 export async function sendDailyPushReminders(
   publicKey: string,
   privateKey: string
-): Promise<{ sent: number }> {
+): Promise<{ sent: number, eligible: number, skipped: number }> {
   webpush.setVapidDetails('mailto:monstera@local.dev', publicKey, privateKey)
 
   const supabase = getServiceSupabase()
-  const endOfToday = new Date()
-  endOfToday.setHours(23, 59, 59, 999)
+  const now = new Date()
+  const endOfToday = endOfUtcDay(now)
 
   const { data: tasks } = await supabase
     .from('care_tasks')
@@ -28,7 +42,7 @@ export async function sendDailyPushReminders(
   )
 
   if (!activeTasks.length) {
-    return { sent: 0 }
+    return { sent: 0, eligible: 0, skipped: 0 }
   }
 
   const byUser = new Map<string, number>()
@@ -37,7 +51,6 @@ export async function sendDailyPushReminders(
   }
 
   const userIds = [...byUser.keys()]
-  const now = new Date()
 
   const { data: settingsRows } = await supabase
     .from('user_settings')
@@ -49,9 +62,16 @@ export async function sendDailyPushReminders(
   )
 
   let sent = 0
+  let eligible = 0
+  let skipped = 0
   for (const [userId, count] of byUser) {
     const settings = settingsByUser.get(userId) as PushReminderSettings | undefined
-    if (!shouldSendPushReminder(settings ?? {}, now)) continue
+    if (!shouldSendPushReminder(settings ?? {}, now)) {
+      skipped++
+      continue
+    }
+
+    eligible++
 
     const locale = parseAppLocale(
       (settings as { locale?: string } | undefined)?.locale
@@ -71,6 +91,7 @@ export async function sendDailyPushReminders(
       url: '/'
     })
 
+    let userSent = 0
     for (const sub of subs) {
       try {
         await webpush.sendNotification(
@@ -80,19 +101,25 @@ export async function sendDailyPushReminders(
           },
           payload
         )
+        userSent++
         sent++
       } catch (e) {
         console.error('Push failed:', e)
+        if (isExpiredPushSubscription(e)) {
+          await supabase.from('push_subscriptions').delete().eq('id', sub.id)
+        }
       }
     }
 
-    const timeZone = settings?.push_reminder_timezone || 'UTC'
-    const { dateStr } = getLocalDateTimeParts(now, timeZone)
-    await supabase
-      .from('user_settings')
-      .update({ push_reminder_last_sent_on: dateStr })
-      .eq('user_id', userId)
+    if (userSent > 0) {
+      const timeZone = settings?.push_reminder_timezone || 'UTC'
+      const { dateStr } = getLocalDateTimeParts(now, timeZone)
+      await supabase
+        .from('user_settings')
+        .update({ push_reminder_last_sent_on: dateStr })
+        .eq('user_id', userId)
+    }
   }
 
-  return { sent }
+  return { sent, eligible, skipped }
 }

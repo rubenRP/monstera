@@ -19,6 +19,7 @@ export const plantFormSchema = z.object({
   health_status_note: z.string().optional().nullable(),
   watering_base_interval_days: z.coerce.number().int().min(1).max(90).default(7),
   fertilizing_interval_days: z.coerce.number().int().min(1).max(365).default(30),
+  check_in_interval_days: z.coerce.number().int().min(7).max(180).default(30),
   site_id: z.string().uuid().optional().nullable(),
   window_distance_cm: z.coerce.number().int().min(0).max(500).optional().nullable(),
   pot_size: potSizeSchema.optional().nullable(),
