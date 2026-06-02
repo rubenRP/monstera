@@ -19,6 +19,19 @@ export function useAdaptiveWatering() {
   const supabase = useSupabaseClient()
   const { requireUserId } = useRequireUserId()
 
+  async function hasOverduePendingWaterTask(plantId: string): Promise<boolean> {
+    const nowIso = new Date().toISOString()
+    const { count, error } = await supabase
+      .from('care_tasks')
+      .select('*', { count: 'exact', head: true })
+      .eq('plant_id', plantId)
+      .eq('type', 'water')
+      .eq('status', 'pending')
+      .lt('due_at', nowIso)
+    if (error) throw error
+    return (count ?? 0) > 0
+  }
+
   async function fetchHomeLat(): Promise<number | null> {
     let uid: string
     try {
@@ -271,6 +284,9 @@ export function useAdaptiveWatering() {
     if (error) throw error
 
     for (const row of plants ?? []) {
+      if (await hasOverduePendingWaterTask(row.id)) {
+        continue
+      }
       await rescheduleWatering(row.id)
       await rescheduleCheckIn(row.id)
     }
@@ -300,6 +316,9 @@ export function useAdaptiveWatering() {
     if (error) throw error
 
     for (const row of plants ?? []) {
+      if (await hasOverduePendingWaterTask(row.id)) {
+        continue
+      }
       await rescheduleWatering(row.id)
       await rescheduleCheckIn(row.id)
     }

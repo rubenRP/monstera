@@ -13,19 +13,19 @@ const sizeClass = computed(() => {
   }
 })
 
-const colorMode = useColorMode()
-const logoSrc = computed(() =>
-  colorMode.value === 'dark'
-    ? '/monstera-logo-mark-dark.svg'
-    : '/monstera-logo-mark-light.svg'
-)
 </script>
 
 <template>
   <img
-    :src="logoSrc"
+    src="/monstera-logo-mark-light.svg"
     alt=""
     aria-hidden="true"
-    :class="[sizeClass, 'shrink-0']"
+    :class="[sizeClass, 'shrink-0 dark:hidden']"
+  >
+  <img
+    src="/monstera-logo-mark-dark.svg"
+    alt=""
+    aria-hidden="true"
+    :class="[sizeClass, 'hidden shrink-0 dark:block']"
   >
 </template>
