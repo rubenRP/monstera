@@ -561,7 +561,7 @@
     }
   },
   "push": {
-    "title": "Monstera",
+    "title": "Jardinero",
     "bodyOne": "Tienes 1 tarea de cuidado pendiente hoy",
     "bodyMany": "Tienes {count} tareas de cuidado pendientes hoy"
   },

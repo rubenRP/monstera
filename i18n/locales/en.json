@@ -561,7 +561,7 @@
     }
   },
   "push": {
-    "title": "Monstera",
+    "title": "Gardener",
     "bodyOne": "You have 1 care task due today",
     "bodyMany": "You have {count} care tasks due today"
   },
