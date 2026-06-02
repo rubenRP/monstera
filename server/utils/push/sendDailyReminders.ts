@@ -1,11 +1,6 @@
 import webpush from 'web-push'
 import { parseAppLocale } from '#shared/utils/i18n/locale'
 import { translate } from '#shared/utils/i18n/translate'
-import {
-  getLocalDateTimeParts,
-  shouldSendPushReminder,
-  type PushReminderSettings
-} from '#shared/utils/push/reminderSchedule'
 
 function endOfUtcDay(date: Date): Date {
   return new Date(Date.UTC(
@@ -26,7 +21,7 @@ export async function sendDailyPushReminders(
   privateKey: string
 ): Promise<{ sent: number, eligible: number, skipped: number }> {
   // #region agent log
-  fetch('http://127.0.0.1:7401/ingest/9091c024-be74-4200-9f61-bbd636b895d0',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'3e6abf'},body:JSON.stringify({sessionId:'3e6abf',runId:'initial',hypothesisId:'H2',location:'sendDailyReminders.ts:start',message:'Daily reminder run started',data:{hasPublicKey:Boolean(publicKey),hasPrivateKey:Boolean(privateKey)},timestamp:Date.now()})}).catch(()=>{})
+  fetch('http://127.0.0.1:7401/ingest/9091c024-be74-4200-9f61-bbd636b895d0', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '3e6abf' }, body: JSON.stringify({ sessionId: '3e6abf', runId: 'initial', hypothesisId: 'H2', location: 'sendDailyReminders.ts:start', message: 'Daily reminder run started', data: { hasPublicKey: Boolean(publicKey), hasPrivateKey: Boolean(privateKey) }, timestamp: Date.now() }) }).catch(() => {})
   // #endregion
   webpush.setVapidDetails('mailto:monstera@local.dev', publicKey, privateKey)
 
@@ -44,7 +39,7 @@ export async function sendDailyPushReminders(
     t => !(t.plant as { archived_at?: string | null } | null)?.archived_at
   )
   // #region agent log
-  fetch('http://127.0.0.1:7401/ingest/9091c024-be74-4200-9f61-bbd636b895d0',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'3e6abf'},body:JSON.stringify({sessionId:'3e6abf',runId:'initial',hypothesisId:'H3',location:'sendDailyReminders.ts:tasks',message:'Tasks loaded for push',data:{rawTasksCount:(tasks ?? []).length,activeTasksCount:activeTasks.length,endOfTodayIso:endOfToday.toISOString()},timestamp:Date.now()})}).catch(()=>{})
+  fetch('http://127.0.0.1:7401/ingest/9091c024-be74-4200-9f61-bbd636b895d0', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '3e6abf' }, body: JSON.stringify({ sessionId: '3e6abf', runId: 'initial', hypothesisId: 'H3', location: 'sendDailyReminders.ts:tasks', message: 'Tasks loaded for push', data: { rawTasksCount: (tasks ?? []).length, activeTasksCount: activeTasks.length, endOfTodayIso: endOfToday.toISOString() }, timestamp: Date.now() }) }).catch(() => {})
   // #endregion
 
   if (!activeTasks.length) {
@@ -60,7 +55,7 @@ export async function sendDailyPushReminders(
 
   const { data: settingsRows } = await supabase
     .from('user_settings')
-    .select('user_id, locale, push_reminder_time, push_reminder_timezone, push_reminder_last_sent_on')
+    .select('user_id, locale')
     .in('user_id', userIds)
 
   const settingsByUser = new Map(
@@ -69,18 +64,12 @@ export async function sendDailyPushReminders(
 
   let sent = 0
   let eligible = 0
-  let skipped = 0
+  const skipped = 0
   for (const [userId, count] of byUser) {
-    const settings = settingsByUser.get(userId) as PushReminderSettings | undefined
-    const shouldSend = shouldSendPushReminder(settings ?? {}, now)
+    const settings = settingsByUser.get(userId) as { locale?: string | null } | undefined
     // #region agent log
-    fetch('http://127.0.0.1:7401/ingest/9091c024-be74-4200-9f61-bbd636b895d0',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'3e6abf'},body:JSON.stringify({sessionId:'3e6abf',runId:'initial',hypothesisId:'H2',location:'sendDailyReminders.ts:user-eligibility',message:'User eligibility evaluated',data:{userId,taskCount:count,shouldSend,timezone:settings?.push_reminder_timezone || 'UTC',reminderTime:settings?.push_reminder_time || null,lastSentOn:settings?.push_reminder_last_sent_on || null},timestamp:Date.now()})}).catch(()=>{})
+    fetch('http://127.0.0.1:7401/ingest/9091c024-be74-4200-9f61-bbd636b895d0', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '3e6abf' }, body: JSON.stringify({ sessionId: '3e6abf', runId: 'initial', hypothesisId: 'H2', location: 'sendDailyReminders.ts:user-eligibility', message: 'User marked eligible by pending tasks', data: { userId, taskCount: count, shouldSend: true }, timestamp: Date.now() }) }).catch(() => {})
     // #endregion
-    if (!shouldSend) {
-      skipped++
-      continue
-    }
-
     eligible++
 
     const locale = parseAppLocale(
@@ -115,7 +104,7 @@ export async function sendDailyPushReminders(
         sent++
       } catch (e) {
         // #region agent log
-        fetch('http://127.0.0.1:7401/ingest/9091c024-be74-4200-9f61-bbd636b895d0',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'3e6abf'},body:JSON.stringify({sessionId:'3e6abf',runId:'initial',hypothesisId:'H4',location:'sendDailyReminders.ts:send-error',message:'Push delivery failed',data:{statusCode:(e as { statusCode?: number })?.statusCode || null,errorName:(e as { name?: string })?.name || null},timestamp:Date.now()})}).catch(()=>{})
+        fetch('http://127.0.0.1:7401/ingest/9091c024-be74-4200-9f61-bbd636b895d0', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '3e6abf' }, body: JSON.stringify({ sessionId: '3e6abf', runId: 'initial', hypothesisId: 'H4', location: 'sendDailyReminders.ts:send-error', message: 'Push delivery failed', data: { statusCode: (e as { statusCode?: number })?.statusCode || null, errorName: (e as { name?: string })?.name || null }, timestamp: Date.now() }) }).catch(() => {})
         // #endregion
         console.error('Push failed:', e)
         if (isExpiredPushSubscription(e)) {
@@ -124,18 +113,11 @@ export async function sendDailyPushReminders(
       }
     }
 
-    if (userSent > 0) {
-      const timeZone = settings?.push_reminder_timezone || 'UTC'
-      const { dateStr } = getLocalDateTimeParts(now, timeZone)
-      await supabase
-        .from('user_settings')
-        .update({ push_reminder_last_sent_on: dateStr })
-        .eq('user_id', userId)
-    }
+    void userSent
   }
 
   // #region agent log
-  fetch('http://127.0.0.1:7401/ingest/9091c024-be74-4200-9f61-bbd636b895d0',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'3e6abf'},body:JSON.stringify({sessionId:'3e6abf',runId:'initial',hypothesisId:'H4',location:'sendDailyReminders.ts:finish',message:'Daily reminder run finished',data:{sent,eligible,skipped},timestamp:Date.now()})}).catch(()=>{})
+  fetch('http://127.0.0.1:7401/ingest/9091c024-be74-4200-9f61-bbd636b895d0', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '3e6abf' }, body: JSON.stringify({ sessionId: '3e6abf', runId: 'initial', hypothesisId: 'H4', location: 'sendDailyReminders.ts:finish', message: 'Daily reminder run finished', data: { sent, eligible, skipped }, timestamp: Date.now() }) }).catch(() => {})
   // #endregion
   return { sent, eligible, skipped }
 }
