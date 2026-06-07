@@ -20,9 +20,6 @@ export async function sendDailyPushReminders(
   publicKey: string,
   privateKey: string
 ): Promise<{ sent: number, eligible: number, skipped: number }> {
-  // #region agent log
-  fetch('http://127.0.0.1:7401/ingest/9091c024-be74-4200-9f61-bbd636b895d0', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '3e6abf' }, body: JSON.stringify({ sessionId: '3e6abf', runId: 'initial', hypothesisId: 'H2', location: 'sendDailyReminders.ts:start', message: 'Daily reminder run started', data: { hasPublicKey: Boolean(publicKey), hasPrivateKey: Boolean(privateKey) }, timestamp: Date.now() }) }).catch(() => {})
-  // #endregion
   webpush.setVapidDetails('mailto:monstera@local.dev', publicKey, privateKey)
 
   const supabase = getServiceSupabase()
@@ -38,9 +35,6 @@ export async function sendDailyPushReminders(
   const activeTasks = (tasks ?? []).filter(
     t => !(t.plant as { archived_at?: string | null } | null)?.archived_at
   )
-  // #region agent log
-  fetch('http://127.0.0.1:7401/ingest/9091c024-be74-4200-9f61-bbd636b895d0', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '3e6abf' }, body: JSON.stringify({ sessionId: '3e6abf', runId: 'initial', hypothesisId: 'H3', location: 'sendDailyReminders.ts:tasks', message: 'Tasks loaded for push', data: { rawTasksCount: (tasks ?? []).length, activeTasksCount: activeTasks.length, endOfTodayIso: endOfToday.toISOString() }, timestamp: Date.now() }) }).catch(() => {})
-  // #endregion
 
   if (!activeTasks.length) {
     return { sent: 0, eligible: 0, skipped: 0 }
@@ -64,12 +58,8 @@ export async function sendDailyPushReminders(
 
   let sent = 0
   let eligible = 0
-  const skipped = 0
   for (const [userId, count] of byUser) {
     const settings = settingsByUser.get(userId) as { locale?: string | null } | undefined
-    // #region agent log
-    fetch('http://127.0.0.1:7401/ingest/9091c024-be74-4200-9f61-bbd636b895d0', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '3e6abf' }, body: JSON.stringify({ sessionId: '3e6abf', runId: 'initial', hypothesisId: 'H2', location: 'sendDailyReminders.ts:user-eligibility', message: 'User marked eligible by pending tasks', data: { userId, taskCount: count, shouldSend: true }, timestamp: Date.now() }) }).catch(() => {})
-    // #endregion
     eligible++
 
     const locale = parseAppLocale(
@@ -90,7 +80,6 @@ export async function sendDailyPushReminders(
       url: '/'
     })
 
-    let userSent = 0
     for (const sub of subs) {
       try {
         await webpush.sendNotification(
@@ -100,24 +89,15 @@ export async function sendDailyPushReminders(
           },
           payload
         )
-        userSent++
         sent++
       } catch (e) {
-        // #region agent log
-        fetch('http://127.0.0.1:7401/ingest/9091c024-be74-4200-9f61-bbd636b895d0', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '3e6abf' }, body: JSON.stringify({ sessionId: '3e6abf', runId: 'initial', hypothesisId: 'H4', location: 'sendDailyReminders.ts:send-error', message: 'Push delivery failed', data: { statusCode: (e as { statusCode?: number })?.statusCode || null, errorName: (e as { name?: string })?.name || null }, timestamp: Date.now() }) }).catch(() => {})
-        // #endregion
         console.error('Push failed:', e)
         if (isExpiredPushSubscription(e)) {
           await supabase.from('push_subscriptions').delete().eq('id', sub.id)
         }
       }
     }
-
-    void userSent
   }
 
-  // #region agent log
-  fetch('http://127.0.0.1:7401/ingest/9091c024-be74-4200-9f61-bbd636b895d0', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '3e6abf' }, body: JSON.stringify({ sessionId: '3e6abf', runId: 'initial', hypothesisId: 'H4', location: 'sendDailyReminders.ts:finish', message: 'Daily reminder run finished', data: { sent, eligible, skipped }, timestamp: Date.now() }) }).catch(() => {})
-  // #endregion
-  return { sent, eligible, skipped }
+  return { sent, eligible, skipped: 0 }
 }

@@ -3,15 +3,11 @@ import type { Plant } from '#shared/types/database'
 import { computeWateringSchedule, plantToAdaptiveInput } from '#shared/utils/care/adaptiveWatering'
 import { alignFertilizeDueAt, idealFertilizeDueAt } from '#shared/utils/care/alignFertilize'
 import { upsertPendingCheckInTask } from '../../utils/care/checkInTask'
-import { API_ERROR_CODES } from '#shared/utils/i18n/apiErrors'
 
 const EXTERIOR_PLACEMENTS = new Set(['outdoor', 'semi_outdoor'])
 
 export default defineEventHandler(async (event) => {
-  const vercelCron = getHeader(event, 'x-vercel-cron')
-  if (!vercelCron) {
-    throwApiError(403, API_ERROR_CODES.CRON_FORBIDDEN)
-  }
+  assertCronAuthorized(event)
 
   const supabase = getServiceSupabase()
 

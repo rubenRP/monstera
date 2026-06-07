@@ -12,7 +12,6 @@ const sizeClass = computed(() => {
     default: return 'w-6 h-6'
   }
 })
-
 </script>
 
 <template>

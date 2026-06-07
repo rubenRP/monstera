@@ -167,7 +167,7 @@ npx supabase db push # apply migrations
 - Do not commit `.env` or secrets.
 - RLS on all user tables; `species_profiles` is read-only for `authenticated`.
 - Photos in private bucket `plant-photos`; signed URLs on the client.
-- Push cron (Vercel): `GET /api/cron/send-daily` from `vercel.json` (4×/day UTC on Hobby-compatible schedules; `x-vercel-cron`). Hobby rejects hourly cron. Manual: `POST /api/push/send-daily` with `x-cron-secret` when `CRON_SECRET` is set.
+- Push cron (Vercel): `GET /api/cron/send-daily` once daily at 09:00 UTC (`vercel.json`). Auth: `x-vercel-cron`, or `Authorization: Bearer <CRON_SECRET>` / `x-cron-secret` when `CRON_SECRET` is set (Vercel sends Bearer automatically). Manual test: `POST /api/push/send-daily` with the same secret headers.
 
 ## Cursor rules (detail by area)
 

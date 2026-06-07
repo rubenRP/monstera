@@ -45,6 +45,11 @@ export default defineNuxtConfig({
     '#shared': fileURLToPath(new URL('./shared', import.meta.url))
   },
 
+  routeRules: {
+    '/api/cron/**': { cache: false },
+    '/api/push/send-daily': { cache: false }
+  },
+
   compatibilityDate: '2025-01-15',
 
   eslint: {
