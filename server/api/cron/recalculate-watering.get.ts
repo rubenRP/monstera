@@ -5,9 +5,30 @@ import { alignFertilizeDueAt, idealFertilizeDueAt } from '#shared/utils/care/ali
 import { upsertPendingCheckInTask } from '../../utils/care/checkInTask'
 
 const EXTERIOR_PLACEMENTS = new Set(['outdoor', 'semi_outdoor'])
+const LOG_PREFIX = '[cron:recalculate-watering]'
+
+interface PlantRecalcChange {
+  plantId: string
+  plantName: string
+  placement: string
+  previousIntervalDays: number
+  newIntervalDays: number
+  weatherFactor: number
+  nextWaterDueAt: string
+  nextFertilizeDueAt: string
+}
+
+interface PlantRecalcError {
+  plantId: string
+  plantName: string
+  message: string
+}
 
 export default defineEventHandler(async (event) => {
   assertCronAuthorized(event)
+
+  const startedAt = new Date().toISOString()
+  console.log(LOG_PREFIX, JSON.stringify({ event: 'start', startedAt }))
 
   const supabase = getServiceSupabase()
 
@@ -23,7 +44,9 @@ export default defineEventHandler(async (event) => {
   })
 
   if (!exteriorPlants.length) {
-    return { updated: 0, skipped: 0, errors: 0, users: 0, plants: 0 }
+    const summary = { updated: 0, skipped: 0, errors: 0, users: 0, plants: 0, changes: [] }
+    console.log(LOG_PREFIX, JSON.stringify({ event: 'finish', startedAt, ...summary }))
+    return summary
   }
 
   const plantsByUser = new Map<string, typeof exteriorPlants>()
@@ -78,12 +101,24 @@ export default defineEventHandler(async (event) => {
     const homeLon = settings?.home_lon
     if (homeLat == null || homeLon == null) {
       skipped += userPlants.length
+      console.log(LOG_PREFIX, JSON.stringify({
+        event: 'user_skipped',
+        userId,
+        reason: 'missing_home_location',
+        plantCount: userPlants.length
+      }))
       continue
     }
 
     const metrics = await fetchWeatherMetrics(Number(homeLat), Number(homeLon))
     if (!metrics) {
       skipped += userPlants.length
+      console.log(LOG_PREFIX, JSON.stringify({
+        event: 'user_skipped',
+        userId,
+        reason: 'weather_unavailable',
+        plantCount: userPlants.length
+      }))
       continue
     }
 
@@ -106,6 +141,8 @@ export default defineEventHandler(async (event) => {
   }
 
   let updated = 0
+  const changes: PlantRecalcChange[] = []
+  const errorDetails: PlantRecalcError[] = []
 
   for (const plant of exteriorPlants) {
     const userFactor = userFactors.get(plant.user_id)
@@ -125,6 +162,8 @@ export default defineEventHandler(async (event) => {
           weatherFactor
         })
       )
+
+      const previousIntervalDays = plant.watering_interval_days
 
       const { error: updateError } = await supabase
         .from('plants')
@@ -188,18 +227,42 @@ export default defineEventHandler(async (event) => {
         created_at: plant.created_at
       })
 
+      const change: PlantRecalcChange = {
+        plantId: plant.id,
+        plantName: plant.name,
+        placement,
+        previousIntervalDays,
+        newIntervalDays: schedule.effectiveIntervalDays,
+        weatherFactor,
+        nextWaterDueAt: schedule.nextDueAt,
+        nextFertilizeDueAt: aligned.toISOString()
+      }
+      changes.push(change)
+      console.log(LOG_PREFIX, JSON.stringify({ event: 'plant_updated', ...change }))
       updated++
     } catch (e) {
       errors++
-      console.error('Cron recalculation failed:', plant.id, e)
+      const message = e instanceof Error ? e.message : String(e)
+      const errorEntry: PlantRecalcError = {
+        plantId: plant.id,
+        plantName: plant.name,
+        message
+      }
+      errorDetails.push(errorEntry)
+      console.error(LOG_PREFIX, JSON.stringify({ event: 'plant_error', ...errorEntry }))
     }
   }
 
-  return {
+  const summary = {
     updated,
     skipped,
     errors,
     users: userFactors.size,
-    plants: exteriorPlants.length
+    plants: exteriorPlants.length,
+    changes,
+    errorDetails
   }
+  console.log(LOG_PREFIX, JSON.stringify({ event: 'finish', startedAt, ...summary }))
+
+  return summary
 })
