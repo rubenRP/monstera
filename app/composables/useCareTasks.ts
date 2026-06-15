@@ -1,5 +1,8 @@
 import type { CareTask, CareTaskType } from '#shared/types/database'
-import { deduplicateOverlappingTasks } from '#shared/utils/care/deduplicateTasks'
+import {
+  deduplicateOverlappingTasks,
+  deduplicateResolvedTasks
+} from '#shared/utils/care/deduplicateTasks'
 import { isSameCalendarDay } from '#shared/utils/care/alignFertilize'
 import { taskOverdueDays } from '#shared/utils/care/taskDue'
 
@@ -12,17 +15,13 @@ export function useCareTasks() {
     countRecentWetSkips
   } = useAdaptiveWatering()
 
-  async function dismissOverlappingPendingTasks(task: CareTask, exceptId: string) {
-    const end = new Date()
-    end.setHours(23, 59, 59, 999)
-
+  async function deleteOverlappingPendingTasks(task: CareTask, exceptId: string) {
     const { error } = await supabase
       .from('care_tasks')
-      .update({ status: 'skipped', completed_at: new Date().toISOString() })
+      .delete()
       .eq('plant_id', task.plant_id)
       .eq('type', task.type)
       .eq('status', 'pending')
-      .lte('due_at', end.toISOString())
       .neq('id', exceptId)
     if (error) throw error
   }
@@ -75,7 +74,9 @@ export function useCareTasks() {
       .lte('completed_at', end.toISOString())
       .order('completed_at', { ascending: false })
     if (error) throw error
-    return filterActivePlantTasks((data ?? []) as CareTask[])
+    return deduplicateResolvedTasks(
+      filterActivePlantTasks((data ?? []) as CareTask[])
+    )
   }
 
   async function fetchUpcomingTasks(days = 7) {
@@ -114,7 +115,7 @@ export function useCareTasks() {
   }
 
   async function completeTask(task: CareTask) {
-    await dismissOverlappingPendingTasks(task, task.id)
+    await deleteOverlappingPendingTasks(task, task.id)
 
     const now = new Date().toISOString()
     const { error: taskError } = await supabase
@@ -186,7 +187,7 @@ export function useCareTasks() {
   }
 
   async function skipTask(task: CareTask, options?: { soilStillWet?: boolean }) {
-    await dismissOverlappingPendingTasks(task, task.id)
+    await deleteOverlappingPendingTasks(task, task.id)
 
     const now = new Date().toISOString()
     const { error } = await supabase
@@ -264,6 +265,7 @@ export function useCareTasks() {
   }
 
   return {
+    deleteOverlappingPendingTasks,
     fetchTodayTasks,
     fetchTodayCompletedTasks,
     fetchUpcomingTasks,

@@ -18,3 +18,42 @@ export function deduplicateOverlappingTasks(tasks: CareTask[]): CareTask[] {
 
   return result
 }
+
+function resolvedTaskRank(task: CareTask): number {
+  if (task.status === 'done') return 2
+  return 1
+}
+
+/** One entry per plant and type; prefers done over skipped, then most recent. */
+export function deduplicateResolvedTasks(tasks: CareTask[]): CareTask[] {
+  const best = new Map<string, CareTask>()
+
+  for (const task of tasks) {
+    const key = taskKey(task)
+    const current = best.get(key)
+    if (!current) {
+      best.set(key, task)
+      continue
+    }
+
+    const taskRank = resolvedTaskRank(task)
+    const currentRank = resolvedTaskRank(current)
+    if (taskRank > currentRank) {
+      best.set(key, task)
+      continue
+    }
+    if (taskRank < currentRank) continue
+
+    const taskAt = task.completed_at ? new Date(task.completed_at).getTime() : 0
+    const currentAt = current.completed_at ? new Date(current.completed_at).getTime() : 0
+    if (taskAt > currentAt) {
+      best.set(key, task)
+    }
+  }
+
+  return [...best.values()].sort((a, b) => {
+    const aAt = a.completed_at ? new Date(a.completed_at).getTime() : 0
+    const bAt = b.completed_at ? new Date(b.completed_at).getTime() : 0
+    return bAt - aAt
+  })
+}

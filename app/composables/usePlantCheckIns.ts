@@ -7,6 +7,7 @@ export function usePlantCheckIns() {
   const { requireUserId } = useRequireUserId()
   const { uploadPhoto } = usePlants()
   const { rescheduleCheckIn } = useAdaptiveWatering()
+  const { deleteOverlappingPendingTasks } = useCareTasks()
 
   async function fetchCheckInHistory(plantId: string, limit = 50) {
     const { data, error } = await supabase
@@ -27,17 +28,7 @@ export function usePlantCheckIns() {
     const uid = await requireUserId()
     const now = new Date().toISOString()
 
-    const end = new Date()
-    end.setHours(23, 59, 59, 999)
-    const { error: dismissError } = await supabase
-      .from('care_tasks')
-      .update({ status: 'skipped', completed_at: now })
-      .eq('plant_id', task.plant_id)
-      .eq('type', 'check_in')
-      .eq('status', 'pending')
-      .lte('due_at', end.toISOString())
-      .neq('id', task.id)
-    if (dismissError) throw dismissError
+    await deleteOverlappingPendingTasks(task, task.id)
 
     let photoPath: string | null = null
     if (photoFile) {
