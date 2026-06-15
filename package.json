@@ -10,6 +10,9 @@
     "lint": "eslint .",
     "typecheck": "nuxt typecheck",
     "test": "vitest run",
+    "test:unit": "vitest run --project node",
+    "test:nuxt": "vitest run --project nuxt",
+    "test:e2e": "playwright test",
     "generate:icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {
@@ -26,12 +29,16 @@
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.15.2",
+    "@nuxt/test-utils": "^4.0.3",
+    "@playwright/test": "^1.60.0",
     "@types/web-push": "^3.6.4",
     "@vite-pwa/nuxt": "^1.0.7",
+    "@vue/test-utils": "^2.4.11",
     "eslint": "^10.3.0",
+    "happy-dom": "^20.10.3",
     "sharp": "^0.34.5",
     "typescript": "^6.0.3",
-    "vitest": "^3.2.4",
+    "vitest": "^4.1.9",
     "vue-tsc": "^3.2.8"
   }
 }

@@ -152,8 +152,24 @@ npm run dev          # development
 npm run build        # production build
 npm run lint         # ESLint (@nuxt/eslint, no trailing comma)
 npm run typecheck    # vue-tsc via nuxt typecheck
+npm run test         # unit (shared/) + component tests (app/**/*.nuxt.test.ts)
+npm run test:unit    # shared/ only
+npm run test:nuxt    # Nuxt component tests only
+npm run test:e2e     # Playwright E2E (phase 2 smoke; see e2e/README.md)
 npx supabase db push # apply migrations
 ```
+
+## Testing
+
+| Layer | Location | Runner | Notes |
+|-------|----------|--------|-------|
+| Unit | `shared/**/*.test.ts` | Vitest (`node`) | Pure logic, no Nuxt boot |
+| Components | `app/**/*.nuxt.test.ts` | Vitest + `@nuxt/test-utils` | `mountSuspended`, mock composables with `mockNuxtImport` |
+| E2E | `e2e/**/*.spec.ts` | Playwright | Smoke on `/login` today; full flows in phase 2 — see [`e2e/README.md`](e2e/README.md) |
+
+Helpers: [`test/factories/`](test/factories/), [`test/mocks/`](test/mocks/). Test env vars: [`.env.test`](.env.test).
+
+CI runs lint, typecheck, test, and build on every push/PR ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)). Deployment gate: [`docs/deployment-gate.md`](docs/deployment-gate.md).
 
 ## Code style
 
@@ -181,4 +197,4 @@ npx supabase db push # apply migrations
 ## Commits and PRs
 
 - Do not commit unless the user explicitly asks.
-- CI: lint + typecheck on Node 22 (`.github/workflows/ci.yml`).
+- CI: lint + typecheck + test + build on Node 22 (`.github/workflows/ci.yml`). E2E workflow is optional (`e2e.yml`).

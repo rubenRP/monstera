@@ -1,18 +1,13 @@
-name: ci
+name: e2e
 
 on:
-  push:
-  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1'
 
 jobs:
-  ci:
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        node: [22]
-
+  e2e:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -25,23 +20,18 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v6
         with:
-          node-version: ${{ matrix.node }}
+          node-version: 22
 
       - name: Install dependencies
         run: pnpm install
 
-      - name: Lint
-        run: pnpm run lint
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install chromium --with-deps
 
-      - name: Typecheck
-        run: pnpm run typecheck
-
-      - name: Unit and component tests
-        run: pnpm run test
-
-      - name: Build
-        run: pnpm run build
+      - name: E2E tests
+        run: pnpm run test:e2e
         env:
+          CI: true
           SUPABASE_URL: https://placeholder.supabase.co
           SUPABASE_KEY: placeholder-key
           NUXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co

@@ -14,5 +14,5 @@ alwaysApply: true
 - **Secrets**: never `NUXT_SUPABASE_SECRET_KEY` on the client; do not commit `.env`.
 - **Env**: do not use a `SUPABASE_DB` variable (breaks Supabase CLI).
 - **Style**: no trailing comma (ESLint); minimal changes, no unrelated refactors.
-- **Verification**: run `npm run lint` and `npm run typecheck` after relevant changes.
+- **Verification**: run `npm run lint`, `npm run typecheck`, and `npm run test` after relevant changes.
 - **Commits**: only when the user explicitly asks.
