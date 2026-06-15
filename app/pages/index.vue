@@ -26,6 +26,7 @@ const { apiErrorMessage } = useApiError()
 const toast = useToast()
 
 const tasks = ref<Awaited<ReturnType<typeof fetchTodayTasks>>>([])
+const summaryTasks = ref<Awaited<ReturnType<typeof fetchTodayTasks>>>([])
 const completedToday = ref<Awaited<ReturnType<typeof fetchTodayCompletedTasks>>>([])
 const plants = ref<Awaited<ReturnType<typeof fetchPlants>>>([])
 const loading = ref(true)
@@ -60,7 +61,12 @@ const plantsForAdvanceWater = computed(() =>
 
 async function loadTasks() {
   if (showUpcoming.value) {
-    tasks.value = await fetchUpcomingTasks()
+    const [todayPending, upcoming] = await Promise.all([
+      fetchTodayTasks(),
+      fetchUpcomingTasks()
+    ])
+    summaryTasks.value = todayPending
+    tasks.value = upcoming
     completedToday.value = []
     return
   }
@@ -68,9 +74,18 @@ async function loadTasks() {
     fetchTodayTasks(),
     fetchTodayCompletedTasks()
   ])
+  summaryTasks.value = pending
   tasks.value = pending
   completedToday.value = completed
 }
+
+const overdueTaskCount = computed(
+  () => summaryTasks.value.filter(task => overdueDays(task.due_at) > 0).length
+)
+
+const todayTaskCount = computed(
+  () => summaryTasks.value.filter(task => overdueDays(task.due_at) <= 0).length
+)
 
 async function reloadTasks() {
   tasksLoading.value = true
@@ -216,6 +231,8 @@ async function confirmSkip(task: CareTask, soilStillWet: boolean) {
     <HomePlantSummary
       v-if="!loading && plants.length > 0"
       :plants="plants"
+      :today-task-count="todayTaskCount"
+      :overdue-task-count="overdueTaskCount"
     />
 
     <div

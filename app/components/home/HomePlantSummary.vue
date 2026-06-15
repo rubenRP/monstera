@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import type { HealthStatus, Plant } from '#shared/types/database'
-import { HEALTH_ICONS, HEALTH_ICON_CLASSES } from '#shared/constants/plants'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   plants: Plant[]
-}>()
+  todayTaskCount?: number
+  overdueTaskCount?: number
+}>(), {
+  todayTaskCount: 0,
+  overdueTaskCount: 0
+})
 
 const { t } = useI18n()
-const { healthLabel } = usePlantEnumLabels()
 
 const HEALTH_ORDER: HealthStatus[] = ['critical', 'sick', 'fair', 'healthy']
 
@@ -17,6 +20,8 @@ const HEALTH_BAR_COLOR: Record<HealthStatus, string> = {
   fair: '#f59e0b',
   healthy: '#38704a'
 }
+
+const HEALTH_DOT_COLOR: Record<HealthStatus, string> = HEALTH_BAR_COLOR
 
 function attentionBadgeColor(status: HealthStatus): 'error' | 'warning' | 'neutral' {
   if (status === 'critical') return 'error'
@@ -50,13 +55,91 @@ const barSegments = computed(() => {
     }))
 })
 
-const plantsNeedingAttention = computed(() =>
-  props.plants.filter(p =>
-    p.health_status === 'critical'
-    || p.health_status === 'sick'
-    || p.health_status === 'fair'
-  )
+function healthChipLabel(status: HealthStatus, count: number): string {
+  if (status === 'healthy') return t('home.healthHealthy', { count })
+  if (status === 'fair') return count === 1 ? t('home.healthFairOne') : t('home.healthFairMany', { count })
+  if (status === 'sick') return count === 1 ? t('home.healthSickOne') : t('home.healthSickMany', { count })
+  return count === 1 ? t('home.healthCriticalOne') : t('home.healthCriticalMany', { count })
+}
+
+const healthChips = computed(() =>
+  barSegments.value.map(segment => ({
+    status: segment.status,
+    label: healthChipLabel(segment.status, segment.count)
+  }))
 )
+
+const attentionPlants = computed(() =>
+  props.plants.filter(p => p.health_status === 'critical' || p.health_status === 'sick')
+)
+
+const attentionCount = computed(() => attentionPlants.value.length)
+
+const stats = computed(() => [
+  {
+    key: 'today',
+    icon: 'i-lucide-calendar-check',
+    value: props.todayTaskCount,
+    label: t('home.statTodayLabel'),
+    active: props.todayTaskCount > 0,
+    classes: 'text-primary bg-primary/10'
+  },
+  {
+    key: 'overdue',
+    icon: 'i-lucide-alarm-clock',
+    value: props.overdueTaskCount,
+    label: t('home.statOverdueLabel'),
+    active: props.overdueTaskCount > 0,
+    classes: 'text-warning bg-warning/10'
+  },
+  {
+    key: 'attention',
+    icon: 'i-lucide-heart-pulse',
+    value: attentionCount.value,
+    label: t('home.statAttentionLabel'),
+    active: attentionCount.value > 0,
+    classes: 'text-error bg-error/10'
+  }
+])
+
+const headline = computed(() => {
+  if (props.overdueTaskCount > 0) {
+    return {
+      icon: 'i-lucide-alarm-clock',
+      tone: 'text-warning',
+      bg: 'bg-warning/10',
+      text: props.overdueTaskCount === 1
+        ? t('home.headlineOverdueOne')
+        : t('home.headlineOverdueMany', { count: props.overdueTaskCount })
+    }
+  }
+  if (props.todayTaskCount > 0) {
+    return {
+      icon: 'i-lucide-calendar-check',
+      tone: 'text-primary',
+      bg: 'bg-primary/10',
+      text: props.todayTaskCount === 1
+        ? t('home.headlineTodayOne')
+        : t('home.headlineTodayMany', { count: props.todayTaskCount })
+    }
+  }
+  if (attentionCount.value > 0) {
+    return {
+      icon: 'i-lucide-heart-pulse',
+      tone: 'text-error',
+      bg: 'bg-error/10',
+      text: attentionCount.value === 1
+        ? t('home.headlineAttentionOne')
+        : t('home.headlineAttentionMany', { count: attentionCount.value })
+    }
+  }
+  return {
+    icon: 'i-lucide-circle-check',
+    tone: 'text-success',
+    bg: 'bg-success/10',
+    text: t('home.headlineAllGood')
+  }
+})
 
 const totalLabel = computed(() =>
   totalPlants.value === 1
@@ -66,18 +149,23 @@ const totalLabel = computed(() =>
 </script>
 
 <template>
-  <UCard>
+  <UCard v-if="totalPlants > 0">
     <template #header>
       <div class="flex items-center justify-between gap-3">
-        <div class="flex items-center gap-2.5 min-w-0">
+        <div class="flex items-center gap-3 min-w-0">
           <div
-            class="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0"
+            class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+            :class="headline.bg"
           >
-            <AppLogo size="sm" />
+            <UIcon
+              :name="headline.icon"
+              class="w-5 h-5"
+              :class="headline.tone"
+            />
           </div>
           <div class="min-w-0">
-            <p class="font-medium leading-tight">
-              {{ t('home.plantSummary') }}
+            <p class="font-semibold leading-tight truncate">
+              {{ headline.text }}
             </p>
             <p class="text-xs text-muted mt-0.5">
               {{ totalLabel }}
@@ -93,55 +181,69 @@ const totalLabel = computed(() =>
       </div>
     </template>
 
-    <div
-      v-if="totalPlants > 0"
-      class="space-y-4"
-    >
-      <div
-        class="flex h-2.5 rounded-full overflow-hidden bg-accented"
-        role="img"
-        :aria-label="t('home.healthDistributionAria')"
-      >
+    <div class="space-y-4">
+      <div class="grid grid-cols-3 gap-2">
         <div
-          v-for="segment in barSegments"
-          :key="segment.status"
-          class="h-full shrink-0"
-          :style="{
-            width: `${segment.percent}%`,
-            backgroundColor: HEALTH_BAR_COLOR[segment.status]
-          }"
-        />
-      </div>
-
-      <div class="grid grid-cols-2 gap-2">
-        <div
-          v-for="status in HEALTH_ORDER"
-          :key="status"
-          class="flex items-center gap-2.5 p-2.5 rounded-lg border border-default bg-elevated/40"
-          :class="healthCounts[status] === 0 ? 'opacity-50' : ''"
+          v-for="stat in stats"
+          :key="stat.key"
+          class="flex flex-col gap-1.5 p-3 rounded-xl border border-default bg-elevated/40 transition-opacity"
+          :class="stat.active ? '' : 'opacity-55'"
         >
           <div
-            class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-            :class="HEALTH_ICON_CLASSES[status]"
+            class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+            :class="stat.active ? stat.classes : 'bg-elevated text-muted'"
           >
             <UIcon
-              :name="HEALTH_ICONS[status]"
+              :name="stat.icon"
               class="w-4 h-4"
             />
           </div>
           <div class="min-w-0">
-            <p class="text-lg font-semibold leading-none tabular-nums">
-              {{ healthCounts[status] }}
+            <p class="text-xl font-bold leading-none tabular-nums">
+              {{ stat.value }}
             </p>
-            <p class="text-xs text-muted truncate mt-0.5">
-              {{ healthLabel(status) }}
+            <p class="text-xs text-muted truncate mt-1">
+              {{ stat.label }}
             </p>
           </div>
         </div>
       </div>
 
+      <div class="space-y-2.5">
+        <div
+          v-if="barSegments.length > 1"
+          class="flex h-2 rounded-full overflow-hidden bg-accented"
+          role="img"
+          :aria-label="t('home.healthDistributionAria')"
+        >
+          <div
+            v-for="segment in barSegments"
+            :key="segment.status"
+            class="h-full shrink-0"
+            :style="{
+              width: `${segment.percent}%`,
+              backgroundColor: HEALTH_BAR_COLOR[segment.status]
+            }"
+          />
+        </div>
+
+        <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+          <span
+            v-for="chip in healthChips"
+            :key="chip.status"
+            class="flex items-center gap-1.5 text-xs text-muted"
+          >
+            <span
+              class="w-2 h-2 rounded-full shrink-0"
+              :style="{ backgroundColor: HEALTH_DOT_COLOR[chip.status] }"
+            />
+            {{ chip.label }}
+          </span>
+        </div>
+      </div>
+
       <div
-        v-if="plantsNeedingAttention.length"
+        v-if="attentionCount > 0"
         class="pt-1 border-t border-default"
       >
         <p class="text-xs font-medium text-muted mb-2 flex items-center gap-1.5">
@@ -153,7 +255,7 @@ const totalLabel = computed(() =>
         </p>
         <div class="flex flex-wrap gap-1.5">
           <NuxtLink
-            v-for="plant in plantsNeedingAttention.slice(0, 5)"
+            v-for="plant in attentionPlants.slice(0, 5)"
             :key="plant.id"
             :to="`/plants/${plant.id}`"
           >
@@ -166,24 +268,13 @@ const totalLabel = computed(() =>
             </UBadge>
           </NuxtLink>
           <UBadge
-            v-if="plantsNeedingAttention.length > 5"
+            v-if="attentionPlants.length > 5"
             color="neutral"
             variant="subtle"
           >
-            {{ t('home.morePlants', { count: plantsNeedingAttention.length - 5 }) }}
+            {{ t('home.morePlants', { count: attentionPlants.length - 5 }) }}
           </UBadge>
         </div>
-      </div>
-
-      <div
-        v-else
-        class="flex items-center gap-2 text-sm text-success pt-1"
-      >
-        <UIcon
-          name="i-lucide-circle-check"
-          class="w-4 h-4 shrink-0"
-        />
-        {{ t('home.allHealthyMessage') }}
       </div>
     </div>
   </UCard>
