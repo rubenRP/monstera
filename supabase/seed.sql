@@ -1,0 +1,2 @@
+-- Optional local seed data (runs on `supabase db reset` only, not on `db push`).
+-- Demo plants are created by migrations for the first registered user.
