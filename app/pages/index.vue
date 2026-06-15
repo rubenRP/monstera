@@ -273,7 +273,7 @@ async function confirmSkip(task: CareTask, soilStillWet: boolean) {
         <li
           v-for="task in tasks"
           :key="task.id"
-          class="p-4 rounded-xl border bg-elevated/30"
+          class="p-4 rounded-xl border bg-elevated/40 shadow-sm transition-all hover:shadow-md"
           :class="overdueDays(task.due_at) > 0 ? 'border-warning/50' : 'border-default'"
         >
           <div class="flex items-start gap-3">
@@ -341,10 +341,10 @@ async function confirmSkip(task: CareTask, soilStillWet: boolean) {
           <li
             v-for="task in completedToday"
             :key="task.id"
-            class="p-4 rounded-xl border"
+            class="p-4 rounded-xl border shadow-sm"
             :class="task.status === 'done'
               ? 'border-success/30 bg-success/5'
-              : 'border-default bg-elevated/20'"
+              : 'border-default bg-elevated/30'"
           >
             <div class="flex items-start gap-3">
               <UIcon

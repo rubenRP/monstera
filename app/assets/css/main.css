@@ -42,33 +42,65 @@
   --color-slate-950: #111C11;
 }
 
+@theme {
+  --shadow-xs: 0 1px 2px 0 rgb(26 45 26 / 0.04);
+  --shadow-sm: 0 1px 3px 0 rgb(26 45 26 / 0.06), 0 1px 2px -1px rgb(26 45 26 / 0.05);
+  --shadow-md: 0 4px 12px -2px rgb(26 45 26 / 0.08), 0 2px 6px -2px rgb(26 45 26 / 0.05);
+  --shadow-lg: 0 12px 28px -6px rgb(26 45 26 / 0.12), 0 4px 10px -4px rgb(26 45 26 / 0.06);
+}
+
 @layer base {
   html,
   body {
-    @apply bg-default text-default;
+    @apply bg-default text-default antialiased;
   }
 }
 
 :root {
+  --ui-radius: 0.625rem;
+
   --ui-primary: var(--ui-color-primary-600);
+
+  /* Warm cream surfaces — light brand identity */
   --ui-bg: #F5F0E4;
-  --ui-bg-muted: var(--ui-color-neutral-100);
+  --ui-bg-muted: #EFE9DB;
   --ui-bg-elevated: #FDFCF8;
-  --ui-bg-accented: var(--ui-color-neutral-200);
-  --ui-bg-inverted: var(--ui-color-neutral-900);
-  --ui-text: var(--ui-color-neutral-800);
+  --ui-bg-accented: #E3DCCB;
+  --ui-bg-inverted: #1A2D1A;
+
+  --ui-text-dimmed: #9A958A;
+  --ui-text-muted: #6E6A60;
+  --ui-text-toned: #4C4940;
+  --ui-text: #2F3A2C;
   --ui-text-highlighted: #1A2D1A;
-  --ui-border: var(--ui-color-neutral-200);
+
+  --ui-border: #E1DACB;
+  --ui-border-muted: #EAE4D6;
+  --ui-border-accented: #D3CBB9;
 }
 
 .dark {
   --ui-primary: var(--ui-color-primary-400);
-  --ui-bg: #1A2D1A;
-  --ui-bg-muted: var(--ui-color-neutral-800);
-  --ui-bg-elevated: var(--ui-color-neutral-800);
-  --ui-bg-accented: var(--ui-color-neutral-700);
-  --ui-bg-inverted: var(--ui-color-neutral-100);
-  --ui-text: var(--ui-color-neutral-200);
-  --ui-text-highlighted: var(--ui-color-neutral-50);
-  --ui-border: var(--ui-color-neutral-700);
+
+  /* Neutral charcoal surfaces — no green tint, green stays as accent only */
+  --ui-bg: #18191B;
+  --ui-bg-muted: #1F2123;
+  --ui-bg-elevated: #25272A;
+  --ui-bg-accented: #303236;
+  --ui-bg-inverted: #F5F0E4;
+
+  --ui-text-dimmed: #6B6D72;
+  --ui-text-muted: #9A9CA1;
+  --ui-text-toned: #B9BBC0;
+  --ui-text: #D6D8DC;
+  --ui-text-highlighted: #FAFAFA;
+
+  --ui-border: #303236;
+  --ui-border-muted: #26282B;
+  --ui-border-accented: #3A3D41;
+
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 12px -2px rgb(0 0 0 / 0.45), 0 2px 6px -2px rgb(0 0 0 / 0.35);
+  --shadow-lg: 0 12px 28px -6px rgb(0 0 0 / 0.55), 0 4px 10px -4px rgb(0 0 0 / 0.4);
 }

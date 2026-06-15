@@ -84,10 +84,10 @@ export const HEALTH_DOT_CLASSES: Record<HealthStatus, string> = {
 
 /** Pill badge next to plant name — static classes for Tailwind scan */
 export const HEALTH_BADGE_CLASSES: Record<HealthStatus, string> = {
-  healthy: 'bg-green-600/15 text-green-800',
-  fair: 'bg-amber-500/15 text-amber-900',
-  sick: 'bg-orange-500/15 text-orange-900',
-  critical: 'bg-red-600/15 text-red-900'
+  healthy: 'bg-green-600/15 text-green-800 dark:text-green-300',
+  fair: 'bg-amber-500/15 text-amber-900 dark:text-amber-300',
+  sick: 'bg-orange-500/15 text-orange-900 dark:text-orange-300',
+  critical: 'bg-red-600/15 text-red-900 dark:text-red-300'
 }
 
 export function getHealthBadgeClasses(status: HealthStatus): string {

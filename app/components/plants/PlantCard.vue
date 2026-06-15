@@ -15,7 +15,7 @@ const { t } = useI18n()
 <template>
   <NuxtLink
     :to="`/plants/${plant.id}`"
-    class="flex items-center gap-3 p-3 rounded-xl border border-default border-l-4 bg-elevated/30 hover:bg-elevated/60 transition-colors"
+    class="flex items-center gap-3 p-3 rounded-xl border border-default border-l-4 bg-elevated/40 shadow-sm hover:bg-elevated hover:shadow-md transition-all"
     :class="[
       archived ? 'opacity-70 border-l-neutral-400' : getHealthBorderColor(plant.health_status)
     ]"

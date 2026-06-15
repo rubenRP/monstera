@@ -34,7 +34,7 @@ function isActive(path: string) {
           :key="item.to"
           :to="item.to"
           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
-          :class="isActive(item.to) ? 'bg-primary/10 text-primary' : 'text-muted hover:bg-elevated'"
+          :class="isActive(item.to) ? 'bg-primary/10 text-primary font-semibold shadow-xs' : 'text-muted hover:bg-elevated hover:text-default'"
         >
           <UIcon
             :name="item.icon"
@@ -58,7 +58,7 @@ function isActive(path: string) {
     </aside>
 
     <div class="flex-1 flex flex-col min-w-0">
-      <header class="sticky top-0 z-40 border-b border-default bg-default/95 backdrop-blur px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top,0px))] md:hidden">
+      <header class="sticky top-0 z-40 border-b border-default bg-default/80 backdrop-blur-lg px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top,0px))] md:hidden">
         <div class="max-w-lg mx-auto flex items-center justify-between">
           <NuxtLink
             to="/"
@@ -81,7 +81,7 @@ function isActive(path: string) {
     </div>
 
     <nav
-      class="fixed bottom-0 inset-x-0 z-40 border-t border-default bg-default/95 backdrop-blur md:hidden pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]"
+      class="fixed bottom-0 inset-x-0 z-40 border-t border-default bg-default/80 backdrop-blur-lg md:hidden pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]"
       :aria-label="t('nav.mainNav')"
     >
       <div class="flex justify-around pt-2 pb-1 px-2">
@@ -89,8 +89,8 @@ function isActive(path: string) {
           v-for="item in nav"
           :key="item.to"
           :to="item.to"
-          class="flex flex-col items-center gap-0.5 px-3 py-1 text-xs rounded-lg transition-colors min-w-[4rem]"
-          :class="isActive(item.to) ? 'text-primary' : 'text-muted'"
+          class="flex flex-col items-center gap-0.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors min-w-[4rem]"
+          :class="isActive(item.to) ? 'text-primary bg-primary/10' : 'text-muted hover:text-default'"
         >
           <UIcon
             :name="item.icon"
