@@ -4,19 +4,17 @@ import { isStandalonePwa } from '~/utils/isStandalonePwa'
 definePageMeta({ layout: false })
 
 const { t } = useI18n()
+const route = useRoute()
 const user = useSupabaseUser()
 
-const inPwa = ref(false)
+const inPwa = ref(import.meta.client ? isStandalonePwa() : false)
 const safariSession = ref(false)
-
-onMounted(() => {
-  inPwa.value = isStandalonePwa()
-})
 
 watchEffect(() => {
   if (!user.value) return
-  if (inPwa.value) {
-    navigateTo('/')
+  const openedFromPwaLogin = route.query.from === 'pwa'
+  if (inPwa.value || !openedFromPwaLogin) {
+    void navigateTo('/')
     return
   }
   safariSession.value = true

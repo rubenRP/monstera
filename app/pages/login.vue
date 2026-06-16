@@ -15,11 +15,7 @@ const sent = ref(false)
 const loading = ref(false)
 const verifying = ref(false)
 const error = ref<string | null>(null)
-const inPwa = ref(false)
-
-onMounted(() => {
-  inPwa.value = isStandalonePwa()
-})
+const inPwa = ref(import.meta.client ? isStandalonePwa() : false)
 
 async function sendMagicLink() {
   loading.value = true
@@ -28,7 +24,9 @@ async function sendMagicLink() {
     const { error: err } = await supabase.auth.signInWithOtp({
       email: email.value,
       options: {
-        emailRedirectTo: `${window.location.origin}/confirm`
+        emailRedirectTo: inPwa.value
+          ? `${window.location.origin}/confirm?from=pwa`
+          : `${window.location.origin}/confirm`
       }
     })
     if (err) throw err
