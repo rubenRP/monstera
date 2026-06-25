@@ -3,6 +3,11 @@ import type { Plant } from '#shared/types/database'
 import { computeWateringSchedule, plantToAdaptiveInput } from '#shared/utils/care/adaptiveWatering'
 import { alignFertilizeDueAt, idealFertilizeDueAt } from '#shared/utils/care/alignFertilize'
 import { upsertPendingCheckInTask } from '../../utils/care/checkInTask'
+import { hasOverduePendingWaterTask } from '#shared/utils/care/overdueWaterTask'
+import {
+  fetchPendingWaterDueAt,
+  logWateringRecalcEvent
+} from '../../utils/care/wateringRecalcEvent'
 
 const EXTERIOR_PLACEMENTS = new Set(['outdoor', 'semi_outdoor'])
 const LOG_PREFIX = '[cron:recalculate-watering]'
@@ -156,14 +161,19 @@ export default defineEventHandler(async (event) => {
       : userFactor.semiFactor
 
     try {
+      if (await hasOverduePendingWaterTask(supabase, plant.id)) {
+        continue
+      }
+
+      const previousDueAt = await fetchPendingWaterDueAt(supabase, plant.id)
+      const previousIntervalDays = plant.watering_interval_days
+
       const schedule = computeWateringSchedule(
         plantToAdaptiveInput(plant as Plant, userFactor.homeLat, {
           recentWetSkipCount: wetSkipCounts.get(plant.id) ?? 0,
           weatherFactor
         })
       )
-
-      const previousIntervalDays = plant.watering_interval_days
 
       const { error: updateError } = await supabase
         .from('plants')
@@ -189,6 +199,17 @@ export default defineEventHandler(async (event) => {
           status: 'pending'
         })
       if (insWaterError) throw insWaterError
+
+      await logWateringRecalcEvent(supabase, {
+        userId: plant.user_id,
+        plantId: plant.id,
+        plantName: plant.name,
+        source: 'cron_exterior',
+        previousDueAt,
+        newDueAt: schedule.nextDueAt,
+        previousIntervalDays,
+        newIntervalDays: schedule.effectiveIntervalDays
+      })
 
       const ideal = idealFertilizeDueAt(
         plant.last_fertilized_at ? new Date(plant.last_fertilized_at) : null,

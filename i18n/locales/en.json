@@ -125,7 +125,28 @@
     "addPlant": "Add plant",
     "addAdvanceWater": "Water early",
     "wateringPlanUpdated": "Watering plan updated",
-    "nextWaterIn": "Next watering in {days} days"
+    "nextWaterIn": "Next watering in {days} days",
+    "recalcTitle": "Recalculated watering",
+    "recalcSubtitle": "Recent due date or interval changes to debug rescheduling",
+    "recalcDismiss": "Dismiss",
+    "recalcDismissAll": "Dismiss all",
+    "recalcDueLabel": "Next watering",
+    "recalcIntervalLabel": "Interval",
+    "recalcNoPreviousDue": "no previous task",
+    "recalcNoPreviousInterval": "—",
+    "recalcIntervalDays": "{days} days",
+    "recalcSource": {
+      "season_sync": "Seasonal adjustment",
+      "fertilize_align_sync": "Fertilizer alignment",
+      "plant_create": "New plant",
+      "plant_edit": "Plant edited",
+      "plant_move": "Site changed",
+      "task_complete": "Watering completed",
+      "task_skip": "Watering postponed",
+      "base_interval_update": "Base interval updated",
+      "cron_exterior": "Exterior plants cron",
+      "manual_exterior": "Manual exterior recalc"
+    }
   },
   "plants": {
     "title": "Plants",

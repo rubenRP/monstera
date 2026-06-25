@@ -26,6 +26,20 @@ const weekDays = computed(() => {
   return days
 })
 
+const overdueDisplayDay = computed(() => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  for (const day of weekDays.value) {
+    const normalized = new Date(day)
+    normalized.setHours(0, 0, 0, 0)
+    if (normalized.getTime() >= today.getTime()) {
+      return normalized
+    }
+  }
+  const last = weekDays.value[weekDays.value.length - 1]
+  return last ? new Date(last) : today
+})
+
 async function load() {
   loading.value = true
   const end = new Date(weekStart.value)
@@ -40,7 +54,15 @@ async function load() {
 
 function tasksForDay(day: Date) {
   const key = day.toDateString()
-  return tasks.value.filter(t => new Date(t.due_at).toDateString() === key)
+  const overdueKey = overdueDisplayDay.value.toDateString()
+  const rangeStart = weekStart.value.getTime()
+  return tasks.value.filter((task) => {
+    const due = new Date(task.due_at)
+    if (due.getTime() < rangeStart) {
+      return key === overdueKey
+    }
+    return due.toDateString() === key
+  })
 }
 
 function prevWeek() {

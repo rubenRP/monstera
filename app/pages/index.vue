@@ -22,6 +22,13 @@ const {
 } = useCareTasks()
 const { submitCheckIn } = usePlantCheckIns()
 const { fetchPlants } = usePlants()
+const {
+  events: recalcEvents,
+  loading: recalcLoading,
+  fetchRecentEvents,
+  dismissEvent,
+  dismissAll: dismissAllRecalcEvents
+} = useWateringRecalcEvents()
 const { apiErrorMessage } = useApiError()
 const toast = useToast()
 
@@ -102,7 +109,7 @@ onMounted(async () => {
   }
   try {
     plants.value = await fetchPlants()
-    await loadTasks()
+    await Promise.all([loadTasks(), fetchRecentEvents()])
   } finally {
     loading.value = false
   }
@@ -126,7 +133,7 @@ async function markDone(taskId: string) {
   acting.value = taskId
   try {
     await completeTask(task)
-    await reloadTasks()
+    await Promise.all([reloadTasks(), fetchRecentEvents()])
   } finally {
     acting.value = null
   }
@@ -203,7 +210,7 @@ async function confirmSkip(task: CareTask, soilStillWet: boolean) {
   acting.value = task.id
   try {
     const newInterval = await skipTask(task, { soilStillWet })
-    await reloadTasks()
+    await Promise.all([reloadTasks(), fetchRecentEvents()])
     if (soilStillWet && newInterval) {
       toast.add({
         title: t('home.wateringPlanUpdated'),
@@ -233,6 +240,14 @@ async function confirmSkip(task: CareTask, soilStillWet: boolean) {
       :plants="plants"
       :today-task-count="todayTaskCount"
       :overdue-task-count="overdueTaskCount"
+    />
+
+    <HomeWateringRecalcWidget
+      v-if="!loading"
+      :events="recalcEvents"
+      :loading="recalcLoading"
+      @dismiss="dismissEvent"
+      @dismiss-all="dismissAllRecalcEvents"
     />
 
     <div

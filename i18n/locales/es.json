@@ -125,7 +125,28 @@
     "addPlant": "Añadir planta",
     "addAdvanceWater": "Regar por adelantado",
     "wateringPlanUpdated": "Plan de riego actualizado",
-    "nextWaterIn": "Próximo riego en {days} días"
+    "nextWaterIn": "Próximo riego en {days} días",
+    "recalcTitle": "Riegos recalculados",
+    "recalcSubtitle": "Cambios recientes en fechas o intervalos para depurar reprogramaciones",
+    "recalcDismiss": "Descartar",
+    "recalcDismissAll": "Descartar todo",
+    "recalcDueLabel": "Próximo riego",
+    "recalcIntervalLabel": "Intervalo",
+    "recalcNoPreviousDue": "sin tarea previa",
+    "recalcNoPreviousInterval": "—",
+    "recalcIntervalDays": "{days} días",
+    "recalcSource": {
+      "season_sync": "Ajuste estacional",
+      "fertilize_align_sync": "Alineación con abono",
+      "plant_create": "Planta nueva",
+      "plant_edit": "Edición de planta",
+      "plant_move": "Cambio de ubicación",
+      "task_complete": "Riego completado",
+      "task_skip": "Riego pospuesto",
+      "base_interval_update": "Intervalo base actualizado",
+      "cron_exterior": "Cron plantas exteriores",
+      "manual_exterior": "Recálculo manual exterior"
+    }
   },
   "plants": {
     "title": "Plantas",

@@ -103,15 +103,28 @@ export function useCareTasks() {
   }
 
   async function fetchTasksInRange(start: Date, end: Date) {
-    const { data, error } = await supabase
-      .from('care_tasks')
-      .select(taskSelect)
-      .eq('status', 'pending')
-      .gte('due_at', start.toISOString())
-      .lte('due_at', end.toISOString())
-      .order('due_at')
-    if (error) throw error
-    return deduplicateOverlappingTasks(filterActivePlantTasks((data ?? []) as CareTask[]))
+    const [inRange, overdue] = await Promise.all([
+      supabase
+        .from('care_tasks')
+        .select(taskSelect)
+        .eq('status', 'pending')
+        .gte('due_at', start.toISOString())
+        .lte('due_at', end.toISOString())
+        .order('due_at'),
+      supabase
+        .from('care_tasks')
+        .select(taskSelect)
+        .eq('status', 'pending')
+        .lt('due_at', start.toISOString())
+        .order('due_at')
+    ])
+    if (inRange.error) throw inRange.error
+    if (overdue.error) throw overdue.error
+    const merged = [
+      ...(overdue.data ?? []),
+      ...(inRange.data ?? [])
+    ] as CareTask[]
+    return deduplicateOverlappingTasks(filterActivePlantTasks(merged))
   }
 
   async function completeTask(task: CareTask) {
@@ -130,7 +143,7 @@ export function useCareTasks() {
         .update({ last_watered_at: now })
         .eq('id', task.plant_id)
 
-      await rescheduleWatering(task.plant_id, { wetSkipCountOverride: 0 })
+      await rescheduleWatering(task.plant_id, { wetSkipCountOverride: 0, source: 'task_complete' })
       return
     }
 
@@ -204,7 +217,8 @@ export function useCareTasks() {
       const wetCount = await countRecentWetSkips(task.plant_id)
       const schedule = await rescheduleWatering(task.plant_id, {
         scheduleFromToday: true,
-        wetSkipCountOverride: wetCount
+        wetSkipCountOverride: wetCount,
+        source: 'task_skip'
       })
       return schedule?.effectiveIntervalDays
     }

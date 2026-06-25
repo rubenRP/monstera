@@ -11,6 +11,8 @@ import {
   idealFertilizeDueAt
 } from '#shared/utils/care/alignFertilize'
 import { idealCheckInDueAt } from '#shared/utils/care/checkInSchedule'
+import { hasOverduePendingWaterTask as queryOverduePendingWaterTask } from '#shared/utils/care/overdueWaterTask'
+import type { WateringRecalcSource } from '#shared/utils/care/wateringRecalcEvent'
 
 const PLANT_SELECT = '*, site:sites(*)'
 const SYNC_STORAGE_PREFIX = 'monstera_watering_sync_'
@@ -18,18 +20,10 @@ const SYNC_STORAGE_PREFIX = 'monstera_watering_sync_'
 export function useAdaptiveWatering() {
   const supabase = useSupabaseClient()
   const { requireUserId } = useRequireUserId()
+  const { fetchWateringSnapshot, logWateringRecalcEvent } = useWateringRecalcEvents()
 
   async function hasOverduePendingWaterTask(plantId: string): Promise<boolean> {
-    const nowIso = new Date().toISOString()
-    const { count, error } = await supabase
-      .from('care_tasks')
-      .select('*', { count: 'exact', head: true })
-      .eq('plant_id', plantId)
-      .eq('type', 'water')
-      .eq('status', 'pending')
-      .lt('due_at', nowIso)
-    if (error) throw error
-    return (count ?? 0) > 0
+    return queryOverduePendingWaterTask(supabase, plantId)
   }
 
   async function fetchHomeLat(): Promise<number | null> {
@@ -128,6 +122,7 @@ export function useAdaptiveWatering() {
       extraWetDelayDays?: number
       scheduleFromToday?: boolean
       wetSkipCountOverride?: number
+      source?: WateringRecalcSource
     }
   ): Promise<WateringScheduleResult | null> {
     const { data: row } = await supabase
@@ -138,6 +133,7 @@ export function useAdaptiveWatering() {
     if (row?.archived_at) return null
 
     const uid = await requireUserId()
+    const before = await fetchWateringSnapshot(plantId)
 
     const { schedule } = await recalculatePlantWatering(plantId, options)
 
@@ -157,6 +153,18 @@ export function useAdaptiveWatering() {
       status: 'pending'
     })
     if (insError) throw insError
+
+    if (options?.source) {
+      await logWateringRecalcEvent({
+        plantId,
+        plantName: before.plantName,
+        source: options.source,
+        previousDueAt: before.dueAt,
+        newDueAt: schedule.nextDueAt,
+        previousIntervalDays: before.intervalDays,
+        newIntervalDays: schedule.effectiveIntervalDays
+      })
+    }
 
     await rescheduleFertilizing(plantId, { nextWaterDueAt: schedule.nextDueAt })
 
@@ -263,7 +271,7 @@ export function useAdaptiveWatering() {
       .update({ watering_base_interval_days: baseDays })
       .eq('id', plantId)
     if (error) throw error
-    await rescheduleWatering(plantId)
+    await rescheduleWatering(plantId, { source: 'base_interval_update' })
   }
 
   async function syncFertilizeAlignmentOnce(): Promise<void> {
@@ -287,7 +295,7 @@ export function useAdaptiveWatering() {
       if (await hasOverduePendingWaterTask(row.id)) {
         continue
       }
-      await rescheduleWatering(row.id)
+      await rescheduleWatering(row.id, { source: 'fertilize_align_sync' })
       await rescheduleCheckIn(row.id)
     }
 
@@ -319,7 +327,7 @@ export function useAdaptiveWatering() {
       if (await hasOverduePendingWaterTask(row.id)) {
         continue
       }
-      await rescheduleWatering(row.id)
+      await rescheduleWatering(row.id, { source: 'season_sync' })
       await rescheduleCheckIn(row.id)
     }
 
@@ -333,6 +341,7 @@ export function useAdaptiveWatering() {
     countRecentWetSkips,
     computeScheduleForPlant,
     recalculatePlantWatering,
+    hasOverduePendingWaterTask,
     rescheduleWatering,
     rescheduleFertilizing,
     rescheduleCheckIn,

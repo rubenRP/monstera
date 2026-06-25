@@ -199,6 +199,7 @@ export function computeNextWateringDue(
     if (anchor.getTime() > due.getTime()) {
       return anchor.toISOString()
     }
+    return due.toISOString()
   }
   due.setDate(due.getDate() + effectiveIntervalDays + wetDelayDays)
   return due.toISOString()

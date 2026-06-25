@@ -13,6 +13,7 @@ import type {
   SubstrateType,
   WindowOrientation
 } from '../../shared/types/database'
+import type { WateringRecalcSource } from '../../shared/utils/care/wateringRecalcEvent'
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
@@ -156,6 +157,48 @@ export interface Database {
           completed_at?: string | null
           status?: CareTaskStatus
           skip_reason?: CareTaskSkipReason | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      watering_recalc_events: {
+        Row: {
+          id: string
+          user_id: string
+          plant_id: string
+          plant_name: string
+          source: WateringRecalcSource
+          previous_due_at: string | null
+          new_due_at: string
+          previous_interval_days: number | null
+          new_interval_days: number
+          dismissed_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          plant_id: string
+          plant_name: string
+          source: WateringRecalcSource
+          previous_due_at?: string | null
+          new_due_at: string
+          previous_interval_days?: number | null
+          new_interval_days: number
+          dismissed_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          plant_id?: string
+          plant_name?: string
+          source?: WateringRecalcSource
+          previous_due_at?: string | null
+          new_due_at?: string
+          previous_interval_days?: number | null
+          new_interval_days?: number
+          dismissed_at?: string | null
           created_at?: string
         }
         Relationships: []

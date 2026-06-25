@@ -1,5 +1,6 @@
 import type { HealthStatus, Plant, PlantArchiveReason } from '#shared/types/database'
 import { HEALTH_STATUS_ORDER } from '#shared/constants/plants'
+import type { WateringRecalcSource } from '#shared/utils/care/wateringRecalcEvent'
 import type { PlantFormInput } from '#shared/utils/plants/schemas'
 import { usesWindowDistance } from '#shared/utils/sites/placement'
 
@@ -8,7 +9,7 @@ const PLANT_SELECT = '*, site:sites(*)'
 export function usePlants() {
   const supabase = useSupabaseClient()
   const { requireUserId } = useRequireUserId()
-  const { rescheduleWatering, rescheduleCheckIn } = useAdaptiveWatering()
+  const { rescheduleWatering, rescheduleCheckIn, hasOverduePendingWaterTask } = useAdaptiveWatering()
 
   type FetchPlantsOptions = {
     filterStatus?: HealthStatus | 'all'
@@ -93,7 +94,7 @@ export function usePlants() {
       plant.photo_path = photoPath
     }
 
-    await regenerateTasks(plant.id, plant)
+    await regenerateTasks(plant.id, plant, 'plant_create')
     return plant
   }
 
@@ -154,7 +155,7 @@ export function usePlants() {
       .eq('type', 'fertilize')
     if (delFertError) throw delFertError
 
-    await regenerateTasks(id, plant as Plant)
+    await regenerateTasks(id, plant as Plant, 'plant_edit')
     return plant as Plant
   }
 
@@ -232,12 +233,18 @@ export function usePlants() {
       .single()
     if (error) throw error
 
-    await regenerateTasks(plantId, plant as Plant)
+    await regenerateTasks(plantId, plant as Plant, 'plant_move')
     return plant as Plant
   }
 
-  async function regenerateTasks(plantId: string, _plant: Plant) {
-    await rescheduleWatering(plantId)
+  async function regenerateTasks(
+    plantId: string,
+    _plant: Plant,
+    source: WateringRecalcSource
+  ) {
+    if (!(await hasOverduePendingWaterTask(plantId))) {
+      await rescheduleWatering(plantId, { source })
+    }
     await rescheduleCheckIn(plantId)
   }
 

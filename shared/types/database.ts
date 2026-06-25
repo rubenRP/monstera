@@ -122,3 +122,5 @@ export interface UserSettings {
   created_at: string
   updated_at: string
 }
+
+export type { WateringRecalcEvent, WateringRecalcSource } from '../utils/care/wateringRecalcEvent'

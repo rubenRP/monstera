@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  computeNextWateringDue,
   computeWateringSchedule,
   drainageFactor,
   getSeason,
@@ -65,6 +66,29 @@ describe('resolveEffectiveWateringInterval', () => {
       drainageFactor: 0.9
     })
     expect(days).toBe(8)
+  })
+})
+
+describe('computeNextWateringDue', () => {
+  it('returns today when last watered date makes the plant overdue', () => {
+    const now = new Date('2026-06-25T12:00:00Z')
+    const lastWateredAt = '2026-06-01T12:00:00Z'
+    const due = computeNextWateringDue(7, 0, lastWateredAt, now, false)
+    expect(due).toBe(now.toISOString())
+  })
+
+  it('returns anchor when next watering is still in the future', () => {
+    const now = new Date('2026-06-25T12:00:00Z')
+    const lastWateredAt = '2026-06-20T12:00:00Z'
+    const due = computeNextWateringDue(7, 0, lastWateredAt, now, false)
+    expect(due).toBe('2026-06-27T12:00:00.000Z')
+  })
+
+  it('schedules from today plus interval when explicitly requested after skip', () => {
+    const now = new Date('2026-06-25T12:00:00Z')
+    const lastWateredAt = '2026-06-01T12:00:00Z'
+    const due = computeNextWateringDue(7, 2, lastWateredAt, now, true)
+    expect(due).toBe('2026-07-04T12:00:00.000Z')
   })
 })
 
