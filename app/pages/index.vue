@@ -24,7 +24,6 @@ const { submitCheckIn } = usePlantCheckIns()
 const { fetchPlants } = usePlants()
 const {
   events: recalcEvents,
-  loading: recalcLoading,
   fetchRecentEvents,
   dismissEvent,
   dismissAll: dismissAllRecalcEvents
@@ -243,9 +242,8 @@ async function confirmSkip(task: CareTask, soilStillWet: boolean) {
     />
 
     <HomeWateringRecalcWidget
-      v-if="!loading"
+      v-if="!loading && recalcEvents.length"
       :events="recalcEvents"
-      :loading="recalcLoading"
       @dismiss="dismissEvent"
       @dismiss-all="dismissAllRecalcEvents"
     />

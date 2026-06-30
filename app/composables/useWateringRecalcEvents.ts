@@ -1,5 +1,8 @@
 import type { WateringRecalcEvent, WateringRecalcSnapshot, WateringRecalcSource } from '#shared/utils/care/wateringRecalcEvent'
-import { wateringRecalcHasChange } from '#shared/utils/care/wateringRecalcEvent'
+import {
+  wateringRecalcEventHasChange,
+  wateringRecalcHasChange
+} from '#shared/utils/care/wateringRecalcEvent'
 
 const RECENT_DAYS = 7
 
@@ -67,7 +70,9 @@ export function useWateringRecalcEvents() {
       .select('*')
       .single()
     if (error) throw error
-    events.value = [data as WateringRecalcEvent, ...events.value.filter(e => e.id !== data.id)]
+    const event = data as WateringRecalcEvent
+    if (!wateringRecalcEventHasChange(event)) return
+    events.value = [event, ...events.value.filter(e => e.id !== event.id)]
   }
 
   async function fetchRecentEvents() {
@@ -83,7 +88,8 @@ export function useWateringRecalcEvents() {
         .order('created_at', { ascending: false })
         .limit(20)
       if (error) throw error
-      events.value = (data ?? []) as WateringRecalcEvent[]
+      events.value = ((data ?? []) as WateringRecalcEvent[])
+        .filter(wateringRecalcEventHasChange)
     } finally {
       loading.value = false
     }

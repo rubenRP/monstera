@@ -3,7 +3,6 @@ import type { WateringRecalcEvent } from '#shared/types/database'
 
 defineProps<{
   events: WateringRecalcEvent[]
-  loading?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -13,7 +12,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const { dateLocale } = useDateLocale()
-const open = ref(true)
+const open = ref(false)
 
 function sourceLabel(source: WateringRecalcEvent['source']) {
   return t(`home.recalcSource.${source}`)
@@ -44,7 +43,7 @@ function formatWhen(createdAt: string) {
 
 <template>
   <UCollapsible
-    v-if="events.length || loading"
+    v-if="events.length"
     v-model:open="open"
     class="group"
   >
@@ -84,89 +83,79 @@ function formatWhen(createdAt: string) {
       <UCollapsibleContent>
         <div class="border-t border-default px-4 pb-4 pt-3 space-y-3">
           <div
-            v-if="loading"
-            class="space-y-2"
+            v-if="events.length > 1"
+            class="flex justify-end"
           >
-            <USkeleton class="h-16" />
-            <USkeleton class="h-16" />
+            <UButton
+              size="xs"
+              variant="ghost"
+              color="neutral"
+              @click="emit('dismissAll')"
+            >
+              {{ t('home.recalcDismissAll') }}
+            </UButton>
           </div>
 
-          <template v-else>
-            <div
-              v-if="events.length > 1"
-              class="flex justify-end"
+          <ul class="space-y-3">
+            <li
+              v-for="event in events"
+              :key="event.id"
+              class="rounded-lg border border-info/20 bg-info/5 p-3 space-y-2"
             >
-              <UButton
-                size="xs"
-                variant="ghost"
-                color="neutral"
-                @click="emit('dismissAll')"
-              >
-                {{ t('home.recalcDismissAll') }}
-              </UButton>
-            </div>
-
-            <ul class="space-y-3">
-              <li
-                v-for="event in events"
-                :key="event.id"
-                class="rounded-lg border border-info/20 bg-info/5 p-3 space-y-2"
-              >
-                <div class="flex items-start justify-between gap-2">
-                  <div class="min-w-0">
-                    <NuxtLink
-                      :to="`/plants/${event.plant_id}`"
-                      class="font-medium text-sm hover:text-primary"
-                    >
-                      {{ event.plant_name }}
-                    </NuxtLink>
-                    <p class="text-xs text-muted mt-0.5">
-                      {{ formatWhen(event.created_at) }}
-                    </p>
-                  </div>
-                  <UButton
-                    size="xs"
-                    variant="ghost"
-                    color="neutral"
-                    icon="i-lucide-x"
-                    :aria-label="t('home.recalcDismiss')"
-                    @click="emit('dismiss', event.id)"
-                  />
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <NuxtLink
+                    :to="`/plants/${event.plant_id}`"
+                    class="font-medium text-sm hover:text-primary"
+                  >
+                    {{ event.plant_name }}
+                  </NuxtLink>
+                  <p class="text-xs text-muted mt-0.5">
+                    {{ formatWhen(event.created_at) }}
+                  </p>
                 </div>
+                <UButton
+                  size="xs"
+                  variant="ghost"
+                  color="neutral"
+                  icon="i-lucide-x"
+                  :aria-label="t('home.recalcDismiss')"
+                  @click="emit('dismiss', event.id)"
+                />
+              </div>
 
-                <UBadge
-                  color="info"
-                  variant="subtle"
-                  size="sm"
-                >
-                  {{ sourceLabel(event.source) }}
-                </UBadge>
+              <UBadge
+                color="info"
+                variant="subtle"
+                size="sm"
+              >
+                {{ sourceLabel(event.source) }}
+              </UBadge>
 
-                <dl class="grid gap-1 text-xs">
-                  <div class="flex flex-wrap gap-x-1">
-                    <dt class="text-muted">
-                      {{ t('home.recalcDueLabel') }}:
-                    </dt>
-                    <dd>
-                      {{ formatDueAt(event.previous_due_at) }}
-                      <span class="text-muted">→</span>
-                      {{ formatDueAt(event.new_due_at) }}
-                    </dd>
-                  </div>
-                  <div class="flex flex-wrap gap-x-1">
-                    <dt class="text-muted">
-                      {{ t('home.recalcIntervalLabel') }}:
-                    </dt>
-                    <dd>
-                      {{ formatInterval(event.previous_interval_days) }}
-                      <span class="text-muted">→</span>
-                      {{ formatInterval(event.new_interval_days) }}
-                    </dd>
-                  </div>
-                </dl>
-              </li>
-            </ul>
-          </template>
+              <dl class="grid gap-1 text-xs">
+                <div class="flex flex-wrap gap-x-1">
+                  <dt class="text-muted">
+                    {{ t('home.recalcDueLabel') }}:
+                  </dt>
+                  <dd>
+                    {{ formatDueAt(event.previous_due_at) }}
+                    <span class="text-muted">→</span>
+                    {{ formatDueAt(event.new_due_at) }}
+                  </dd>
+                </div>
+                <div class="flex flex-wrap gap-x-1">
+                  <dt class="text-muted">
+                    {{ t('home.recalcIntervalLabel') }}:
+                  </dt>
+                  <dd>
+                    {{ formatInterval(event.previous_interval_days) }}
+                    <span class="text-muted">→</span>
+                    {{ formatInterval(event.new_interval_days) }}
+                  </dd>
+                </div>
+              </dl>
+            </li>
+          </ul>
         </div>
       </UCollapsibleContent>
     </UCard>
