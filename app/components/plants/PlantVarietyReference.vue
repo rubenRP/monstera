@@ -8,10 +8,6 @@ const props = defineProps<{
   plantId?: string
 }>()
 
-const emit = defineEmits<{
-  applySuggestion: [days: number]
-}>()
-
 const { t } = useI18n()
 const { fetchSpeciesProfile } = useSpeciesProfile()
 const supabase = useSupabaseClient()
@@ -105,21 +101,12 @@ const open = ref(false)
             {{ profile.humidity }}
           </p>
         </div>
-        <div
+        <p
           v-if="suggestedDays"
-          class="flex flex-wrap items-center gap-2"
+          class="text-muted text-xs"
         >
-          <span class="text-muted">
-            {{ t('plants.wateringSuggestDays', { days: suggestedDays }) }}
-          </span>
-          <UButton
-            size="xs"
-            variant="soft"
-            @click="emit('applySuggestion', suggestedDays)"
-          >
-            {{ t('plants.useWateringSuggestion') }}
-          </UButton>
-        </div>
+          {{ t('plants.wateringSuggestDays', { days: suggestedDays }) }}
+        </p>
       </div>
       <p
         v-else-if="!loading"

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Plant } from '#shared/types/database'
-import type { WateringFactors } from '#shared/utils/care/adaptiveWatering'
+import type { WateringFactors, WateringReferenceSource } from '#shared/utils/care/adaptiveWatering'
 
 const { t } = useI18n()
 
@@ -8,13 +8,15 @@ const props = defineProps<{
   plant: Plant
   factors: WateringFactors
   effectiveDays: number
+  referenceSource?: WateringReferenceSource
 }>()
 
 const explainOpen = ref(false)
 
-const baseDays = computed(
-  () => props.plant.watering_base_interval_days ?? props.plant.watering_interval_days
-)
+const referenceSourceLabel = computed(() => {
+  const source = props.referenceSource ?? 'default'
+  return t(`care.referenceSource.${source}`)
+})
 
 function factorLabel(key: string, factor: number): string | null {
   if (factor === 1) return null
@@ -65,7 +67,10 @@ const showExteriorWeatherHint = computed(() => {
       <span class="font-medium text-sm">{{ t('care.wateringSchedule') }}</span>
     </template>
     <p class="text-sm">
-      {{ t('care.wateringBaseEffective', { base: baseDays, effective: effectiveDays }) }}
+      {{ t('care.wateringIntervalDays', { days: effectiveDays }) }}
+    </p>
+    <p class="mt-1 text-xs text-muted">
+      {{ referenceSourceLabel }}
     </p>
     <ul
       v-if="activeFactors.length"

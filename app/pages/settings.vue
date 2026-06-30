@@ -15,6 +15,7 @@ const homeLon = ref(String(config.public.homeLon))
 const saving = ref(false)
 const pushLoading = ref(false)
 const recalcLoading = ref(false)
+const recalcAllLoading = ref(false)
 
 const localeItems = computed(() =>
   locales.value.map(l => ({ label: l.name, value: l.code }))
@@ -97,6 +98,50 @@ async function enablePush() {
   }
 }
 
+async function recalculateAllWatering() {
+  recalcAllLoading.value = true
+  try {
+    const { data } = await supabase.auth.getSession()
+    const token = data.session?.access_token
+    if (!token) throw new Error(t('auth.notAuthenticated'))
+
+    const result = await $fetch<{
+      updated: number
+      errors: number
+      plants: number
+      skipped: number
+    }>(
+      '/api/watering/recalculate-all',
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    )
+
+    if (result.plants === 0) {
+      toast.add({ title: t('settings.wateringRecalcAllEmpty'), color: 'neutral' })
+      return
+    }
+
+    toast.add({
+      title: t('settings.wateringRecalcAllDone', { count: result.updated }),
+      description: buildRecalcToastDescription(result.errors, result.skipped),
+      color: result.errors ? 'warning' : 'success'
+    })
+  } catch (e: unknown) {
+    toast.add({ title: t('common.error'), description: apiErrorMessage(e), color: 'error' })
+  } finally {
+    recalcAllLoading.value = false
+  }
+}
+
+function buildRecalcToastDescription(errors: number, skipped: number): string | undefined {
+  const parts: string[] = []
+  if (errors) parts.push(t('settings.wateringRecalcErrors', { count: errors }))
+  if (skipped) parts.push(t('settings.wateringRecalcSkipped', { count: skipped }))
+  return parts.length ? parts.join(' ') : undefined
+}
+
 async function recalculateExteriorWatering() {
   recalcLoading.value = true
   try {
@@ -119,9 +164,7 @@ async function recalculateExteriorWatering() {
 
     toast.add({
       title: t('settings.wateringRecalcDone', { count: result.updated }),
-      description: result.errors
-        ? t('settings.wateringRecalcErrors', { count: result.errors })
-        : undefined,
+      description: buildRecalcToastDescription(result.errors, 0),
       color: result.errors ? 'warning' : 'success'
     })
   } catch (e: unknown) {
@@ -229,18 +272,35 @@ async function onLocaleChange(value: string) {
 
     <UCard>
       <template #header>
-        {{ t('settings.wateringRecalcTitle') }}
+        {{ t('settings.wateringRecalcSectionTitle') }}
       </template>
-      <p class="text-sm text-muted mb-3">
-        {{ t('settings.wateringRecalcHint') }}
-      </p>
-      <UButton
-        :loading="recalcLoading"
-        icon="i-lucide-refresh-ccw"
-        @click="recalculateExteriorWatering"
-      >
-        {{ t('settings.wateringRecalcAction') }}
-      </UButton>
+      <div class="space-y-4">
+        <div>
+          <p class="text-sm text-muted mb-3">
+            {{ t('settings.wateringRecalcAllHint') }}
+          </p>
+          <UButton
+            :loading="recalcAllLoading"
+            icon="i-lucide-refresh-ccw"
+            @click="recalculateAllWatering"
+          >
+            {{ t('settings.wateringRecalcAllAction') }}
+          </UButton>
+        </div>
+        <div class="border-t border-default pt-4">
+          <p class="text-sm text-muted mb-3">
+            {{ t('settings.wateringRecalcHint') }}
+          </p>
+          <UButton
+            :loading="recalcLoading"
+            variant="soft"
+            icon="i-lucide-sun"
+            @click="recalculateExteriorWatering"
+          >
+            {{ t('settings.wateringRecalcAction') }}
+          </UButton>
+        </div>
+      </div>
     </UCard>
 
     <UCard>

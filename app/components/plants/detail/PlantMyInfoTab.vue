@@ -44,7 +44,7 @@ const emit = defineEmits<{
 }>()
 
 const { taskLabel, taskIcon, overdueDays, overdueLabel, fertilizeWithWater } = useCareTasks()
-const { fetchHomeLat, computeScheduleForPlant, countRecentWetSkips } = useAdaptiveWatering()
+const { fetchHomeLat, computeScheduleForPlant, countRecentWetSkips, fetchWateringHistoryIntervals, resolveWateringReference } = useAdaptiveWatering()
 const { snapshot: weatherSnapshot, load: loadWeather } = usePlantHomeWeather()
 const { fetchSpeciesProfile } = useSpeciesProfile()
 
@@ -93,8 +93,13 @@ async function loadSpeciesProfile() {
 async function loadWateringSchedule() {
   const homeLat = await fetchHomeLat()
   const wetCount = await countRecentWetSkips(props.plant.id)
+  const historyIntervals = await fetchWateringHistoryIntervals(props.plant.id)
+  const reference = await resolveWateringReference(props.plant.id, false)
   wateringSchedule.value = await computeScheduleForPlant(props.plant, homeLat, {
-    recentWetSkipCount: wetCount
+    recentWetSkipCount: wetCount,
+    speciesReferenceDays: reference.referenceDays,
+    referenceSource: reference.source,
+    completedWaterIntervals: historyIntervals
   })
 }
 
@@ -534,6 +539,7 @@ const climateItems = computed((): PlantInfoGridItem[] => {
       :plant="plant"
       :factors="wateringSchedule.factors"
       :effective-days="wateringSchedule.effectiveIntervalDays"
+      :reference-source="wateringSchedule.referenceSource"
     />
 
     <PlantsSpeciesPlantSpeciesSectionCard v-if="plant.notes?.trim()">

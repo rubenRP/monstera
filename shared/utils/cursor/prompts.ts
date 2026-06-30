@@ -94,6 +94,18 @@ JSON esperado:
 Mapeo severity → suggestedHealthStatus: low→fair, medium→sick, high→critical (ajusta según gravedad real).`
 }
 
+export function buildWateringReferencePrompt(plant: Plant): string {
+  return `Eres un experto en cuidado de plantas de interior. Estima el intervalo de riego de referencia (días entre riegos en condiciones estándar de interior) para esta planta. Responde SOLO con JSON válido (sin markdown).
+
+Planta:
+${plantContext(plant)}
+
+JSON esperado:
+{
+  "referenceDays": number entre 1 y 90
+}`
+}
+
 export function buildRecommendPrompt(
   plant: Plant,
   weatherSummary: string,

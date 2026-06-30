@@ -1,6 +1,6 @@
 import type { HealthStatus, Plant, PlantArchiveReason } from '#shared/types/database'
 import { HEALTH_STATUS_ORDER } from '#shared/constants/plants'
-import type { WateringRecalcSource } from '#shared/utils/care/wateringRecalcEvent'
+import { DEFAULT_WATERING_REFERENCE_DAYS } from '#shared/constants/care'
 import type { PlantFormInput } from '#shared/utils/plants/schemas'
 import { usesWindowDistance } from '#shared/utils/sites/placement'
 
@@ -243,21 +243,20 @@ export function usePlants() {
     source: WateringRecalcSource
   ) {
     if (!(await hasOverduePendingWaterTask(plantId))) {
-      await rescheduleWatering(plantId, { source })
+      await rescheduleWatering(plantId, { source, allowCursor: true })
     }
     await rescheduleCheckIn(plantId)
   }
 
   function sanitizePlantPayload(form: PlantFormInput) {
-    const base = form.watering_base_interval_days
     return {
       name: form.name,
       species: form.species || null,
       notes: form.notes ?? '',
       health_status: form.health_status,
       health_status_note: form.health_status_note || null,
-      watering_base_interval_days: base,
-      watering_interval_days: base,
+      watering_base_interval_days: DEFAULT_WATERING_REFERENCE_DAYS,
+      watering_interval_days: DEFAULT_WATERING_REFERENCE_DAYS,
       fertilizing_interval_days: form.fertilizing_interval_days,
       check_in_interval_days: form.check_in_interval_days,
       site_id: form.site_id || null,

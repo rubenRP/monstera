@@ -1,5 +1,4 @@
 import { API_ERROR_CODES } from '#shared/utils/i18n/apiErrors'
-import { isExteriorPlant } from '#shared/utils/care/plantPlacement'
 import type { Plant } from '#shared/types/database'
 import {
   buildWateringRecalcContexts,
@@ -20,28 +19,17 @@ export default defineEventHandler(async (event) => {
     throwApiError(401, API_ERROR_CODES.AUTH_INVALID_SESSION)
   }
 
-  const { data: settings, error: settingsError } = await supabase
+  const locale = getRequestLocale(event)
+  const config = useRuntimeConfig()
+
+  const { data: settings } = await supabase
     .from('user_settings')
     .select('home_lat, home_lon')
     .eq('user_id', user.id)
     .maybeSingle()
-  if (settingsError) throw settingsError
 
-  if (settings?.home_lat == null || settings?.home_lon == null) {
-    throwApiError(400, API_ERROR_CODES.VALIDATION_FAILED, {
-      messageKey: 'errors.validation.homeLocationRequired'
-    })
-  }
-
-  const homeLat = Number(settings.home_lat)
-  const homeLon = Number(settings.home_lon)
-
-  const metrics = await fetchWeatherMetrics(homeLat, homeLon)
-  if (!metrics) {
-    throwApiError(503, API_ERROR_CODES.WEATHER_UNAVAILABLE)
-  }
-
-  const config = useRuntimeConfig()
+  const homeLat = settings?.home_lat != null ? Number(settings.home_lat) : null
+  const homeLon = settings?.home_lon != null ? Number(settings.home_lon) : null
 
   const { data: plants, error: plantError } = await supabase
     .from('plants')
@@ -50,26 +38,22 @@ export default defineEventHandler(async (event) => {
     .is('archived_at', null)
   if (plantError) throw plantError
 
-  const exteriorPlants = (plants ?? []).filter(plant => isExteriorPlant(plant as Plant))
-
-  if (!exteriorPlants.length) {
-    return { updated: 0, errors: 0, plants: 0 }
+  const allPlants = (plants ?? []) as Plant[]
+  if (!allPlants.length) {
+    return { updated: 0, errors: 0, plants: 0, skipped: 0 }
   }
 
-  const plantIds = exteriorPlants.map(plant => plant.id)
+  const plantIds = allPlants.map(plant => plant.id)
   const wetSkipCounts = await loadWetSkipCounts(supabase, plantIds)
-  const plantContextById = await buildWateringRecalcContexts(
-    exteriorPlants as Plant[],
-    homeLat,
-    homeLon
-  )
+  const plantContextById = await buildWateringRecalcContexts(allPlants, homeLat, homeLon)
 
   const batchResult = await runWateringRecalcBatch({
-    plants: exteriorPlants as Plant[],
+    plants: allPlants,
     plantContextById,
     wetSkipCounts,
-    source: 'manual_exterior',
+    source: 'manual_all',
     supabase,
+    locale,
     perenualApiKey: config.perenualApiKey,
     allowCursor: false
   })
@@ -77,6 +61,7 @@ export default defineEventHandler(async (event) => {
   return {
     updated: batchResult.updated,
     errors: batchResult.errors,
-    plants: exteriorPlants.length
+    skipped: batchResult.skipped,
+    plants: allPlants.length
   }
 })

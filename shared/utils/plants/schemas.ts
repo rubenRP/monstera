@@ -17,7 +17,6 @@ export const plantFormSchema = z.object({
   notes: z.string().optional().default(''),
   health_status: healthStatusSchema.default('healthy'),
   health_status_note: z.string().optional().nullable(),
-  watering_base_interval_days: z.coerce.number().int().min(1).max(90).default(7),
   fertilizing_interval_days: z.coerce.number().int().min(1).max(365).default(30),
   check_in_interval_days: z.coerce.number().int().min(7).max(180).default(30),
   site_id: z.string().uuid().optional().nullable(),
@@ -93,3 +92,14 @@ export const recommendResponseSchema = z.object({
 
 export type DiagnosisResponse = z.infer<typeof diagnosisResponseSchema>
 export type RecommendResponse = z.infer<typeof recommendResponseSchema>
+
+export const wateringReferenceResponseSchema = z.object({
+  referenceDays: z.number().int().min(1).max(90)
+})
+
+export type WateringReferenceResponse = z.infer<typeof wateringReferenceResponseSchema>
+
+export const resolveWateringReferenceRequestSchema = z.object({
+  plantId: z.string().uuid(),
+  allowCursor: z.boolean().optional().default(true)
+})

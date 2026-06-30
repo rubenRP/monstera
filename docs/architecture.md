@@ -83,6 +83,7 @@ Types: [`shared/types/database.ts`](../shared/types/database.ts).
 | Job | Trigger | Function |
 |-----|---------|----------|
 | `send-daily` | Daily 09:00 UTC | Web Push for users with pending tasks |
-| `recalculate-watering` | Every 2 days | Weather-based intervals for outdoor/semi-outdoor plants |
+| `recalculate-watering` | Weekly (Sunday midnight UTC) | Weather-based intervals for outdoor/semi-outdoor plants |
+| `recalculate-watering-indoor` | 1st of each month | Season/history-based intervals for indoor plants |
 
 Configured in [`vercel.json`](../vercel.json); self-hosters use system cron — see [self-hosting.md](./self-hosting.md).

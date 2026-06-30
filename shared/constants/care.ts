@@ -3,6 +3,7 @@ import type { HealthStatus, Luminosity, Placement, PotSize, SubstrateType } from
 export const MAX_WATERING_INTERVAL_DAYS = 90
 export const MIN_WATERING_INTERVAL_DAYS = 1
 export const WET_SKIP_LOOKBACK_DAYS = 60
+export const DEFAULT_WATERING_REFERENCE_DAYS = 7
 
 export const SEASON_FACTORS = {
   winter: 1.15,

@@ -10,7 +10,9 @@ export type WateringRecalcSource
     | 'task_skip'
     | 'base_interval_update'
     | 'cron_exterior'
+    | 'cron_indoor'
     | 'manual_exterior'
+    | 'manual_all'
 
 export interface WateringRecalcEvent {
   id: string

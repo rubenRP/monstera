@@ -82,11 +82,17 @@
     "pushDenied": "Notification permission denied",
     "pushSessionExpired": "Session expired. Sign in again and try once more",
     "vapidHint": "Set NUXT_PUBLIC_VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY",
+    "wateringRecalcSectionTitle": "Recalculate watering",
+    "wateringRecalcAllHint": "Updates the interval and next watering date for all plants from species, environment, and history.",
+    "wateringRecalcAllAction": "Recalculate all plants",
+    "wateringRecalcAllDone": "Watering recalculated for {count} plants",
+    "wateringRecalcAllEmpty": "No plants to recalculate",
     "wateringRecalcTitle": "Recalculate outdoor watering",
-    "wateringRecalcHint": "Updates outdoor plant intervals using your home weather.",
-    "wateringRecalcAction": "Recalculate now",
+    "wateringRecalcHint": "Outdoor and semi-outdoor plants only, using your home weather.",
+    "wateringRecalcAction": "Recalculate outdoor plants",
     "wateringRecalcDone": "Outdoor watering recalculated ({count})",
     "wateringRecalcErrors": "{count} failed to update.",
+    "wateringRecalcSkipped": "{count} skipped with overdue pending water task.",
     "wateringRecalcEmpty": "No outdoor plants to recalculate"
   },
   "home": {
@@ -145,7 +151,9 @@
       "task_skip": "Watering postponed",
       "base_interval_update": "Base interval updated",
       "cron_exterior": "Exterior plants cron",
-      "manual_exterior": "Manual exterior recalc"
+      "cron_indoor": "Indoor plants cron",
+      "manual_exterior": "Manual exterior recalc",
+      "manual_all": "Manual recalc"
     }
   },
   "plants": {
@@ -195,8 +203,7 @@
     "photo": "Photo",
     "healthStatus": "Health status",
     "waterEvery": "Water every (days)",
-    "waterBaseEvery": "Base watering interval (days)",
-    "waterBaseHint": "The calendar adjusts automatically for season, pot, and environment.",
+    "wateringAutoHint": "Watering interval is calculated automatically from species, environment, and your history.",
     "fieldWaterBase": "Base watering",
     "fieldWaterEffective": "Effective watering (calendar)",
     "fertilizeEvery": "Fertilize every (days)",
@@ -315,7 +322,6 @@
     "varietyReferenceEmpty": "No variety profile cached. Save the species and check the Variety tab.",
     "fromVariety": "From variety (Perenual)",
     "wateringSuggestDays": "Variety suggests ~{days} days between waterings",
-    "useWateringSuggestion": "Use suggestion",
     "completenessBanner": "{count} field missing on this plant | {count} fields missing on this plant",
     "completenessSite": "Link a site to complete light and placement",
     "completenessHome": "Set home location for climate and humidity",
@@ -379,10 +385,16 @@
     "skipWaterTitle": "Skip watering",
     "skipWaterBody": "Skip watering {plant} because the soil is still wet? We'll reschedule the next watering with extra margin.",
     "wateringSchedule": "Watering schedule",
-    "wateringBaseEffective": "Base: {base} days → Effective: {effective} days",
+    "wateringIntervalDays": "Water every {days} days",
+    "referenceSource": {
+      "species": "Reference from species profile",
+      "ai": "AI estimate",
+      "default": "Default estimate",
+      "override": "Manual adjustment applied"
+    },
     "howCalculated": "How is this calculated?",
     "howCalculatedTitle": "Watering interval calculation",
-    "howCalculatedBody": "We start from your base interval and multiply by season (hemisphere from your location), pot size, substrate, site light, health, indoor/outdoor placement, distance to window, drainage, and home weather (stronger for outdoor plants). Wet-soil skips in the last 60 days add extra days to the next due date.\n\nLiquid fertilizing is scheduled for the first watering on or after your ideal fertilizing date.",
+    "howCalculatedBody": "The interval starts from the species reference (Perenual or AI when data is missing), then adjusts for season (hemisphere from your location), pot, substrate, site light, health, indoor/outdoor placement, window distance, drainage, and home weather (stronger for outdoor plants). With enough completed watering history, we blend the real median with the environmental estimate. Wet-soil skips in the last 60 days add extra days to the next due date.\n\nLiquid fertilizing is scheduled for the first watering on or after your ideal fertilizing date.",
     "fertilizeWithWater": "with watering",
     "seasonLabel": {
       "winter": "Winter ×{factor}",

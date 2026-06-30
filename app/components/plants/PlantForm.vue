@@ -1,13 +1,9 @@
 <script setup lang="ts">
 import type { HealthStatus, Plant } from '#shared/types/database'
 import { plantFormSchema, type PlantFormInput } from '#shared/utils/plants/schemas'
-import { suggestWateringDaysFromProfile } from '#shared/utils/care/speciesWateringHint'
-import type { SpeciesProfile } from '#shared/types/species'
-import { normalizeSpeciesQuery } from '#shared/utils/species/normalize'
 
 const { t } = useI18n()
 const { validationMessage } = useApiError()
-const supabase = useSupabaseClient()
 
 const props = defineProps<{
   initial?: Plant | null
@@ -24,8 +20,6 @@ const form = reactive<PlantFormInput>({
   notes: props.initial?.notes ?? '',
   health_status: (props.initial?.health_status ?? 'healthy') as HealthStatus,
   health_status_note: props.initial?.health_status_note ?? '',
-  watering_base_interval_days: props.initial?.watering_base_interval_days
-    ?? props.initial?.watering_interval_days ?? 7,
   fertilizing_interval_days: props.initial?.fertilizing_interval_days ?? 30,
   check_in_interval_days: props.initial?.check_in_interval_days ?? 30,
   site_id: props.initial?.site_id ?? null,
@@ -44,33 +38,6 @@ const form = reactive<PlantFormInput>({
 const photoFile = ref<File | null>(null)
 const photoPreview = ref<string | null>(null)
 const errors = ref<string | null>(null)
-const wateringTouched = ref(!!props.initial)
-const speciesProfileForSuggest = ref<SpeciesProfile | null>(null)
-
-async function loadSpeciesSuggestion() {
-  const query = form.species?.trim()
-  if (!query) {
-    speciesProfileForSuggest.value = null
-    return
-  }
-  const normalized = normalizeSpeciesQuery(query)
-  const { data } = await supabase
-    .from('species_profiles')
-    .select('profile')
-    .eq('species_query', normalized)
-    .maybeSingle()
-  speciesProfileForSuggest.value = (data?.profile as SpeciesProfile | undefined) ?? null
-  if (!props.initial && !wateringTouched.value) {
-    const days = suggestWateringDaysFromProfile(speciesProfileForSuggest.value)
-    if (days != null) {
-      form.watering_base_interval_days = days
-    }
-  }
-}
-
-watch(() => form.species, () => {
-  void loadSpeciesSuggestion()
-}, { immediate: true })
 
 function onPhotoChange(e: Event) {
   const input = e.target as HTMLInputElement
@@ -78,15 +45,6 @@ function onPhotoChange(e: Event) {
   if (!file) return
   photoFile.value = file
   photoPreview.value = URL.createObjectURL(file)
-}
-
-function applyWateringSuggestion(days: number) {
-  form.watering_base_interval_days = days
-  wateringTouched.value = true
-}
-
-function onWateringInput() {
-  wateringTouched.value = true
 }
 
 function handleSubmit() {
@@ -133,7 +91,6 @@ function handleSubmit() {
     <PlantsPlantVarietyReference
       :species="form.species"
       :plant-id="initial?.id"
-      @apply-suggestion="applyWateringSuggestion"
     />
 
     <UFormField :label="t('plants.photo')">
@@ -172,19 +129,10 @@ function handleSubmit() {
       <h2 class="text-sm font-semibold text-highlighted">
         {{ t('plants.formSectionCare') }}
       </h2>
+      <p class="text-xs text-muted">
+        {{ t('plants.wateringAutoHint') }}
+      </p>
       <div class="grid grid-cols-2 gap-4">
-        <UFormField :label="t('plants.waterBaseEvery')">
-          <UInput
-            v-model.number="form.watering_base_interval_days"
-            type="number"
-            min="1"
-            max="90"
-            @input="onWateringInput"
-          />
-          <template #hint>
-            {{ t('plants.waterBaseHint') }}
-          </template>
-        </UFormField>
         <UFormField :label="t('plants.fertilizeEvery')">
           <UInput
             v-model.number="form.fertilizing_interval_days"

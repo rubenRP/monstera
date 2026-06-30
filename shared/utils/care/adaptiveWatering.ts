@@ -27,8 +27,14 @@ import type {
   Site,
   SubstrateType
 } from '../../types/database'
+import {
+  blendIntervalWithHistory,
+  medianDaysBetweenWaterings
+} from './wateringHistory'
+import type { WateringReferenceSource } from './resolveWateringReference'
 import { usesWindowDistance } from '../sites/placement'
 
+export type { WateringReferenceSource }
 export type Season = keyof typeof SEASON_FACTORS
 
 export interface WateringFactors {
@@ -68,6 +74,8 @@ export interface WateringScheduleResult {
   effectiveIntervalDays: number
   factors: WateringFactors
   nextDueAt: string
+  referenceDays: number
+  referenceSource: WateringReferenceSource
 }
 
 export function getSeason(month: number, homeLat: number | null): Season {
@@ -209,6 +217,7 @@ export function computeWateringSchedule(
   input: AdaptiveWateringInput & {
     lastWateredAt: string | null
     scheduleFromToday?: boolean
+    referenceSource?: WateringReferenceSource
   }
 ): WateringScheduleResult {
   const factors = computeWateringFactors(input)
@@ -223,21 +232,71 @@ export function computeWateringSchedule(
     input.now,
     input.scheduleFromToday
   )
-  return { effectiveIntervalDays, factors, nextDueAt }
+  return {
+    effectiveIntervalDays,
+    factors,
+    nextDueAt,
+    referenceDays: input.wateringBaseIntervalDays,
+    referenceSource: input.referenceSource ?? 'default'
+  }
+}
+
+export function computeOptimalWateringSchedule(
+  input: AdaptiveWateringInput & {
+    lastWateredAt: string | null
+    scheduleFromToday?: boolean
+    completedWaterIntervals?: number[]
+    referenceSource?: WateringReferenceSource
+  }
+): WateringScheduleResult {
+  const factors = computeWateringFactors(input)
+  const environmentalDays = resolveEffectiveWateringInterval(
+    input.wateringBaseIntervalDays,
+    factors
+  )
+  const intervals = input.completedWaterIntervals ?? []
+  const historicalDays = medianDaysBetweenWaterings(intervals)
+  const effectiveIntervalDays = historicalDays != null
+    ? blendIntervalWithHistory(environmentalDays, historicalDays, intervals.length)
+    : environmentalDays
+  const nextDueAt = computeNextWateringDue(
+    effectiveIntervalDays,
+    factors.wetDelayDays,
+    input.lastWateredAt,
+    input.now,
+    input.scheduleFromToday
+  )
+  return {
+    effectiveIntervalDays,
+    factors,
+    nextDueAt,
+    referenceDays: input.wateringBaseIntervalDays,
+    referenceSource: input.referenceSource ?? 'default'
+  }
 }
 
 export function plantToAdaptiveInput(
   plant: Plant & { site?: Site | null },
   homeLat: number | null,
   options?: {
+    speciesReferenceDays?: number
     now?: Date
     recentWetSkipCount?: number
     extraWetDelayDays?: number
     scheduleFromToday?: boolean
     weatherFactor?: number
+    completedWaterIntervals?: number[]
+    referenceSource?: WateringReferenceSource
   }
-): AdaptiveWateringInput & { lastWateredAt: string | null, scheduleFromToday?: boolean } {
-  const base = plant.watering_base_interval_days ?? plant.watering_interval_days
+): AdaptiveWateringInput & {
+  lastWateredAt: string | null
+  scheduleFromToday?: boolean
+  completedWaterIntervals?: number[]
+  referenceSource?: WateringReferenceSource
+} {
+  const base = options?.speciesReferenceDays
+    ?? plant.watering_base_interval_days
+    ?? plant.watering_interval_days
   return {
     wateringBaseIntervalDays: base,
     potSize: plant.pot_size,
@@ -254,6 +313,8 @@ export function plantToAdaptiveInput(
     recentWetSkipCount: options?.recentWetSkipCount,
     extraWetDelayDays: options?.extraWetDelayDays,
     lastWateredAt: plant.last_watered_at,
-    scheduleFromToday: options?.scheduleFromToday
+    scheduleFromToday: options?.scheduleFromToday,
+    completedWaterIntervals: options?.completedWaterIntervals,
+    referenceSource: options?.referenceSource
   }
 }

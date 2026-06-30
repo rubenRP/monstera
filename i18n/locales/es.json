@@ -82,11 +82,17 @@
     "pushDenied": "Permiso de notificaciones denegado",
     "pushSessionExpired": "Sesión caducada. Vuelve a iniciar sesión e inténtalo de nuevo",
     "vapidHint": "Configura NUXT_PUBLIC_VAPID_PUBLIC_KEY y VAPID_PRIVATE_KEY",
+    "wateringRecalcSectionTitle": "Recalcular riego",
+    "wateringRecalcAllHint": "Actualiza el intervalo y la próxima fecha de riego de todas tus plantas según especie, entorno e historial.",
+    "wateringRecalcAllAction": "Recalcular todas las plantas",
+    "wateringRecalcAllDone": "Riego recalculado en {count} plantas",
+    "wateringRecalcAllEmpty": "No hay plantas para recalcular",
     "wateringRecalcTitle": "Recalcular riego exterior",
-    "wateringRecalcHint": "Actualiza el intervalo de riego de plantas en exterior usando el tiempo del hogar.",
-    "wateringRecalcAction": "Recalcular ahora",
+    "wateringRecalcHint": "Solo plantas en exterior o terraza, usando el tiempo del hogar.",
+    "wateringRecalcAction": "Recalcular plantas exteriores",
     "wateringRecalcDone": "Riego exterior recalculado ({count})",
     "wateringRecalcErrors": "Se omitieron {count} por error.",
+    "wateringRecalcSkipped": "Se omitieron {count} con riego pendiente vencido.",
     "wateringRecalcEmpty": "No hay plantas en exterior para recalcular"
   },
   "home": {
@@ -145,7 +151,9 @@
       "task_skip": "Riego pospuesto",
       "base_interval_update": "Intervalo base actualizado",
       "cron_exterior": "Cron plantas exteriores",
-      "manual_exterior": "Recálculo manual exterior"
+      "cron_indoor": "Cron plantas interiores",
+      "manual_exterior": "Recálculo manual exterior",
+      "manual_all": "Recálculo manual"
     }
   },
   "plants": {
@@ -195,8 +203,7 @@
     "photo": "Foto",
     "healthStatus": "Estado de salud",
     "waterEvery": "Riego cada (días)",
-    "waterBaseEvery": "Riego base cada (días)",
-    "waterBaseHint": "El calendario ajusta automáticamente según época, maceta y entorno.",
+    "wateringAutoHint": "El intervalo de riego se calcula automáticamente según la especie, el entorno y tu historial.",
     "fieldWaterBase": "Riego base",
     "fieldWaterEffective": "Riego efectivo (calendario)",
     "fertilizeEvery": "Fertilizar cada (días)",
@@ -315,7 +322,6 @@
     "varietyReferenceEmpty": "Sin ficha de variedad en caché. Guarda la especie y consulta la pestaña Variedad.",
     "fromVariety": "Según variedad (Perenual)",
     "wateringSuggestDays": "La variedad sugiere ~{days} días entre riegos",
-    "useWateringSuggestion": "Usar sugerencia",
     "completenessBanner": "{count} dato pendiente en esta planta | {count} datos pendientes en esta planta",
     "completenessSite": "Vincula un sitio para completar luz y ubicación",
     "completenessHome": "Configura la ubicación del hogar para clima y humedad",
@@ -379,10 +385,16 @@
     "skipWaterTitle": "Omitir riego",
     "skipWaterBody": "¿Omites el riego de {plant} porque la tierra sigue húmeda? Reprogramaremos el próximo riego con un margen extra.",
     "wateringSchedule": "Calendario de riego",
-    "wateringBaseEffective": "Base: {base} días → Efectivo: {effective} días",
+    "wateringIntervalDays": "Riego cada {days} días",
+    "referenceSource": {
+      "species": "Referencia según la especie",
+      "ai": "Estimación con IA",
+      "default": "Estimación por defecto",
+      "override": "Ajuste manual aplicado"
+    },
     "howCalculated": "¿Cómo se calcula?",
     "howCalculatedTitle": "Cálculo del intervalo de riego",
-    "howCalculatedBody": "Partimos de tu intervalo base y lo multiplicamos por factores de época (hemisferio según tu ubicación), maceta, sustrato, luz del sitio, salud, ubicación interior/exterior, distancia a la ventana, drenaje y clima del hogar (más peso en exterior). Si omites riegos por tierra húmeda, añadimos días extra al próximo vencimiento (últimos 60 días).\n\nLa fertilización líquida se programa para el primer riego en o después de la fecha ideal según tu intervalo de fertilización.",
+    "howCalculatedBody": "El intervalo parte de la referencia de la especie (Perenual o IA si no hay datos), se ajusta por época (hemisferio según tu ubicación), maceta, sustrato, luz del sitio, salud, ubicación interior/exterior, distancia a la ventana, drenaje y clima del hogar (más peso en exterior). Con suficiente historial de riegos completados, mezclamos la mediana real con la estimación ambiental. Si omites riegos por tierra húmeda, añadimos días extra al próximo vencimiento (últimos 60 días).\n\nLa fertilización líquida se programa para el primer riego en o después de la fecha ideal según tu intervalo de fertilización.",
     "fertilizeWithWater": "con el riego",
     "seasonLabel": {
       "winter": "Invierno ×{factor}",

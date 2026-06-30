@@ -129,7 +129,8 @@ Deploy the Nitro output (`.output/`) on any Node 22 host (VPS, Railway, Fly.io, 
 | Endpoint | Schedule (UTC) | Purpose |
 |----------|----------------|---------|
 | `GET /api/cron/send-daily` | `0 9 * * *` (daily 09:00) | Push reminders for pending care tasks |
-| `GET /api/cron/recalculate-watering` | `0 0 */2 * *` (every 2 days, midnight) | Adjust exterior watering from Open-Meteo |
+| `GET /api/cron/recalculate-watering` | `0 0 * * 0` (Sundays, midnight UTC) | Adjust exterior watering from Open-Meteo |
+| `GET /api/cron/recalculate-watering-indoor` | `0 0 1 * *` (1st of month, midnight) | Adjust indoor watering (season + history) |
 
 Example crontab (`CRON_SECRET` and domain as env vars or literals):
 
@@ -138,8 +139,8 @@ Example crontab (`CRON_SECRET` and domain as env vars or literals):
 0 9 * * * curl -fsS -H "Authorization: Bearer $CRON_SECRET" \
   https://your-domain.example/api/cron/send-daily
 
-# Exterior watering recalc (every 2 days, midnight UTC)
-0 0 */2 * * curl -fsS -H "Authorization: Bearer $CRON_SECRET" \
+# Exterior watering recalc (Sundays, midnight UTC)
+0 0 * * 0 curl -fsS -H "Authorization: Bearer $CRON_SECRET" \
   https://your-domain.example/api/cron/recalculate-watering
 ```
 

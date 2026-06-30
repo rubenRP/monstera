@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   computeNextWateringDue,
+  computeOptimalWateringSchedule,
   computeWateringSchedule,
   drainageFactor,
   getSeason,
@@ -115,6 +116,39 @@ describe('computeWateringSchedule', () => {
     const from = new Date('2026-01-15T12:00:00Z')
     const diffDays = Math.round((due.getTime() - from.getTime()) / 86400000)
     expect(diffDays).toBeGreaterThanOrEqual(7 + 2 - 1)
+  })
+})
+
+describe('computeOptimalWateringSchedule', () => {
+  const baseInput = {
+    wateringBaseIntervalDays: 10,
+    potSize: null,
+    potDiameterCm: null,
+    substrateType: null,
+    siteLuminosity: null,
+    sitePlacement: null,
+    healthStatus: 'healthy' as const,
+    windowDistanceCm: null,
+    hasDrainage: true,
+    homeLat: 40,
+    lastWateredAt: null,
+    now: new Date('2026-03-15T12:00:00Z')
+  }
+
+  it('uses environmental interval without history', () => {
+    const result = computeOptimalWateringSchedule({
+      ...baseInput,
+      completedWaterIntervals: [5, 6]
+    })
+    expect(result.effectiveIntervalDays).toBe(10)
+  })
+
+  it('blends with historical median when enough intervals', () => {
+    const result = computeOptimalWateringSchedule({
+      ...baseInput,
+      completedWaterIntervals: [5, 6, 7]
+    })
+    expect(result.effectiveIntervalDays).toBe(9)
   })
 })
 

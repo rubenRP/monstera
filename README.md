@@ -79,7 +79,7 @@ Deploy on Vercel, a VPS, or any Node 22 host with the same environment variables
 | Endpoint | Schedule (UTC) | Purpose |
 |----------|----------------|---------|
 | `GET /api/cron/send-daily` | Daily 09:00 | Push reminders |
-| `GET /api/cron/recalculate-watering` | Every 2 days, midnight | Exterior watering from weather |
+| `GET /api/cron/recalculate-watering` | Sundays, midnight | Exterior watering from weather |
 
 Set `CRON_SECRET` in production. Vercel cron sends `Authorization: Bearer <CRON_SECRET>`; endpoints also accept `x-vercel-cron` or `x-cron-secret`.
 
