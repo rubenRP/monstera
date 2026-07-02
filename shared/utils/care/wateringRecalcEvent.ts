@@ -1,5 +1,3 @@
-import { isSameCalendarDay } from './alignFertilize'
-
 export type WateringRecalcSource
   = | 'season_sync'
     | 'fertilize_align_sync'
@@ -40,10 +38,9 @@ export function wateringRecalcHasChange(
   previousIntervalDays: number | null,
   newIntervalDays: number
 ): boolean {
-  const dueChanged = previousDueAt != null && !isSameCalendarDay(previousDueAt, newDueAt)
   const intervalChanged = previousIntervalDays != null && previousIntervalDays !== newIntervalDays
   const createdFirstTask = previousDueAt == null
-  return dueChanged || intervalChanged || createdFirstTask
+  return intervalChanged || createdFirstTask
 }
 
 export function wateringRecalcEventHasChange(

@@ -11,13 +11,13 @@ describe('wateringRecalcHasChange', () => {
     )).toBe(false)
   })
 
-  it('returns true when due date changes', () => {
+  it('returns false when only the due date changes', () => {
     expect(wateringRecalcHasChange(
       '2026-06-20T10:00:00Z',
       '2026-06-27T10:00:00Z',
       7,
       7
-    )).toBe(true)
+    )).toBe(false)
   })
 
   it('returns true when interval changes', () => {
