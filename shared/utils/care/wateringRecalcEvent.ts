@@ -32,15 +32,25 @@ export interface WateringRecalcSnapshot {
   dueAt: string | null
 }
 
+export function inferPreviousWaterDueAt(input: {
+  pendingDueAt: string | null
+  lastWateredAt: string | null
+  intervalDays: number | null
+}): string | null {
+  if (input.pendingDueAt) return input.pendingDueAt
+  if (!input.lastWateredAt || input.intervalDays == null) return null
+  const anchor = new Date(input.lastWateredAt)
+  anchor.setDate(anchor.getDate() + input.intervalDays)
+  return anchor.toISOString()
+}
+
 export function wateringRecalcHasChange(
-  previousDueAt: string | null,
-  newDueAt: string,
+  _previousDueAt: string | null,
+  _newDueAt: string,
   previousIntervalDays: number | null,
   newIntervalDays: number
 ): boolean {
-  const intervalChanged = previousIntervalDays != null && previousIntervalDays !== newIntervalDays
-  const createdFirstTask = previousDueAt == null
-  return intervalChanged || createdFirstTask
+  return previousIntervalDays != null && previousIntervalDays !== newIntervalDays
 }
 
 export function wateringRecalcEventHasChange(

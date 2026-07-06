@@ -143,7 +143,11 @@ export function useCareTasks() {
         .update({ last_watered_at: now })
         .eq('id', task.plant_id)
 
-      await rescheduleWatering(task.plant_id, { wetSkipCountOverride: 0, source: 'task_complete' })
+      await rescheduleWatering(task.plant_id, {
+        wetSkipCountOverride: 0,
+        source: 'task_complete',
+        previousDueAtOverride: task.due_at
+      })
       return
     }
 
@@ -218,7 +222,8 @@ export function useCareTasks() {
       const schedule = await rescheduleWatering(task.plant_id, {
         scheduleFromToday: true,
         wetSkipCountOverride: wetCount,
-        source: 'task_skip'
+        source: 'task_skip',
+        previousDueAtOverride: task.due_at
       })
       return schedule?.effectiveIntervalDays
     }

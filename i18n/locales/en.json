@@ -138,7 +138,7 @@
     "recalcDismissAll": "Dismiss all",
     "recalcDueLabel": "Next watering",
     "recalcIntervalLabel": "Interval",
-    "recalcNoPreviousDue": "no previous task",
+    "recalcNoPreviousDue": "no scheduled date",
     "recalcNoPreviousInterval": "—",
     "recalcIntervalDays": "{days} days",
     "recalcSource": {

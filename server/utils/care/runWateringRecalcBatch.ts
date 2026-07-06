@@ -7,7 +7,7 @@ import {
 } from '#shared/utils/care/adaptiveWatering'
 import { alignFertilizeDueAt, idealFertilizeDueAt } from '#shared/utils/care/alignFertilize'
 import { hasOverduePendingWaterTask } from '#shared/utils/care/overdueWaterTask'
-import type { WateringRecalcSource } from '#shared/utils/care/wateringRecalcEvent'
+import { inferPreviousWaterDueAt, type WateringRecalcSource } from '#shared/utils/care/wateringRecalcEvent'
 import type { AppLocale } from '#shared/utils/i18n/locale'
 import { upsertPendingCheckInTask } from './checkInTask'
 import { fetchWateringHistoryIntervals } from './wateringHistory'
@@ -60,7 +60,11 @@ export async function runWateringRecalcBatch(
         continue
       }
 
-      const previousDueAt = await fetchPendingWaterDueAt(options.supabase, plant.id)
+      const previousDueAt = inferPreviousWaterDueAt({
+        pendingDueAt: await fetchPendingWaterDueAt(options.supabase, plant.id),
+        lastWateredAt: plant.last_watered_at,
+        intervalDays: plant.watering_interval_days
+      })
       const previousIntervalDays = plant.watering_interval_days
 
       const reference = await resolveWateringReferenceForPlant(

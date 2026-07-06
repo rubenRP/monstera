@@ -1,5 +1,6 @@
 import type { WateringRecalcEvent, WateringRecalcSnapshot, WateringRecalcSource } from '#shared/utils/care/wateringRecalcEvent'
 import {
+  inferPreviousWaterDueAt,
   wateringRecalcEventHasChange,
   wateringRecalcHasChange
 } from '#shared/utils/care/wateringRecalcEvent'
@@ -16,7 +17,7 @@ export function useWateringRecalcEvents() {
     const [{ data: plant, error: plantError }, { data: task, error: taskError }] = await Promise.all([
       supabase
         .from('plants')
-        .select('name, watering_interval_days')
+        .select('name, watering_interval_days, last_watered_at')
         .eq('id', plantId)
         .single(),
       supabase
@@ -32,7 +33,11 @@ export function useWateringRecalcEvents() {
     return {
       plantName: plant.name,
       intervalDays: plant.watering_interval_days,
-      dueAt: task?.due_at ?? null
+      dueAt: inferPreviousWaterDueAt({
+        pendingDueAt: task?.due_at ?? null,
+        lastWateredAt: plant.last_watered_at,
+        intervalDays: plant.watering_interval_days
+      })
     }
   }
 

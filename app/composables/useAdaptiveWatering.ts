@@ -188,6 +188,7 @@ export function useAdaptiveWatering() {
       source?: WateringRecalcSource
       allowCursor?: boolean
       referenceOverride?: WateringReferenceResult
+      previousDueAtOverride?: string | null
     }
   ): Promise<WateringScheduleResult | null> {
     const { data: row } = await supabase
@@ -224,7 +225,7 @@ export function useAdaptiveWatering() {
         plantId,
         plantName: before.plantName,
         source: options.source,
-        previousDueAt: before.dueAt,
+        previousDueAt: options?.previousDueAtOverride ?? before.dueAt,
         newDueAt: schedule.nextDueAt,
         previousIntervalDays: before.intervalDays,
         newIntervalDays: schedule.effectiveIntervalDays

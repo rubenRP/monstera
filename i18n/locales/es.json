@@ -138,7 +138,7 @@
     "recalcDismissAll": "Descartar todo",
     "recalcDueLabel": "Próximo riego",
     "recalcIntervalLabel": "Intervalo",
-    "recalcNoPreviousDue": "sin tarea previa",
+    "recalcNoPreviousDue": "sin fecha programada",
     "recalcNoPreviousInterval": "—",
     "recalcIntervalDays": "{days} días",
     "recalcSource": {
