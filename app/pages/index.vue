@@ -291,7 +291,7 @@ async function confirmSkip(task: CareTask, soilStillWet: boolean) {
         variant="soft"
         icon="i-lucide-droplets"
         :disabled="!plantsForAdvanceWater.length"
-        @click="addWaterModalOpen = true"
+        @click="() => { addWaterModalOpen = true }"
       >
         {{ t('home.addAdvanceWater') }}
       </UButton>

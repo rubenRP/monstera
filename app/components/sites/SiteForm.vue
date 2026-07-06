@@ -95,7 +95,7 @@ function handleSubmit() {
             size="sm"
             :variant="form.window_orientation === opt.value ? 'solid' : 'outline'"
             :color="form.window_orientation === opt.value ? 'primary' : 'neutral'"
-            @click="form.window_orientation = opt.value"
+            @click="() => { form.window_orientation = opt.value }"
           >
             {{ opt.value }}
           </UButton>

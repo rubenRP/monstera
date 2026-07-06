@@ -179,7 +179,7 @@ defineExpose({ setSaving })
             variant="soft"
             color="neutral"
             class="flex-1"
-            @click="open = false"
+            @click="() => { open = false }"
           >
             {{ t('common.cancel') }}
           </UButton>

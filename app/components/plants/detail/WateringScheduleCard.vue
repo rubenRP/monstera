@@ -94,7 +94,7 @@ const showExteriorWeatherHint = computed(() => {
       variant="link"
       size="xs"
       :padded="false"
-      @click="explainOpen = true"
+      @click="() => { explainOpen = true }"
     >
       {{ t('care.howCalculated') }}
     </UButton>

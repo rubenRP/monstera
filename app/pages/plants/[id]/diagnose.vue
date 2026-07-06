@@ -172,7 +172,7 @@ async function applySuggestedStatus() {
           <UButton
             block
             variant="ghost"
-            @click="showHealthModal = false"
+            @click="() => { showHealthModal = false }"
           >
             {{ t('diagnose.keepCurrent') }}
           </UButton>
