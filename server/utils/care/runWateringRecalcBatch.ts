@@ -1,6 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { wetSkipCountSince } from '#shared/utils/care/wetSkips'
-import type { Plant } from '#shared/types/database'
+import type { IndoorHumidityLevel, Placement, Plant } from '#shared/types/database'
+import { resolveWateringClimateFactors } from '#shared/utils/care/resolveWateringClimate'
+import type { WeatherMetrics } from '#shared/utils/weather/deriveWeatherFactor'
 import {
   computeOptimalWateringSchedule,
   plantToAdaptiveInput
@@ -16,9 +18,17 @@ import {
   logWateringRecalcEvent
 } from './wateringRecalcEvent'
 import { resolveWateringReferenceForPlant } from './wateringContext'
+import { fetchWeatherMetrics } from '../weather'
+
+export interface WateringRecalcUserSettings {
+  homeLat: number | null
+  homeLon: number | null
+  indoorHumidity: IndoorHumidityLevel
+}
 
 export interface WateringRecalcBatchPlantContext {
   homeLat: number | null
+  humidityFactor: number
   weatherFactor: number
 }
 
@@ -88,6 +98,7 @@ export async function runWateringRecalcBatch(
           speciesReferenceDays: reference.referenceDays,
           referenceSource: reference.source,
           recentWetSkipCount: options.wetSkipCounts.get(plant.id) ?? 0,
+          humidityFactor: ctx.humidityFactor,
           weatherFactor: ctx.weatherFactor,
           completedWaterIntervals: historyIntervals
         })
@@ -220,38 +231,40 @@ const EXTERIOR_PLACEMENTS = new Set(['outdoor', 'semi_outdoor'])
 
 export async function buildWateringRecalcContexts(
   plants: (Plant & { site?: { placement?: string | null } | null })[],
-  homeLat: number | null,
-  homeLon: number | null
+  settingsByUserId: Map<string, WateringRecalcUserSettings>
 ): Promise<Map<string, WateringRecalcBatchPlantContext>> {
-  let outdoorFactor = 1
-  let semiFactor = 1
+  const metricsByUserId = new Map<string, WeatherMetrics | null>()
 
-  if (homeLat != null && homeLon != null) {
-    const metrics = await fetchWeatherMetrics(homeLat, homeLon)
-    if (metrics) {
-      outdoorFactor = deriveWeatherFactor(metrics, {
-        includeTemperature: true,
-        includeHumidity: true,
-        includePrecipitation: true
-      })
-      semiFactor = deriveWeatherFactor(metrics, {
-        includeTemperature: true,
-        includeHumidity: true,
-        includePrecipitation: false
-      })
+  for (const [userId, settings] of settingsByUserId) {
+    if (settings.homeLat == null || settings.homeLon == null) {
+      metricsByUserId.set(userId, null)
+      continue
     }
+    if (metricsByUserId.has(userId)) continue
+    const metrics = await fetchWeatherMetrics(settings.homeLat, settings.homeLon)
+    metricsByUserId.set(userId, metrics)
   }
 
   const plantContextById = new Map<string, WateringRecalcBatchPlantContext>()
   for (const plant of plants) {
-    const placement = plant.site?.placement
-    let weatherFactor = 1
-    if (placement === 'outdoor') {
-      weatherFactor = outdoorFactor
-    } else if (placement === 'semi_outdoor') {
-      weatherFactor = semiFactor
+    const settings = settingsByUserId.get(plant.user_id) ?? {
+      homeLat: null,
+      homeLon: null,
+      indoorHumidity: 'auto' as IndoorHumidityLevel
     }
-    plantContextById.set(plant.id, { homeLat, weatherFactor })
+    const metrics = metricsByUserId.get(plant.user_id) ?? null
+    const outdoorHumidity = metrics?.avgHumidity ?? null
+    const climate = resolveWateringClimateFactors({
+      placement: (plant.site?.placement ?? null) as Placement | null,
+      indoorHumidity: settings.indoorHumidity,
+      outdoorHumidityPercent: outdoorHumidity,
+      weatherMetrics: metrics
+    })
+    plantContextById.set(plant.id, {
+      homeLat: settings.homeLat,
+      humidityFactor: climate.humidityFactor,
+      weatherFactor: climate.weatherFactor
+    })
   }
   return plantContextById
 }

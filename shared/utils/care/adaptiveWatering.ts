@@ -10,6 +10,7 @@ import {
   POT_DIAMETER_LARGE_FACTOR,
   POT_DIAMETER_SMALL_CM,
   POT_DIAMETER_SMALL_FACTOR,
+  POT_MATERIAL_FACTORS,
   POT_SIZE_FACTORS,
   SEASON_FACTORS,
   SUBSTRATE_FACTORS,
@@ -23,6 +24,7 @@ import type {
   Luminosity,
   Placement,
   Plant,
+  PotMaterial,
   PotSize,
   Site,
   SubstrateType
@@ -41,8 +43,10 @@ export interface WateringFactors {
   season: Season
   seasonFactor: number
   potFactor: number
+  potMaterialFactor: number
   substrateFactor: number
   lightFactor: number
+  humidityFactor: number
   weatherFactor: number
   healthFactor: number
   placementFactor: number
@@ -57,6 +61,7 @@ export interface AdaptiveWateringInput {
   wateringBaseIntervalDays: number
   potSize: PotSize | null
   potDiameterCm: number | null
+  potMaterial: PotMaterial | null
   substrateType: SubstrateType | null
   siteLuminosity: Luminosity | null
   sitePlacement: Placement | null
@@ -64,6 +69,7 @@ export interface AdaptiveWateringInput {
   windowDistanceCm: number | null
   hasDrainage: boolean
   homeLat: number | null
+  humidityFactor?: number
   weatherFactor?: number
   now?: Date
   recentWetSkipCount?: number
@@ -106,6 +112,11 @@ export function potDiameterFactor(potDiameterCm: number | null, potSize: PotSize
     return 1
   }
   return potSizeFactor(potSize)
+}
+
+export function potMaterialFactor(material: PotMaterial | null): number {
+  if (!material) return 1
+  return POT_MATERIAL_FACTORS[material]
 }
 
 export function substrateFactor(substrateType: SubstrateType | null): number {
@@ -152,14 +163,18 @@ export function computeWateringFactors(input: AdaptiveWateringInput): WateringFa
   const wetSkipCount = input.recentWetSkipCount ?? 0
   const wetDelayDays = wetSkipCount + (input.extraWetDelayDays ?? 0)
   const weatherFactor = input.weatherFactor ?? 1
+  const humidityFactor = input.humidityFactor ?? 1
   const potVolumeFactor = potDiameterFactor(input.potDiameterCm, input.potSize)
+  const materialFactor = potMaterialFactor(input.potMaterial)
 
   return {
     season,
     seasonFactor: SEASON_FACTORS[season],
-    potFactor: potVolumeFactor,
+    potFactor: potVolumeFactor * materialFactor,
+    potMaterialFactor: materialFactor,
     substrateFactor: substrateFactor(input.substrateType),
     lightFactor: lightFactor(input.siteLuminosity),
+    humidityFactor,
     weatherFactor,
     healthFactor: healthFactor(input.healthStatus),
     placementFactor: placementFactor(input.sitePlacement),
@@ -179,6 +194,7 @@ export function resolveEffectiveWateringInterval(
     | 'potFactor'
     | 'substrateFactor'
     | 'lightFactor'
+    | 'humidityFactor'
     | 'weatherFactor'
     | 'healthFactor'
     | 'placementFactor'
@@ -187,7 +203,8 @@ export function resolveEffectiveWateringInterval(
   >
 ): number {
   const raw = baseDays * factors.seasonFactor * factors.potFactor
-    * factors.substrateFactor * factors.lightFactor * factors.weatherFactor
+    * factors.substrateFactor * factors.lightFactor * factors.humidityFactor
+    * factors.weatherFactor
     * factors.healthFactor * factors.placementFactor * factors.distanceFactor
     * factors.drainageFactor
   return clampWateringInterval(Math.round(raw))
@@ -284,6 +301,7 @@ export function plantToAdaptiveInput(
     recentWetSkipCount?: number
     extraWetDelayDays?: number
     scheduleFromToday?: boolean
+    humidityFactor?: number
     weatherFactor?: number
     completedWaterIntervals?: number[]
     referenceSource?: WateringReferenceSource
@@ -301,6 +319,7 @@ export function plantToAdaptiveInput(
     wateringBaseIntervalDays: base,
     potSize: plant.pot_size,
     potDiameterCm: plant.pot_diameter_cm != null ? Number(plant.pot_diameter_cm) : null,
+    potMaterial: plant.pot_material,
     substrateType: plant.substrate_type,
     siteLuminosity: plant.site?.luminosity ?? null,
     sitePlacement: plant.site?.placement ?? null,
@@ -308,6 +327,7 @@ export function plantToAdaptiveInput(
     windowDistanceCm: plant.window_distance_cm,
     hasDrainage: plant.has_drainage,
     homeLat,
+    humidityFactor: options?.humidityFactor,
     weatherFactor: options?.weatherFactor,
     now: options?.now,
     recentWetSkipCount: options?.recentWetSkipCount,

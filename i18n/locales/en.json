@@ -67,6 +67,9 @@
     "longitude": "Longitude",
     "useMyLocation": "Use my location",
     "locationSaved": "Location saved",
+    "indoorHumidity": "Approximate indoor humidity",
+    "indoorHumidityHint": "Affects watering for indoor plants. Auto estimates humidity from outdoor weather. Saving recalculates watering schedules.",
+    "indoorHumidityAuto": "Automatic (from weather)",
     "coordsInvalid": "Enter valid latitude and longitude (use a decimal point, e.g. 40.4168).",
     "notifications": "Notifications",
     "notificationsHint": "Get one daily reminder when you have watering or fertilizing tasks due today or overdue. On iPhone, add Monstera to your Home Screen and tap «Enable push notifications».",
@@ -153,7 +156,8 @@
       "cron_exterior": "Exterior plants cron",
       "cron_indoor": "Indoor plants cron",
       "manual_exterior": "Manual exterior recalc",
-      "manual_all": "Manual recalc"
+      "manual_all": "Manual recalc",
+      "home_settings_update": "Home settings"
     }
   },
   "plants": {
@@ -394,7 +398,7 @@
     },
     "howCalculated": "How is this calculated?",
     "howCalculatedTitle": "Watering interval calculation",
-    "howCalculatedBody": "The interval starts from the species reference (Perenual or AI when data is missing), then adjusts for season (hemisphere from your location), pot, substrate, site light, health, indoor/outdoor placement, window distance, drainage, and home weather (stronger for outdoor plants). With enough completed watering history, we blend the real median with the environmental estimate. Wet-soil skips in the last 60 days add extra days to the next due date.\n\nLiquid fertilizing is scheduled for the first watering on or after your ideal fertilizing date.",
+    "howCalculatedBody": "The interval starts from the species reference (Perenual or AI when data is missing), then adjusts for season (hemisphere from your location), pot size and material, substrate, site light, indoor humidity (Settings), health, indoor/outdoor placement, window distance, drainage, and weather (temperature indoors; full weather outdoors). With enough completed watering history, we blend the real median with the environmental estimate. Wet-soil skips after the last watering add extra days to the next due date.\n\nLiquid fertilizing is scheduled for the first watering on or after your ideal fertilizing date.",
     "fertilizeWithWater": "with watering",
     "seasonLabel": {
       "winter": "Winter ×{factor}",
@@ -404,9 +408,11 @@
     },
     "factor": {
       "season": "Season ×{factor}",
-      "pot": "Pot ×{factor}",
+      "pot": "Pot size ×{factor}",
+      "potMaterial": "Pot material ×{factor}",
       "substrate": "Substrate ×{factor}",
       "light": "Light ×{factor}",
+      "humidity": "Humidity ×{factor}",
       "weather": "Weather ×{factor}",
       "health": "Health ×{factor}",
       "placement": "Placement ×{factor}",

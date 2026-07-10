@@ -73,7 +73,7 @@ export function weatherFactorForPlacement(
   if (!placement || placement === 'indoor') {
     const raw = deriveWeatherFactor(metrics, {
       includeTemperature: true,
-      includeHumidity: true,
+      includeHumidity: false,
       includePrecipitation: false
     })
     return softenWeatherFactorForIndoor(raw)

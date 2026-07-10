@@ -67,6 +67,9 @@
     "longitude": "Longitud",
     "useMyLocation": "Usar mi ubicación",
     "locationSaved": "Ubicación guardada",
+    "indoorHumidity": "Humedad interior aproximada",
+    "indoorHumidityHint": "Afecta el riego de plantas en interior. «Automática» estima la humedad a partir del clima exterior. Al guardar se recalculan los riegos.",
+    "indoorHumidityAuto": "Automática (según clima)",
     "coordsInvalid": "Introduce una latitud y una longitud válidas (usa punto decimal, ej. 40.4168).",
     "notifications": "Notificaciones",
     "notificationsHint": "Recibe un recordatorio al día si tienes tareas de riego o abono pendientes para hoy o atrasadas. En iPhone, añade Monstera a la pantalla de inicio y pulsa «Activar notificaciones».",
@@ -153,7 +156,8 @@
       "cron_exterior": "Cron plantas exteriores",
       "cron_indoor": "Cron plantas interiores",
       "manual_exterior": "Recálculo manual exterior",
-      "manual_all": "Recálculo manual"
+      "manual_all": "Recálculo manual",
+      "home_settings_update": "Ajustes del hogar"
     }
   },
   "plants": {
@@ -394,7 +398,7 @@
     },
     "howCalculated": "¿Cómo se calcula?",
     "howCalculatedTitle": "Cálculo del intervalo de riego",
-    "howCalculatedBody": "El intervalo parte de la referencia de la especie (Perenual o IA si no hay datos), se ajusta por época (hemisferio según tu ubicación), maceta, sustrato, luz del sitio, salud, ubicación interior/exterior, distancia a la ventana, drenaje y clima del hogar (más peso en exterior). Con suficiente historial de riegos completados, mezclamos la mediana real con la estimación ambiental. Si omites riegos por tierra húmeda, añadimos días extra al próximo vencimiento (últimos 60 días).\n\nLa fertilización líquida se programa para el primer riego en o después de la fecha ideal según tu intervalo de fertilización.",
+    "howCalculatedBody": "El intervalo parte de la referencia de la especie (Perenual o IA si no hay datos), se ajusta por época (hemisferio según tu ubicación), tamaño y material de maceta, sustrato, luz del sitio, humedad interior (Ajustes), salud, ubicación interior/exterior, distancia a la ventana, drenaje y clima (temperatura en interior; clima completo en exterior). Con suficiente historial de riegos completados, mezclamos la mediana real con la estimación ambiental. Si omites riegos por tierra húmeda tras el último riego, añadimos días extra al próximo vencimiento.\n\nLa fertilización líquida se programa para el primer riego en o después de la fecha ideal según tu intervalo de fertilización.",
     "fertilizeWithWater": "con el riego",
     "seasonLabel": {
       "winter": "Invierno ×{factor}",
@@ -404,9 +408,11 @@
     },
     "factor": {
       "season": "Época ×{factor}",
-      "pot": "Maceta ×{factor}",
+      "pot": "Tamaño maceta ×{factor}",
+      "potMaterial": "Material maceta ×{factor}",
       "substrate": "Sustrato ×{factor}",
       "light": "Luz ×{factor}",
+      "humidity": "Humedad ×{factor}",
       "weather": "Clima ×{factor}",
       "health": "Salud ×{factor}",
       "placement": "Ubicación ×{factor}",

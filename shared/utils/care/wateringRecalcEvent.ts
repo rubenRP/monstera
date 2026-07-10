@@ -11,6 +11,7 @@ export type WateringRecalcSource
     | 'cron_indoor'
     | 'manual_exterior'
     | 'manual_all'
+    | 'home_settings_update'
 
 export interface WateringRecalcEvent {
   id: string

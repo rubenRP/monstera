@@ -1,4 +1,5 @@
 import { API_ERROR_CODES } from '#shared/utils/i18n/apiErrors'
+import type { WateringRecalcSource } from '#shared/utils/care/wateringRecalcEvent'
 import type { Plant } from '#shared/types/database'
 import {
   buildWateringRecalcContexts,
@@ -21,15 +22,20 @@ export default defineEventHandler(async (event) => {
 
   const locale = getRequestLocale(event)
   const config = useRuntimeConfig()
+  const body = await readBody(event).catch(() => null) as { source?: WateringRecalcSource } | null
+  const source: WateringRecalcSource = body?.source === 'home_settings_update'
+    ? 'home_settings_update'
+    : 'manual_all'
 
   const { data: settings } = await supabase
     .from('user_settings')
-    .select('home_lat, home_lon')
+    .select('home_lat, home_lon, indoor_humidity')
     .eq('user_id', user.id)
     .maybeSingle()
 
   const homeLat = settings?.home_lat != null ? Number(settings.home_lat) : null
   const homeLon = settings?.home_lon != null ? Number(settings.home_lon) : null
+  const indoorHumidity = settings?.indoor_humidity ?? 'auto'
 
   const { data: plants, error: plantError } = await supabase
     .from('plants')
@@ -44,13 +50,16 @@ export default defineEventHandler(async (event) => {
   }
 
   const wetSkipCounts = await loadWetSkipCounts(supabase, allPlants)
-  const plantContextById = await buildWateringRecalcContexts(allPlants, homeLat, homeLon)
+  const settingsByUserId = new Map([
+    [user.id, { homeLat, homeLon, indoorHumidity }]
+  ])
+  const plantContextById = await buildWateringRecalcContexts(allPlants, settingsByUserId)
 
   const batchResult = await runWateringRecalcBatch({
     plants: allPlants,
     plantContextById,
     wetSkipCounts,
-    source: 'manual_all',
+    source,
     supabase,
     locale,
     perenualApiKey: config.perenualApiKey,

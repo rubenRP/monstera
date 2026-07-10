@@ -1,12 +1,33 @@
 import { isExteriorPlant } from '#shared/utils/care/plantPlacement'
-import type { Plant } from '#shared/types/database'
+import type { IndoorHumidityLevel, Plant } from '#shared/types/database'
 import {
+  buildWateringRecalcContexts,
   loadWetSkipCounts,
   runWateringRecalcBatch,
-  type WateringRecalcBatchPlantContext
+  type WateringRecalcUserSettings
 } from '../../utils/care/runWateringRecalcBatch'
 
 const LOG_PREFIX = '[cron:recalculate-watering]'
+
+function settingsMapFromRows(
+  rows: {
+    user_id: string
+    home_lat: number | null
+    home_lon: number | null
+    indoor_humidity?: IndoorHumidityLevel | null
+  }[]
+): Map<string, WateringRecalcUserSettings> {
+  return new Map(
+    rows.map(row => [
+      row.user_id,
+      {
+        homeLat: row.home_lat != null ? Number(row.home_lat) : null,
+        homeLon: row.home_lon != null ? Number(row.home_lon) : null,
+        indoorHumidity: row.indoor_humidity ?? 'auto'
+      }
+    ])
+  )
+}
 
 export default defineEventHandler(async (event) => {
   assertCronAuthorized(event)
@@ -31,65 +52,23 @@ export default defineEventHandler(async (event) => {
     return summary
   }
 
-  const plantsByUser = new Map<string, typeof exteriorPlants>()
-  for (const plant of exteriorPlants) {
-    const list = plantsByUser.get(plant.user_id) ?? []
-    list.push(plant)
-    plantsByUser.set(plant.user_id, list)
-  }
-
-  const userIds = [...plantsByUser.keys()]
+  const userIds = [...new Set(exteriorPlants.map(plant => plant.user_id))]
   const { data: settingsRows, error: settingsError } = await supabase
     .from('user_settings')
-    .select('user_id, home_lat, home_lon')
+    .select('user_id, home_lat, home_lon, indoor_humidity')
     .in('user_id', userIds)
   if (settingsError) throw settingsError
 
-  const settingsByUser = new Map(
-    (settingsRows ?? []).map(row => [row.user_id, row])
+  const settingsByUserId = settingsMapFromRows(settingsRows ?? [])
+  const wetSkipCounts = await loadWetSkipCounts(supabase, exteriorPlants)
+  const plantContextById = await buildWateringRecalcContexts(
+    exteriorPlants as Plant[],
+    settingsByUserId
   )
 
-  const wetSkipCounts = await loadWetSkipCounts(supabase, exteriorPlants)
-
-  const plantContextById = new Map<string, WateringRecalcBatchPlantContext>()
-  let skippedUsers = 0
-
-  for (const userId of userIds) {
-    const userPlants = plantsByUser.get(userId) ?? []
-    const settings = settingsByUser.get(userId)
-    const homeLat = settings?.home_lat
-    const homeLon = settings?.home_lon
-    if (homeLat == null || homeLon == null) {
-      skippedUsers += userPlants.length
-      continue
-    }
-
-    const metrics = await fetchWeatherMetrics(Number(homeLat), Number(homeLon))
-    if (!metrics) {
-      skippedUsers += userPlants.length
-      continue
-    }
-
-    const outdoorFactor = deriveWeatherFactor(metrics, {
-      includeTemperature: true,
-      includeHumidity: true,
-      includePrecipitation: true
-    })
-    const semiFactor = deriveWeatherFactor(metrics, {
-      includeTemperature: true,
-      includeHumidity: true,
-      includePrecipitation: false
-    })
-
-    for (const plant of userPlants) {
-      const placement = plant.site?.placement
-      const weatherFactor = placement === 'outdoor' ? outdoorFactor : semiFactor
-      plantContextById.set(plant.id, {
-        homeLat: Number(homeLat),
-        weatherFactor
-      })
-    }
-  }
+  const skippedUsers = exteriorPlants.filter(
+    plant => !plantContextById.has(plant.id)
+  ).length
 
   const batchResult = await runWateringRecalcBatch({
     plants: exteriorPlants as Plant[],
@@ -105,7 +84,7 @@ export default defineEventHandler(async (event) => {
     updated: batchResult.updated,
     skipped: batchResult.skipped + skippedUsers,
     errors: batchResult.errors,
-    users: plantContextById.size > 0 ? userIds.length : 0,
+    users: userIds.length,
     plants: exteriorPlants.length
   }
   console.log(LOG_PREFIX, JSON.stringify({ event: 'finish', startedAt, ...summary }))

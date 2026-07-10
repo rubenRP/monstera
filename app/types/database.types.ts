@@ -4,6 +4,7 @@ import type {
   CareTaskStatus,
   CareTaskType,
   HealthStatus,
+  IndoorHumidityLevel,
   Luminosity,
   PlantAgeUnit,
   PlantArchiveReason,
@@ -295,6 +296,7 @@ export interface Database {
           user_id: string
           home_lat: number | null
           home_lon: number | null
+          indoor_humidity: IndoorHumidityLevel
           locale: AppLocale
           created_at: string
           updated_at: string
@@ -303,6 +305,7 @@ export interface Database {
           user_id: string
           home_lat?: number | null
           home_lon?: number | null
+          indoor_humidity?: IndoorHumidityLevel
           locale?: AppLocale
           created_at?: string
           updated_at?: string
@@ -311,6 +314,7 @@ export interface Database {
           user_id?: string
           home_lat?: number | null
           home_lon?: number | null
+          indoor_humidity?: IndoorHumidityLevel
           locale?: AppLocale
           created_at?: string
           updated_at?: string
@@ -424,6 +428,7 @@ export interface Database {
       plant_archive_reason: PlantArchiveReason
       care_task_type: CareTaskType
       care_task_status: CareTaskStatus
+      indoor_humidity_level: IndoorHumidityLevel
     }
     CompositeTypes: Record<string, never>
   }

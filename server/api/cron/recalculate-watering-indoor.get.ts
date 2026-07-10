@@ -1,12 +1,33 @@
 import { isIndoorPlant } from '#shared/utils/care/plantPlacement'
-import type { Plant } from '#shared/types/database'
+import type { IndoorHumidityLevel, Plant } from '#shared/types/database'
 import {
+  buildWateringRecalcContexts,
   loadWetSkipCounts,
   runWateringRecalcBatch,
-  type WateringRecalcBatchPlantContext
+  type WateringRecalcUserSettings
 } from '../../utils/care/runWateringRecalcBatch'
 
 const LOG_PREFIX = '[cron:recalculate-watering-indoor]'
+
+function settingsMapFromRows(
+  rows: {
+    user_id: string
+    home_lat: number | null
+    home_lon: number | null
+    indoor_humidity?: IndoorHumidityLevel | null
+  }[]
+): Map<string, WateringRecalcUserSettings> {
+  return new Map(
+    rows.map(row => [
+      row.user_id,
+      {
+        homeLat: row.home_lat != null ? Number(row.home_lat) : null,
+        homeLon: row.home_lon != null ? Number(row.home_lon) : null,
+        indoorHumidity: row.indoor_humidity ?? 'auto'
+      }
+    ])
+  )
+}
 
 export default defineEventHandler(async (event) => {
   assertCronAuthorized(event)
@@ -34,23 +55,13 @@ export default defineEventHandler(async (event) => {
   const userIds = [...new Set(indoorPlants.map(plant => plant.user_id))]
   const { data: settingsRows, error: settingsError } = await supabase
     .from('user_settings')
-    .select('user_id, home_lat')
+    .select('user_id, home_lat, home_lon, indoor_humidity')
     .in('user_id', userIds)
   if (settingsError) throw settingsError
 
-  const homeLatByUser = new Map(
-    (settingsRows ?? []).map(row => [row.user_id, row.home_lat != null ? Number(row.home_lat) : null])
-  )
-
-  const plantContextById = new Map<string, WateringRecalcBatchPlantContext>()
-  for (const plant of indoorPlants) {
-    plantContextById.set(plant.id, {
-      homeLat: homeLatByUser.get(plant.user_id) ?? null,
-      weatherFactor: 1
-    })
-  }
-
+  const settingsByUserId = settingsMapFromRows(settingsRows ?? [])
   const wetSkipCounts = await loadWetSkipCounts(supabase, indoorPlants)
+  const plantContextById = await buildWateringRecalcContexts(indoorPlants, settingsByUserId)
 
   const batchResult = await runWateringRecalcBatch({
     plants: indoorPlants as Plant[],

@@ -1,4 +1,4 @@
-import type { HealthStatus, Luminosity, Placement, PotSize, SubstrateType } from '../types/database'
+import type { HealthStatus, Luminosity, Placement, PotMaterial, PotSize, SubstrateType } from '../types/database'
 
 export const MAX_WATERING_INTERVAL_DAYS = 90
 export const MIN_WATERING_INTERVAL_DAYS = 1
@@ -6,9 +6,9 @@ export const WET_SKIP_LOOKBACK_DAYS = 60
 export const DEFAULT_WATERING_REFERENCE_DAYS = 7
 
 export const SEASON_FACTORS = {
-  winter: 1.15,
+  winter: 1.4,
   spring: 1,
-  summer: 0.85,
+  summer: 0.72,
   fall: 1
 } as const
 
@@ -62,3 +62,11 @@ export const POT_DIAMETER_SMALL_CM = 12
 export const POT_DIAMETER_LARGE_CM = 25
 export const POT_DIAMETER_SMALL_FACTOR = 0.95
 export const POT_DIAMETER_LARGE_FACTOR = 1.08
+
+export const POT_MATERIAL_FACTORS: Record<PotMaterial, number> = {
+  terracotta: 0.88,
+  plastic: 1.12,
+  ceramic: 1.05,
+  metal: 0.95,
+  other: 1
+}

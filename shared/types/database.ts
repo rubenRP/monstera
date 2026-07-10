@@ -114,10 +114,13 @@ export interface Diagnosis {
 
 export type AppLocale = 'es' | 'en'
 
+export type IndoorHumidityLevel = 'auto' | 'low' | 'normal' | 'high'
+
 export interface UserSettings {
   user_id: string
   home_lat: number | null
   home_lon: number | null
+  indoor_humidity: IndoorHumidityLevel
   locale: AppLocale
   created_at: string
   updated_at: string

@@ -97,6 +97,8 @@ Form/API validation: Zod schemas in [`shared/utils/plants/schemas.ts`](shared/ut
 - Watering plan (skip / adjust interval): [`shared/utils/care/wateringPlan.ts`](shared/utils/care/wateringPlan.ts)
 - Client orchestration: [`app/composables/useCareTasks.ts`](app/composables/useCareTasks.ts)
 
+See also [`docs/watering-algorithm.md`](docs/watering-algorithm.md) for adaptive watering factors.
+
 ## Required patterns
 
 ### Composables (`app/composables/use*.ts`)

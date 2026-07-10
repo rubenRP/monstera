@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AppLocale } from '#shared/types/database'
+import type { AppLocale, IndoorHumidityLevel } from '#shared/types/database'
 
 const { t, locales, locale, setLocale } = useI18n()
 const supabase = useSupabaseClient()
@@ -12,6 +12,7 @@ const { subscribe } = usePushNotifications()
 
 const homeLat = ref(String(config.public.homeLat))
 const homeLon = ref(String(config.public.homeLon))
+const indoorHumidity = ref<IndoorHumidityLevel>('auto')
 const saving = ref(false)
 const pushLoading = ref(false)
 const recalcLoading = ref(false)
@@ -30,11 +31,12 @@ onMounted(async () => {
   }
   const { data } = await supabase
     .from('user_settings')
-    .select('home_lat, home_lon, locale')
+    .select('home_lat, home_lon, locale, indoor_humidity')
     .eq('user_id', userId)
     .maybeSingle()
   if (data?.home_lat != null) homeLat.value = String(data.home_lat)
   if (data?.home_lon != null) homeLon.value = String(data.home_lon)
+  if (data?.indoor_humidity) indoorHumidity.value = data.indoor_humidity
 })
 
 function parseCoordinate(value: string): number | null {
@@ -45,7 +47,42 @@ function parseCoordinate(value: string): number | null {
   return n
 }
 
-async function saveLocation() {
+const indoorHumidityItems = computed(() => [
+  { label: t('settings.indoorHumidityAuto'), value: 'auto' },
+  { label: t('plants.humidityLow'), value: 'low' },
+  { label: t('plants.humidityNormal'), value: 'normal' },
+  { label: t('plants.humidityHigh'), value: 'high' }
+])
+
+async function triggerHomeSettingsRecalc() {
+  const { data } = await supabase.auth.getSession()
+  const token = data.session?.access_token
+  if (!token) return
+
+  const result = await $fetch<{
+    updated: number
+    errors: number
+    plants: number
+    skipped: number
+  }>(
+    '/api/watering/recalculate-all',
+    {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: { source: 'home_settings_update' }
+    }
+  )
+
+  if (result.plants === 0) return
+
+  toast.add({
+    title: t('settings.wateringRecalcAllDone', { count: result.updated }),
+    description: buildRecalcToastDescription(result.errors, result.skipped),
+    color: result.errors ? 'warning' : 'success'
+  })
+}
+
+async function saveHomeSettings() {
   let userId: string
   try {
     userId = await requireUserId()
@@ -67,6 +104,7 @@ async function saveLocation() {
       user_id: userId,
       home_lat: lat,
       home_lon: lon,
+      indoor_humidity: indoorHumidity.value,
       locale: locale.value as AppLocale,
       updated_at: new Date().toISOString()
     }, { onConflict: 'user_id' })
@@ -75,6 +113,7 @@ async function saveLocation() {
     homeLat.value = String(lat)
     homeLon.value = String(lon)
     toast.add({ title: t('settings.locationSaved'), color: 'success' })
+    await triggerHomeSettingsRecalc()
   } catch (e: unknown) {
     toast.add({ title: t('common.error'), description: apiErrorMessage(e), color: 'error' })
   } finally {
@@ -252,6 +291,17 @@ async function onLocaleChange(value: string) {
           />
         </UFormField>
       </div>
+      <UFormField
+        class="mb-3"
+        :label="t('settings.indoorHumidity')"
+        :description="t('settings.indoorHumidityHint')"
+      >
+        <USelect
+          v-model="indoorHumidity"
+          :items="indoorHumidityItems"
+          class="w-full"
+        />
+      </UFormField>
       <div class="flex gap-2">
         <UButton
           variant="soft"
@@ -263,7 +313,7 @@ async function onLocaleChange(value: string) {
         <UButton
           type="button"
           :loading="saving"
-          @click="saveLocation"
+          @click="saveHomeSettings"
         >
           {{ t('common.save') }}
         </UButton>

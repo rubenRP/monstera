@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
 
   const { data: settings, error: settingsError } = await supabase
     .from('user_settings')
-    .select('home_lat, home_lon')
+    .select('home_lat, home_lon, indoor_humidity')
     .eq('user_id', user.id)
     .maybeSingle()
   if (settingsError) throw settingsError
@@ -35,6 +35,7 @@ export default defineEventHandler(async (event) => {
 
   const homeLat = Number(settings.home_lat)
   const homeLon = Number(settings.home_lon)
+  const indoorHumidity = settings.indoor_humidity ?? 'auto'
 
   const metrics = await fetchWeatherMetrics(homeLat, homeLon)
   if (!metrics) {
@@ -57,10 +58,12 @@ export default defineEventHandler(async (event) => {
   }
 
   const wetSkipCounts = await loadWetSkipCounts(supabase, exteriorPlants)
+  const settingsByUserId = new Map([
+    [user.id, { homeLat, homeLon, indoorHumidity }]
+  ])
   const plantContextById = await buildWateringRecalcContexts(
     exteriorPlants as Plant[],
-    homeLat,
-    homeLon
+    settingsByUserId
   )
 
   const batchResult = await runWateringRecalcBatch({

@@ -7,11 +7,66 @@ import {
   getSeason,
   healthFactor,
   placementFactor,
+  plantToAdaptiveInput,
   potDiameterFactor,
+  potMaterialFactor,
   resolveEffectiveWateringInterval,
   seasonFactorFor,
   windowDistanceFactor
 } from './adaptiveWatering'
+import { SEASON_FACTORS } from '../../constants/care'
+import type { Plant } from '../../types/database'
+
+const neutralFactors = {
+  seasonFactor: 1,
+  potFactor: 1,
+  substrateFactor: 1,
+  lightFactor: 1,
+  humidityFactor: 1,
+  weatherFactor: 1,
+  healthFactor: 1,
+  placementFactor: 1,
+  distanceFactor: 1,
+  drainageFactor: 1
+}
+
+function plantFixture(overrides: Partial<Plant> = {}): Plant {
+  return {
+    id: 'p1',
+    user_id: 'u1',
+    name: 'Test',
+    species: null,
+    photo_path: null,
+    notes: '',
+    health_status: 'healthy',
+    health_status_note: null,
+    health_status_updated_at: null,
+    watering_base_interval_days: 7,
+    watering_interval_days: 7,
+    fertilizing_interval_days: 30,
+    last_watered_at: null,
+    last_fertilized_at: null,
+    check_in_interval_days: 30,
+    last_check_in_at: null,
+    site_id: null,
+    window_distance_cm: null,
+    pot_size: null,
+    pot_diameter_cm: null,
+    pot_material: null,
+    has_drainage: true,
+    substrate_type: null,
+    substrate_notes: null,
+    height_cm: null,
+    height_updated_at: null,
+    age_years: null,
+    age_unit: null,
+    archived_at: null,
+    archive_reason: null,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: '2026-01-01T00:00:00Z',
+    ...overrides
+  }
+}
 
 describe('getSeason', () => {
   it('returns winter for January in northern hemisphere', () => {
@@ -26,47 +81,38 @@ describe('getSeason', () => {
 describe('resolveEffectiveWateringInterval', () => {
   it('applies season and pot factors', () => {
     const days = resolveEffectiveWateringInterval(10, {
-      seasonFactor: 1.15,
-      potFactor: 1.1,
-      substrateFactor: 1,
-      lightFactor: 1,
-      weatherFactor: 1,
-      healthFactor: 1,
-      placementFactor: 1,
-      distanceFactor: 1,
-      drainageFactor: 1
+      ...neutralFactors,
+      seasonFactor: 1.4,
+      potFactor: 1.1
     })
-    expect(days).toBe(13)
+    expect(days).toBe(15)
   })
 
   it('clamps to max 90', () => {
     const days = resolveEffectiveWateringInterval(80, {
-      seasonFactor: 1.15,
+      ...neutralFactors,
+      seasonFactor: 1.4,
       potFactor: 1.15,
-      substrateFactor: 1.2,
-      lightFactor: 1,
-      weatherFactor: 1,
-      healthFactor: 1,
-      placementFactor: 1,
-      distanceFactor: 1,
-      drainageFactor: 1
+      substrateFactor: 1.2
     })
     expect(days).toBe(90)
   })
 
   it('applies health and drainage factors', () => {
     const days = resolveEffectiveWateringInterval(10, {
-      seasonFactor: 1,
-      potFactor: 1,
-      substrateFactor: 1,
-      lightFactor: 1,
-      weatherFactor: 1,
+      ...neutralFactors,
       healthFactor: 0.85,
-      placementFactor: 1,
-      distanceFactor: 1,
       drainageFactor: 0.9
     })
     expect(days).toBe(8)
+  })
+
+  it('applies humidity factor for dry indoor air', () => {
+    const days = resolveEffectiveWateringInterval(10, {
+      ...neutralFactors,
+      humidityFactor: 0.88
+    })
+    expect(days).toBe(9)
   })
 })
 
@@ -99,6 +145,7 @@ describe('computeWateringSchedule', () => {
       wateringBaseIntervalDays: 7,
       potSize: null,
       potDiameterCm: null,
+      potMaterial: null,
       substrateType: null,
       siteLuminosity: null,
       sitePlacement: null,
@@ -124,6 +171,7 @@ describe('computeOptimalWateringSchedule', () => {
     wateringBaseIntervalDays: 10,
     potSize: null,
     potDiameterCm: null,
+    potMaterial: null,
     substrateType: null,
     siteLuminosity: null,
     sitePlacement: null,
@@ -158,6 +206,7 @@ describe('weather factor', () => {
       wateringBaseIntervalDays: 10,
       potSize: null,
       potDiameterCm: null,
+      potMaterial: null,
       substrateType: null,
       siteLuminosity: null,
       sitePlacement: 'indoor',
@@ -175,7 +224,23 @@ describe('weather factor', () => {
 
 describe('seasonFactorFor', () => {
   it('shortens interval in summer', () => {
-    expect(seasonFactorFor(6, 40)).toBe(0.85)
+    expect(seasonFactorFor(6, 40)).toBe(0.72)
+  })
+
+  it('lengthens interval in winter', () => {
+    expect(seasonFactorFor(0, 40)).toBe(1.4)
+  })
+
+  it('roughly doubles interval from summer to winter at same factors', () => {
+    const summer = resolveEffectiveWateringInterval(7, {
+      ...neutralFactors,
+      seasonFactor: SEASON_FACTORS.summer
+    })
+    const winter = resolveEffectiveWateringInterval(7, {
+      ...neutralFactors,
+      seasonFactor: SEASON_FACTORS.winter
+    })
+    expect(winter / summer).toBeGreaterThanOrEqual(1.9)
   })
 })
 
@@ -205,5 +270,111 @@ describe('plant environment factors', () => {
   it('uses pot diameter when available', () => {
     expect(potDiameterFactor(10, 'l')).toBe(0.95)
     expect(potDiameterFactor(30, null)).toBe(1.08)
+  })
+
+  it('shortens interval for terracotta pots', () => {
+    expect(potMaterialFactor('terracotta')).toBe(0.88)
+  })
+
+  it('lengthens interval for plastic pots', () => {
+    expect(potMaterialFactor('plastic')).toBe(1.12)
+  })
+})
+
+describe('reference plants seasonal regression', () => {
+  const summer = new Date('2026-07-10T12:00:00+02:00')
+  const winter = new Date('2026-01-10T12:00:00+01:00')
+
+  function envInterval(plant: Plant, now: Date, humidityFactor = 1) {
+    const input = plantToAdaptiveInput(plant, 40, { now, humidityFactor })
+    const result = computeOptimalWateringSchedule({
+      ...input,
+      completedWaterIntervals: []
+    })
+    return result.effectiveIntervalDays
+  }
+
+  it('Marantita: summer ~5d, winter ~10d', () => {
+    const plant = plantFixture({
+      name: 'Marantita',
+      species: 'Maranta leuconeura',
+      pot_size: 'xs',
+      pot_diameter_cm: 10,
+      window_distance_cm: 50,
+      site: {
+        id: 's1',
+        user_id: 'u1',
+        name: 'Despacho',
+        placement: 'indoor',
+        window_orientation: 'W',
+        luminosity: 'medium',
+        has_ceiling_cover: false,
+        notes: '',
+        created_at: '',
+        updated_at: ''
+      }
+    })
+    const summerDays = envInterval(plant, summer)
+    const winterDays = envInterval(plant, winter)
+    expect(summerDays).toBeGreaterThanOrEqual(4)
+    expect(summerDays).toBeLessThanOrEqual(7)
+    expect(winterDays).toBeGreaterThanOrEqual(9)
+    expect(winterDays).toBeLessThanOrEqual(13)
+  })
+
+  it('Costilla: summer ~7-9d, winter ~14d', () => {
+    const plant = plantFixture({
+      name: 'Costilla',
+      species: 'Monstera deliciosa',
+      pot_size: 'm',
+      pot_diameter_cm: 25,
+      window_distance_cm: 200,
+      site: {
+        id: 's2',
+        user_id: 'u1',
+        name: 'Salón',
+        placement: 'indoor',
+        window_orientation: 'E',
+        luminosity: 'medium',
+        has_ceiling_cover: false,
+        notes: '',
+        created_at: '',
+        updated_at: ''
+      }
+    })
+    const summerDays = envInterval(plant, summer)
+    const winterDays = envInterval(plant, winter)
+    expect(summerDays).toBeGreaterThanOrEqual(6)
+    expect(summerDays).toBeLessThanOrEqual(10)
+    expect(winterDays).toBeGreaterThanOrEqual(10)
+    expect(winterDays).toBeLessThanOrEqual(14)
+  })
+
+  it('Ave del paraíso: summer ~6-8d, winter ~12d', () => {
+    const plant = plantFixture({
+      name: 'Ave del paraíso',
+      species: 'Strelitzia nicolai',
+      pot_size: 'm',
+      pot_diameter_cm: 25,
+      window_distance_cm: 50,
+      site: {
+        id: 's3',
+        user_id: 'u1',
+        name: 'Despacho',
+        placement: 'indoor',
+        window_orientation: 'W',
+        luminosity: 'medium',
+        has_ceiling_cover: false,
+        notes: '',
+        created_at: '',
+        updated_at: ''
+      }
+    })
+    const summerDays = envInterval(plant, summer)
+    const winterDays = envInterval(plant, winter)
+    expect(summerDays).toBeGreaterThanOrEqual(5)
+    expect(summerDays).toBeLessThanOrEqual(9)
+    expect(winterDays).toBeGreaterThanOrEqual(10)
+    expect(winterDays).toBeLessThanOrEqual(15)
   })
 })

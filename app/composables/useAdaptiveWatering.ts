@@ -45,7 +45,7 @@ export function useAdaptiveWatering() {
     return lat != null ? Number(lat) : null
   }
 
-  const { weatherFactorForPlant } = usePlantWeatherFactor()
+  const { climateFactorsForPlant } = usePlantWeatherFactor()
 
   async function countRecentWetSkips(plantId: string): Promise<number> {
     const { data: plant, error: plantError } = await supabase
@@ -116,18 +116,22 @@ export function useAdaptiveWatering() {
       extraWetDelayDays?: number
       scheduleFromToday?: boolean
       now?: Date
+      humidityFactor?: number
       weatherFactor?: number
       speciesReferenceDays?: number
       referenceSource?: WateringReferenceResult['source']
       completedWaterIntervals?: number[]
     }
   ): Promise<WateringScheduleResult> {
+    let humidityFactor = options?.humidityFactor
     let weatherFactor = options?.weatherFactor
-    if (weatherFactor == null) {
-      weatherFactor = await weatherFactorForPlant(plant.site?.placement)
+    if (humidityFactor == null || weatherFactor == null) {
+      const climate = await climateFactorsForPlant(plant.site?.placement)
+      humidityFactor = humidityFactor ?? climate.humidityFactor
+      weatherFactor = weatherFactor ?? climate.weatherFactor
     }
     return computeOptimalWateringSchedule(
-      plantToAdaptiveInput(plant, homeLat, { ...options, weatherFactor })
+      plantToAdaptiveInput(plant, homeLat, { ...options, humidityFactor, weatherFactor })
     )
   }
 
