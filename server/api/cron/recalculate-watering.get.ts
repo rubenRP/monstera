@@ -49,8 +49,7 @@ export default defineEventHandler(async (event) => {
     (settingsRows ?? []).map(row => [row.user_id, row])
   )
 
-  const plantIds = exteriorPlants.map(plant => plant.id)
-  const wetSkipCounts = await loadWetSkipCounts(supabase, plantIds)
+  const wetSkipCounts = await loadWetSkipCounts(supabase, exteriorPlants)
 
   const plantContextById = new Map<string, WateringRecalcBatchPlantContext>()
   let skippedUsers = 0

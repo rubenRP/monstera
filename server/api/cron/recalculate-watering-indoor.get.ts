@@ -50,8 +50,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const plantIds = indoorPlants.map(plant => plant.id)
-  const wetSkipCounts = await loadWetSkipCounts(supabase, plantIds)
+  const wetSkipCounts = await loadWetSkipCounts(supabase, indoorPlants)
 
   const batchResult = await runWateringRecalcBatch({
     plants: indoorPlants as Plant[],

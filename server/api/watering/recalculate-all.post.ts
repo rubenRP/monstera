@@ -43,8 +43,7 @@ export default defineEventHandler(async (event) => {
     return { updated: 0, errors: 0, plants: 0, skipped: 0 }
   }
 
-  const plantIds = allPlants.map(plant => plant.id)
-  const wetSkipCounts = await loadWetSkipCounts(supabase, plantIds)
+  const wetSkipCounts = await loadWetSkipCounts(supabase, allPlants)
   const plantContextById = await buildWateringRecalcContexts(allPlants, homeLat, homeLon)
 
   const batchResult = await runWateringRecalcBatch({

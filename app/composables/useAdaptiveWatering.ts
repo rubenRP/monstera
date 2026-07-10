@@ -1,4 +1,4 @@
-import { WET_SKIP_LOOKBACK_DAYS } from '#shared/constants/care'
+import { wetSkipCountSince } from '#shared/utils/care/wetSkips'
 import type { Plant } from '#shared/types/database'
 import {
   computeOptimalWateringSchedule,
@@ -48,8 +48,14 @@ export function useAdaptiveWatering() {
   const { weatherFactorForPlant } = usePlantWeatherFactor()
 
   async function countRecentWetSkips(plantId: string): Promise<number> {
-    const since = new Date()
-    since.setDate(since.getDate() - WET_SKIP_LOOKBACK_DAYS)
+    const { data: plant, error: plantError } = await supabase
+      .from('plants')
+      .select('last_watered_at')
+      .eq('id', plantId)
+      .maybeSingle()
+    if (plantError) throw plantError
+
+    const since = wetSkipCountSince(plant?.last_watered_at ?? null)
     const { count, error } = await supabase
       .from('care_tasks')
       .select('*', { count: 'exact', head: true })

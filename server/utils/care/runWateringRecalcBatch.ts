@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { WET_SKIP_LOOKBACK_DAYS } from '#shared/constants/care'
+import { wetSkipCountSince } from '#shared/utils/care/wetSkips'
 import type { Plant } from '#shared/types/database'
 import {
   computeOptimalWateringSchedule,
@@ -181,22 +181,36 @@ export async function runWateringRecalcBatch(
 
 export async function loadWetSkipCounts(
   supabase: SupabaseClient,
-  plantIds: string[]
+  plants: Pick<Plant, 'id' | 'last_watered_at'>[]
 ): Promise<Map<string, number>> {
-  const since = new Date()
-  since.setDate(since.getDate() - WET_SKIP_LOOKBACK_DAYS)
+  if (!plants.length) return new Map()
 
-  const { data: wetSkips } = await supabase
+  const now = new Date()
+  const sinceByPlant = new Map(
+    plants.map(plant => [
+      plant.id,
+      wetSkipCountSince(plant.last_watered_at, now)
+    ])
+  )
+  const earliestSince = [...sinceByPlant.values()].reduce((min, date) =>
+    date < min ? date : min
+  )
+
+  const { data: wetSkips, error } = await supabase
     .from('care_tasks')
-    .select('plant_id')
+    .select('plant_id, completed_at')
     .eq('type', 'water')
     .eq('status', 'skipped')
     .eq('skip_reason', 'soil_wet')
-    .gte('completed_at', since.toISOString())
-    .in('plant_id', plantIds)
+    .gte('completed_at', earliestSince.toISOString())
+    .in('plant_id', plants.map(plant => plant.id))
+  if (error) throw error
 
   const wetSkipCounts = new Map<string, number>()
   for (const row of wetSkips ?? []) {
+    if (!row.completed_at) continue
+    const since = sinceByPlant.get(row.plant_id)
+    if (!since || new Date(row.completed_at) < since) continue
     wetSkipCounts.set(row.plant_id, (wetSkipCounts.get(row.plant_id) ?? 0) + 1)
   }
   return wetSkipCounts
