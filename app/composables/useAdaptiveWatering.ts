@@ -14,6 +14,7 @@ import {
 import { idealCheckInDueAt } from '#shared/utils/care/checkInSchedule'
 import { WATERING_HISTORY_LOOKBACK_DAYS, daysBetweenWateringCompletions } from '#shared/utils/care/wateringHistory'
 import { hasOverduePendingWaterTask as queryOverduePendingWaterTask } from '#shared/utils/care/overdueWaterTask'
+import { wasCareTaskResolvedToday } from '#shared/utils/care/resolvedToday'
 import type { WateringRecalcSource } from '#shared/utils/care/wateringRecalcEvent'
 
 const PLANT_SELECT = '*, site:sites(*)'
@@ -211,7 +212,13 @@ export function useAdaptiveWatering() {
     const uid = await requireUserId()
     const before = await fetchWateringSnapshot(plantId)
 
-    const { schedule } = await recalculatePlantWatering(plantId, options)
+    const scheduleFromToday = options?.scheduleFromToday
+      ?? await wasCareTaskResolvedToday(supabase, plantId, 'water')
+
+    const { schedule } = await recalculatePlantWatering(plantId, {
+      ...options,
+      scheduleFromToday
+    })
 
     const { error: delError } = await supabase
       .from('care_tasks')

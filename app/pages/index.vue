@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { CareTask } from '#shared/types/database'
+import { excludePendingResolvedToday } from '#shared/utils/care/resolvedToday'
 
 const { t } = useI18n()
 const { dateLocale } = useDateLocale()
@@ -80,8 +81,9 @@ async function loadTasks() {
     fetchTodayTasks(),
     fetchTodayCompletedTasks()
   ])
-  summaryTasks.value = pending
-  tasks.value = pending
+  const visiblePending = excludePendingResolvedToday(pending, completed)
+  summaryTasks.value = visiblePending
+  tasks.value = visiblePending
   completedToday.value = completed
 }
 

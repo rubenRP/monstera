@@ -9,6 +9,7 @@ import {
 } from '#shared/utils/care/adaptiveWatering'
 import { alignFertilizeDueAt, idealFertilizeDueAt } from '#shared/utils/care/alignFertilize'
 import { hasOverduePendingWaterTask } from '#shared/utils/care/overdueWaterTask'
+import { loadWaterResolvedTodayPlantIds } from '#shared/utils/care/resolvedToday'
 import { inferPreviousWaterDueAt, type WateringRecalcSource } from '#shared/utils/care/wateringRecalcEvent'
 import type { AppLocale } from '#shared/utils/i18n/locale'
 import { upsertPendingCheckInTask } from './checkInTask'
@@ -57,6 +58,11 @@ export async function runWateringRecalcBatch(
   let skipped = 0
   let errors = 0
 
+  const waterResolvedTodayPlantIds = await loadWaterResolvedTodayPlantIds(
+    options.supabase,
+    options.plants.map(plant => plant.id)
+  )
+
   for (const plant of options.plants) {
     const ctx = options.plantContextById.get(plant.id)
     if (!ctx) {
@@ -100,7 +106,8 @@ export async function runWateringRecalcBatch(
           recentWetSkipCount: options.wetSkipCounts.get(plant.id) ?? 0,
           humidityFactor: ctx.humidityFactor,
           weatherFactor: ctx.weatherFactor,
-          completedWaterIntervals: historyIntervals
+          completedWaterIntervals: historyIntervals,
+          scheduleFromToday: waterResolvedTodayPlantIds.has(plant.id)
         })
       )
 

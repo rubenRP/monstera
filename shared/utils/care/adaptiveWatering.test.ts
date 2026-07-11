@@ -137,6 +137,13 @@ describe('computeNextWateringDue', () => {
     const due = computeNextWateringDue(7, 2, lastWateredAt, now, true)
     expect(due).toBe('2026-07-04T12:00:00.000Z')
   })
+
+  it('returns today when overdue and not scheduling from today', () => {
+    const now = new Date('2026-07-11T12:00:00Z')
+    const lastWateredAt = '2026-06-01T12:00:00Z'
+    const due = computeNextWateringDue(7, 0, lastWateredAt, now, false)
+    expect(due).toBe(now.toISOString())
+  })
 })
 
 describe('computeWateringSchedule', () => {
