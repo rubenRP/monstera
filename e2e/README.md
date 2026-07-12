@@ -14,7 +14,7 @@ Playwright builds the app, runs `nuxt preview` on port 3000, and executes specs 
 
 | Flow | Route | Notes |
 |------|-------|-------|
-| Auth guard | `/` | Redirect to `/login` without session |
+| Landing | `/` | Public hero, features, GitHub link without session |
 | Login OTP | `/login` | Test project Supabase or local `supabase start` |
 | Home care | `/` | Complete / skip watering |
 | Create plant | `/plants/new` | Form → detail |

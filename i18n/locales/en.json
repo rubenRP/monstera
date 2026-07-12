@@ -56,6 +56,51 @@
     "safariSessionAction": "Go to sign in",
     "notAuthenticated": "Not authenticated"
   },
+  "landing": {
+    "hero": {
+      "badge": "AI-powered plant care",
+      "title": "Care for your plants with ease",
+      "subtitle": "Watering calendar, AI diagnosis and weather-based recommendations. All in an installable PWA.",
+      "cta": "Get started",
+      "secondaryCta": "View on GitHub"
+    },
+    "features": {
+      "title": "What you can do",
+      "watering": {
+        "title": "Watering & fertilizing",
+        "description": "Daily tasks tailored to each plant and site, with reminders for what's due."
+      },
+      "weather": {
+        "title": "Smart watering",
+        "description": "Adjusts intervals based on outdoor weather via Open-Meteo — no API key required."
+      },
+      "diagnose": {
+        "title": "AI diagnosis",
+        "description": "Upload a photo and get a health analysis with likely causes and next steps."
+      },
+      "recommend": {
+        "title": "Recommendations",
+        "description": "Personalized advice based on location, light and your home conditions."
+      },
+      "species": {
+        "title": "Species profiles",
+        "description": "Care sheets per variety powered by the Perenual plant encyclopedia."
+      },
+      "pwa": {
+        "title": "Installable PWA",
+        "description": "Use it like a native app on your phone and get watering reminders via push."
+      }
+    },
+    "openSource": {
+      "title": "Open source & self-hosted",
+      "description": "Monstera is free software under the MIT license. Deploy your own instance with Supabase and keep control of your data.",
+      "selfHosted": "Self-hosting guide",
+      "github": "View on GitHub"
+    },
+    "footer": {
+      "cta": "Create account or sign in"
+    }
+  },
   "settings": {
     "title": "Settings",
     "account": "Account",

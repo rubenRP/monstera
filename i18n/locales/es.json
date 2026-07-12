@@ -56,6 +56,51 @@
     "safariSessionAction": "Ir al inicio de sesión",
     "notAuthenticated": "No autenticado"
   },
+  "landing": {
+    "hero": {
+      "badge": "Cuidado de plantas con IA",
+      "title": "Cuida tus plantas con calma",
+      "subtitle": "Calendario de riego, diagnóstico con IA y recomendaciones según el clima. Todo en una PWA que puedes instalar.",
+      "cta": "Empezar",
+      "secondaryCta": "Ver en GitHub"
+    },
+    "features": {
+      "title": "Qué puedes hacer",
+      "watering": {
+        "title": "Riego y abono",
+        "description": "Tareas diarias adaptadas a cada planta y sitio, con recordatorios de lo pendiente."
+      },
+      "weather": {
+        "title": "Riego inteligente",
+        "description": "Ajusta los intervalos según el clima exterior con Open-Meteo, sin API key."
+      },
+      "diagnose": {
+        "title": "Diagnóstico con IA",
+        "description": "Sube una foto y obtén un análisis de salud con posibles causas y acciones."
+      },
+      "recommend": {
+        "title": "Recomendaciones",
+        "description": "Consejos personalizados según ubicación, luminosidad y condiciones de tu hogar."
+      },
+      "species": {
+        "title": "Perfiles de especies",
+        "description": "Ficha por variedad con datos de cuidado desde la enciclopedia Perenual."
+      },
+      "pwa": {
+        "title": "PWA instalable",
+        "description": "Úsala como app en el móvil y recibe avisos de riego con notificaciones push."
+      }
+    },
+    "openSource": {
+      "title": "Open source y self-hosted",
+      "description": "Monstera es software libre bajo licencia MIT. Despliega tu propia instancia con Supabase y controla tus datos.",
+      "selfHosted": "Guía de self-hosting",
+      "github": "Ver en GitHub"
+    },
+    "footer": {
+      "cta": "Crear cuenta o iniciar sesión"
+    }
+  },
   "settings": {
     "title": "Ajustes",
     "account": "Cuenta",

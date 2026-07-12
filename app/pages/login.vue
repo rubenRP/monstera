@@ -70,8 +70,9 @@ function resetForm() {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center p-4 bg-default">
-    <UCard class="w-full max-w-md">
+  <div class="relative min-h-screen flex items-center justify-center p-4 bg-default overflow-hidden">
+    <AppBackground variant="hero" />
+    <UCard class="relative w-full max-w-md shadow-xl shadow-primary/5">
       <template #header>
         <div class="flex items-center gap-2">
           <AppLogo size="lg" />

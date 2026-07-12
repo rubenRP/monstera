@@ -40,5 +40,5 @@ export function usePlants() {
 
 ## PWA / auth
 
-- Public routes: `/login`, `/confirm` (`layout: false`).
+- Public routes: `/` (landing when logged out), `/login`, `/confirm` (`layout: false` for landing/login/confirm).
 - Everything else protected by `@nuxtjs/supabase` redirect.

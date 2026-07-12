@@ -15,7 +15,7 @@ const { t } = useI18n()
 <template>
   <NuxtLink
     :to="`/plants/${plant.id}`"
-    class="flex items-center gap-3 p-3 rounded-xl border border-default border-l-4 bg-elevated/40 shadow-sm hover:bg-elevated hover:shadow-md transition-all"
+    class="flex items-center gap-3 p-3 rounded-2xl border border-default border-l-4 bg-elevated/40 shadow-sm hover:-translate-y-0.5 hover:bg-elevated hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
     :class="[
       archived ? 'opacity-70 border-l-neutral-400' : getHealthBorderColor(plant.health_status)
     ]"
@@ -28,7 +28,7 @@ const { t } = useI18n()
     />
     <div
       v-else
-      class="w-12 h-12 rounded-lg bg-primary/15 flex items-center justify-center shrink-0"
+      class="w-12 h-12 rounded-xl bg-primary/10 ring-1 ring-inset ring-primary/15 flex items-center justify-center shrink-0"
     >
       <UIcon
         name="i-lucide-leaf"

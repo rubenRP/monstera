@@ -154,8 +154,8 @@ const totalLabel = computed(() =>
       <div class="flex items-center justify-between gap-3">
         <div class="flex items-center gap-3 min-w-0">
           <div
-            class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-            :class="headline.bg"
+            class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ring-1 ring-inset ring-current/10"
+            :class="[headline.bg, headline.tone]"
           >
             <UIcon
               :name="headline.icon"
@@ -186,11 +186,11 @@ const totalLabel = computed(() =>
         <div
           v-for="stat in stats"
           :key="stat.key"
-          class="flex flex-col gap-1.5 p-3 rounded-xl border border-default bg-elevated/40 transition-opacity"
+          class="flex flex-col gap-1.5 p-3 rounded-2xl border border-default bg-elevated/40 transition-opacity"
           :class="stat.active ? '' : 'opacity-55'"
         >
           <div
-            class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+            class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ring-1 ring-inset ring-current/10"
             :class="stat.active ? stat.classes : 'bg-elevated text-muted'"
           >
             <UIcon

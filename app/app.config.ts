@@ -6,7 +6,7 @@ export default defineAppConfig({
     },
     card: {
       slots: {
-        root: 'rounded-xl shadow-sm'
+        root: 'rounded-2xl shadow-sm ring-default/60'
       }
     }
   }

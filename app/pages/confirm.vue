@@ -22,10 +22,11 @@ watchEffect(() => {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center p-4">
+  <div class="relative min-h-screen flex items-center justify-center p-4 bg-default overflow-hidden">
+    <AppBackground variant="hero" />
     <UCard
       v-if="safariSession"
-      class="w-full max-w-md"
+      class="relative w-full max-w-md shadow-xl shadow-primary/5"
     >
       <div class="space-y-3 text-center">
         <UIcon
