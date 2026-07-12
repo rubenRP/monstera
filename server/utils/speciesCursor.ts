@@ -21,6 +21,7 @@ import {
   speciesGenerateResponseSchema
 } from '#shared/utils/species/schemas'
 import { syntheticPerenualId } from '#shared/utils/species/syntheticPerenualId'
+import { buildCursorAgentOptions } from './cursorAgentOptions'
 
 function stubSpeciesProfile(speciesQuery: string, locale: AppLocale): SpeciesProfile {
   const unavailable = translate(locale, 'species.unavailable')
@@ -45,11 +46,7 @@ function stubSpeciesProfile(speciesQuery: string, locale: AppLocale): SpeciesPro
 }
 
 async function promptCursorAgent(promptText: string, apiKey: string): Promise<string> {
-  const result = await Agent.prompt(promptText, {
-    apiKey,
-    model: { id: 'composer-2' },
-    local: { cwd: process.cwd() }
-  })
+  const result = await Agent.prompt(promptText, buildCursorAgentOptions(apiKey))
   return result.result ?? ''
 }
 

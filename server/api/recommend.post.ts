@@ -1,8 +1,9 @@
-import { Agent } from '@cursor/sdk'
+import { Agent, CursorAgentError } from '@cursor/sdk'
 import { API_ERROR_CODES } from '#shared/utils/i18n/apiErrors'
 import { buildRecommendPrompt, extractJsonFromText } from '#shared/utils/cursor/prompts'
 import { recommendRequestSchema, recommendResponseSchema } from '#shared/utils/plants/schemas'
 import type { Plant } from '#shared/types/database'
+import { buildCursorAgentOptions } from '../utils/cursorAgentOptions'
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
@@ -62,16 +63,20 @@ export default defineEventHandler(async (event) => {
   const weatherSummary = await fetchWeatherSummary(lat!, lon!, locale)
   const promptText = buildRecommendPrompt(plant as Plant, weatherSummary, lat!, lon!)
 
+  const agentOptions = buildCursorAgentOptions(config.cursorApiKey)
+
   let resultText: string
   try {
-    const result = await Agent.prompt(promptText, {
-      apiKey: config.cursorApiKey,
-      model: { id: 'composer-2' },
-      local: { cwd: process.cwd() }
-    })
+    const result = await Agent.prompt(promptText, agentOptions)
+    if (result.status === 'error') {
+      console.error('Cursor recommend run failed:', result.id)
+      throwApiError(502, API_ERROR_CODES.AI_QUERY_FAILED)
+    }
     resultText = result.result ?? ''
   } catch (e) {
-    console.error('Cursor recommend error:', e)
+    if (e && typeof e === 'object' && 'statusCode' in e) throw e
+    const detail = e instanceof CursorAgentError ? e.message : String(e)
+    console.error('Cursor recommend error:', detail)
     throwApiError(502, API_ERROR_CODES.AI_QUERY_FAILED)
   }
 
@@ -81,11 +86,7 @@ export default defineEventHandler(async (event) => {
   if (!recommendation.success) {
     const retry = await Agent.prompt(
       `${promptText}\n\nResponde ÚNICAMENTE con el JSON, sin texto adicional.`,
-      {
-        apiKey: config.cursorApiKey,
-        model: { id: 'composer-2' },
-        local: { cwd: process.cwd() }
-      }
+      agentOptions
     )
     recommendation = recommendResponseSchema.safeParse(
       JSON.parse(extractJsonFromText(retry.result ?? ''))

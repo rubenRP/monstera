@@ -56,6 +56,14 @@ export default defineNuxtConfig({
 
   compatibilityDate: '2025-01-15',
 
+  nitro: {
+    vercel: {
+      functions: {
+        maxDuration: 120
+      }
+    }
+  },
+
   eslint: {
     config: {
       stylistic: {
