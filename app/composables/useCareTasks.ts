@@ -127,6 +127,18 @@ export function useCareTasks() {
     return deduplicateOverlappingTasks(filterActivePlantTasks(merged))
   }
 
+  async function fetchResolvedTasksInRange(start: Date, end: Date) {
+    const { data, error } = await supabase
+      .from('care_tasks')
+      .select(taskSelect)
+      .in('status', ['done', 'skipped'])
+      .gte('completed_at', start.toISOString())
+      .lte('completed_at', end.toISOString())
+      .order('completed_at')
+    if (error) throw error
+    return filterActivePlantTasks((data ?? []) as CareTask[])
+  }
+
   async function completeTask(task: CareTask) {
     await deleteOverlappingPendingTasks(task, task.id)
 
@@ -291,6 +303,7 @@ export function useCareTasks() {
     fetchPlantPendingTasks,
     fetchCareHistory,
     fetchTasksInRange,
+    fetchResolvedTasksInRange,
     createAdvanceTask,
     hasPendingTaskDueToday,
     completeTask,

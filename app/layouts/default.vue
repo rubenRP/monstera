@@ -9,6 +9,14 @@ const nav = computed(() => [
   { to: '/settings', label: t('nav.settings'), icon: 'i-lucide-settings' }
 ])
 
+const mobileNav = computed(() => [
+  { to: '/', label: t('nav.today'), icon: 'i-lucide-home' },
+  { to: '/plants', label: t('nav.plants'), icon: 'i-lucide-leaf' },
+  { to: '/calendar', label: t('nav.calendar'), icon: 'i-lucide-calendar' },
+  { to: '/sites', label: t('nav.sites'), icon: 'i-lucide-map-pin' },
+  { to: '/settings', label: t('nav.settings'), icon: 'i-lucide-settings' }
+])
+
 function isActive(path: string) {
   if (path === '/') return route.path === '/'
   return route.path.startsWith(path)
@@ -85,12 +93,12 @@ function isActive(path: string) {
       class="fixed bottom-0 inset-x-0 z-40 border-t border-default/60 bg-default/75 backdrop-blur-lg md:hidden pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]"
       :aria-label="t('nav.mainNav')"
     >
-      <div class="flex justify-around pt-2 pb-1 px-2">
+      <div class="flex pt-2 pb-1 px-1">
         <NuxtLink
-          v-for="item in nav"
+          v-for="item in mobileNav"
           :key="item.to"
           :to="item.to"
-          class="flex flex-col items-center gap-0.5 px-3 py-1.5 text-xs font-medium rounded-full transition-all min-w-[4rem]"
+          class="flex flex-1 flex-col items-center gap-0.5 px-1 py-1.5 text-[11px] font-medium rounded-full transition-all"
           :class="isActive(item.to) ? 'text-primary bg-primary/10 ring-1 ring-inset ring-primary/15' : 'text-muted hover:text-default'"
         >
           <UIcon

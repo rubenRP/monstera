@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import type { CareTask } from '#shared/types/database'
+
 const { t } = useI18n()
 const { dateLocale } = useDateLocale()
-const { fetchTasksInRange, taskLabel, taskIcon } = useCareTasks()
+const { fetchTasksInRange, fetchResolvedTasksInRange, taskLabel, taskIcon } = useCareTasks()
 
 const weekStart = ref(startOfWeek(new Date()))
-const tasks = ref<Awaited<ReturnType<typeof fetchTasksInRange>>>([])
+const tasks = ref<CareTask[]>([])
 const loading = ref(true)
 
 function startOfWeek(d: Date) {
@@ -15,6 +17,14 @@ function startOfWeek(d: Date) {
   x.setHours(0, 0, 0, 0)
   return x
 }
+
+function normalizeDay(d: Date) {
+  const x = new Date(d)
+  x.setHours(0, 0, 0, 0)
+  return x
+}
+
+const today = computed(() => normalizeDay(new Date()))
 
 const weekDays = computed(() => {
   const days: Date[] = []
@@ -27,17 +37,14 @@ const weekDays = computed(() => {
 })
 
 const overdueDisplayDay = computed(() => {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
   for (const day of weekDays.value) {
-    const normalized = new Date(day)
-    normalized.setHours(0, 0, 0, 0)
-    if (normalized.getTime() >= today.getTime()) {
+    const normalized = normalizeDay(day)
+    if (normalized.getTime() >= today.value.getTime()) {
       return normalized
     }
   }
   const last = weekDays.value[weekDays.value.length - 1]
-  return last ? new Date(last) : today
+  return last ? normalizeDay(last) : today.value
 })
 
 async function load() {
@@ -46,20 +53,37 @@ async function load() {
   end.setDate(end.getDate() + 7)
   end.setMilliseconds(-1)
   try {
-    tasks.value = await fetchTasksInRange(weekStart.value, end)
+    const [pending, resolved] = await Promise.all([
+      fetchTasksInRange(weekStart.value, end),
+      fetchResolvedTasksInRange(weekStart.value, end)
+    ])
+    tasks.value = [...pending, ...resolved]
   } finally {
     loading.value = false
   }
 }
 
+function isResolved(task: CareTask) {
+  return task.status === 'done' || task.status === 'skipped'
+}
+
 function tasksForDay(day: Date) {
   const key = day.toDateString()
+  const dayNorm = normalizeDay(day)
+  const isPast = dayNorm.getTime() < today.value.getTime()
+  const isToday = dayNorm.getTime() === today.value.getTime()
   const overdueKey = overdueDisplayDay.value.toDateString()
   const rangeStart = weekStart.value.getTime()
+
   return tasks.value.filter((task) => {
+    if (isResolved(task)) {
+      if (!task.completed_at) return false
+      return new Date(task.completed_at).toDateString() === key
+    }
+    if (isPast) return false
     const due = new Date(task.due_at)
     if (due.getTime() < rangeStart) {
-      return key === overdueKey
+      return isToday && key === overdueKey
     }
     return due.toDateString() === key
   })
@@ -131,14 +155,26 @@ onMounted(load)
         </p>
         <ul
           v-else
-          class="space-y-1"
+          class="space-y-1.5"
         >
           <li
             v-for="task in tasksForDay(day)"
             :key="task.id"
             class="flex items-center gap-2 text-sm"
+            :class="task.status === 'done' ? 'text-success' : task.status === 'skipped' ? 'text-muted' : ''"
           >
             <UIcon
+              v-if="task.status === 'done'"
+              name="i-lucide-check"
+              class="w-4 h-4 shrink-0"
+            />
+            <UIcon
+              v-else-if="task.status === 'skipped'"
+              name="i-lucide-minus"
+              class="w-4 h-4 shrink-0"
+            />
+            <UIcon
+              v-else
               :name="taskIcon(task.type)"
               class="w-4 h-4 text-primary shrink-0"
             />
@@ -147,6 +183,10 @@ onMounted(load)
               class="truncate hover:text-primary"
             >
               {{ task.plant?.name }} — {{ taskLabel(task.type) }}
+              <span
+                v-if="task.status === 'skipped'"
+                class="text-muted"
+              > ({{ t('plants.historySkipped') }})</span>
             </NuxtLink>
           </li>
         </ul>
