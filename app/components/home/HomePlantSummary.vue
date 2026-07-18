@@ -186,7 +186,7 @@ const totalLabel = computed(() =>
         <div
           v-for="stat in stats"
           :key="stat.key"
-          class="flex flex-col gap-1.5 p-3 rounded-2xl border border-default bg-elevated/40 transition-opacity"
+          class="flex flex-col gap-1.5 px-3.5 py-3 rounded-xl border border-default bg-elevated/40 transition-opacity"
           :class="stat.active ? '' : 'opacity-55'"
         >
           <div
