@@ -18,7 +18,6 @@ import { wasCareTaskResolvedToday } from '#shared/utils/care/resolvedToday'
 import type { WateringRecalcSource } from '#shared/utils/care/wateringRecalcEvent'
 
 const PLANT_SELECT = '*, site:sites(*)'
-const SYNC_STORAGE_PREFIX = 'monstera_watering_sync_'
 
 export function useAdaptiveWatering() {
   const supabase = useSupabaseClient()
@@ -215,7 +214,7 @@ export function useAdaptiveWatering() {
     const scheduleFromToday = options?.scheduleFromToday
       ?? await wasCareTaskResolvedToday(supabase, plantId, 'water')
 
-    const { schedule } = await recalculatePlantWatering(plantId, {
+    const { plant, schedule } = await recalculatePlantWatering(plantId, {
       ...options,
       scheduleFromToday
     })
@@ -249,26 +248,53 @@ export function useAdaptiveWatering() {
       })
     }
 
-    await rescheduleFertilizing(plantId, { nextWaterDueAt: schedule.nextDueAt })
+    await rescheduleFertilizing(plantId, {
+      nextWaterDueAt: schedule.nextDueAt,
+      plant
+    })
 
     return schedule
   }
 
   async function rescheduleFertilizing(
     plantId: string,
-    options?: { nextWaterDueAt?: string }
+    options?: {
+      nextWaterDueAt?: string
+      plant?: Pick<Plant, 'last_fertilized_at' | 'fertilizing_interval_days' | 'watering_interval_days'>
+    }
   ): Promise<void> {
-    const { data: row } = await supabase
-      .from('plants')
-      .select('archived_at')
-      .eq('id', plantId)
-      .maybeSingle()
-    if (row?.archived_at) return
+    let plant = options?.plant
+    let waterDueAt = options?.nextWaterDueAt
+
+    if (!plant || !waterDueAt) {
+      const { data: row, error } = await supabase
+        .from('plants')
+        .select('archived_at, last_fertilized_at, fertilizing_interval_days, watering_interval_days')
+        .eq('id', plantId)
+        .maybeSingle()
+      if (error) throw error
+      if (!row || row.archived_at) return
+      plant = row as Pick<Plant, 'last_fertilized_at' | 'fertilizing_interval_days' | 'watering_interval_days'>
+
+      if (!waterDueAt) {
+        const { data: waterTask, error: waterError } = await supabase
+          .from('care_tasks')
+          .select('due_at')
+          .eq('plant_id', plantId)
+          .eq('type', 'water')
+          .eq('status', 'pending')
+          .order('due_at', { ascending: true })
+          .limit(1)
+          .maybeSingle()
+        if (waterError) throw waterError
+        waterDueAt = waterTask?.due_at ?? undefined
+      }
+    }
+
+    if (!plant) return
 
     const uid = await requireUserId()
-
-    const { plant, schedule } = await recalculatePlantWatering(plantId, { allowCursor: false })
-    const waterDueAt = options?.nextWaterDueAt ?? schedule.nextDueAt
+    const waterDueAtResolved = waterDueAt
 
     const ideal = idealFertilizeDueAt(
       plant.last_fertilized_at ? new Date(plant.last_fertilized_at) : null,
@@ -276,7 +302,7 @@ export function useAdaptiveWatering() {
     )
     const aligned = alignFertilizeDueAt(
       ideal,
-      new Date(waterDueAt),
+      waterDueAtResolved ? new Date(waterDueAtResolved) : null,
       plant.watering_interval_days
     )
 
@@ -361,68 +387,6 @@ export function useAdaptiveWatering() {
     })
   }
 
-  async function syncFertilizeAlignmentOnce(): Promise<void> {
-    if (!import.meta.client) return
-    try {
-      await requireUserId()
-    } catch {
-      return
-    }
-
-    const storageKey = 'monstera_fert_water_align_v1'
-    if (localStorage.getItem(storageKey)) return
-
-    const { data: plants, error } = await supabase
-      .from('plants')
-      .select('id')
-      .is('archived_at', null)
-    if (error) throw error
-
-    for (const row of plants ?? []) {
-      if (await hasOverduePendingWaterTask(row.id)) {
-        continue
-      }
-      await rescheduleWatering(row.id, { source: 'fertilize_align_sync', allowCursor: false })
-      await rescheduleCheckIn(row.id)
-    }
-
-    localStorage.setItem(storageKey, '1')
-  }
-
-  async function syncAllIfSeasonChanged(): Promise<void> {
-    let uid: string
-    try {
-      uid = await requireUserId()
-    } catch {
-      return
-    }
-
-    const now = new Date()
-    const monthKey = `${now.getFullYear()}-${now.getMonth()}`
-    const storageKey = `${SYNC_STORAGE_PREFIX}${uid}`
-    if (import.meta.client && localStorage.getItem(storageKey) === monthKey) {
-      return
-    }
-
-    const { data: plants, error } = await supabase
-      .from('plants')
-      .select('id')
-      .is('archived_at', null)
-    if (error) throw error
-
-    for (const row of plants ?? []) {
-      if (await hasOverduePendingWaterTask(row.id)) {
-        continue
-      }
-      await rescheduleWatering(row.id, { source: 'season_sync', allowCursor: false })
-      await rescheduleCheckIn(row.id)
-    }
-
-    if (import.meta.client) {
-      localStorage.setItem(storageKey, monthKey)
-    }
-  }
-
   return {
     fetchHomeLat,
     countRecentWetSkips,
@@ -434,8 +398,6 @@ export function useAdaptiveWatering() {
     rescheduleWatering,
     rescheduleFertilizing,
     rescheduleCheckIn,
-    applySuggestedBaseInterval,
-    syncFertilizeAlignmentOnce,
-    syncAllIfSeasonChanged
+    applySuggestedBaseInterval
   }
 }

@@ -50,6 +50,16 @@ const archivedOnLabel = computed(() => {
   })
 })
 
+const lastWateredLabel = computed(() => {
+  const iso = plant.value?.last_watered_at
+  if (!iso) return null
+  return new Date(iso).toLocaleDateString(dateLocale.value, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  })
+})
+
 const menuItems = computed(() => {
   const items: Array<{ label: string, icon: string, to?: string, onSelect?: () => void }> = []
   if (!isArchived.value) {
@@ -116,6 +126,12 @@ async function onCompleteTask(taskId: string) {
     pendingTasks.value = await fetchPlantPendingTasks(id)
     plant.value = await fetchPlant(id)
     refreshCareHistory()
+  } catch (e: unknown) {
+    toast.add({
+      title: t('common.error'),
+      description: apiErrorMessage(e),
+      color: 'error'
+    })
   } finally {
     actingTaskId.value = null
   }
@@ -178,6 +194,12 @@ async function confirmSkip(task: CareTask, soilStillWet: boolean) {
       })
     }
     refreshCareHistory()
+  } catch (e: unknown) {
+    toast.add({
+      title: t('common.error'),
+      description: apiErrorMessage(e),
+      color: 'error'
+    })
   } finally {
     actingTaskId.value = null
   }
@@ -259,6 +281,16 @@ async function onDelete() {
         >
           {{ plant.species }}
         </p>
+        <p class="mt-1.5 flex items-center gap-1.5 text-sm text-muted">
+          <UIcon
+            name="i-lucide-droplets"
+            class="size-4 shrink-0 text-primary"
+          />
+          <span>{{ t('plants.lastWatered') }}</span>
+          <span class="font-medium text-highlighted">
+            {{ lastWateredLabel ?? t('plants.lastWateredNever') }}
+          </span>
+        </p>
       </div>
       <UDropdownMenu :items="menuItems">
         <UButton
@@ -282,7 +314,7 @@ async function onDelete() {
       v-if="photoUrl"
       :src="photoUrl"
       :alt="plant.name"
-      class="w-full h-40 object-cover rounded-xl"
+      class="w-full aspect-[4/3] object-cover rounded-2xl"
     >
 
     <div

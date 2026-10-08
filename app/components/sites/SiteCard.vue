@@ -17,7 +17,7 @@ const { placementLabel, orientationLabel, luminosityLabel } = useSiteEnumLabels(
     <div class="flex items-start justify-between gap-2">
       <div>
         <h3 class="font-semibold text-lg flex items-center gap-2">
-          <span class="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-inset ring-primary/15 transition-colors group-hover:bg-primary group-hover:text-inverted">
+          <span class="flex size-8 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-inset ring-primary/15 transition-colors group-hover:bg-primary group-hover:text-inverted">
             <UIcon
               name="i-lucide-map-pin"
               class="w-4 h-4"

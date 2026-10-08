@@ -69,6 +69,7 @@ export function createCareTask(
     photo_path: null,
     health_status: 'healthy' as const,
     archived_at: null,
+    last_watered_at: null,
     site_id: 'site-1',
     site: { id: 'site-1', name: 'Salón' }
   }

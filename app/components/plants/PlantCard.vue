@@ -9,7 +9,6 @@ defineProps<{
 }>()
 
 const { healthLabel, archiveReasonLabel } = usePlantEnumLabels()
-const { t } = useI18n()
 </script>
 
 <template>
@@ -19,16 +18,16 @@ const { t } = useI18n()
     :class="[
       archived ? 'opacity-70 border-l-neutral-400' : getHealthBorderColor(plant.health_status)
     ]"
-    :aria-label="t('plants.healthStatusAria', { label: healthLabel(plant.health_status) })"
   >
-    <div
+    <img
       v-if="photoSrc"
-      class="w-12 h-12 rounded-lg bg-cover bg-center shrink-0"
-      :style="{ backgroundImage: `url(${photoSrc})` }"
-    />
+      :src="photoSrc"
+      alt=""
+      class="size-12 rounded-xl object-cover shrink-0"
+    >
     <div
       v-else
-      class="w-12 h-12 rounded-xl bg-primary/10 ring-1 ring-inset ring-primary/15 flex items-center justify-center shrink-0"
+      class="size-12 rounded-xl bg-primary/10 ring-1 ring-inset ring-primary/15 flex items-center justify-center shrink-0"
     >
       <UIcon
         name="i-lucide-leaf"
@@ -38,6 +37,7 @@ const { t } = useI18n()
     <div class="min-w-0 flex-1">
       <div class="flex items-center gap-2 flex-wrap">
         <p class="font-semibold truncate">{{ plant.name }}</p>
+        <span class="sr-only">{{ healthLabel(plant.health_status) }}</span>
         <span
           v-if="archived && plant.archive_reason"
           class="text-xs font-medium px-2 py-0.5 rounded-full bg-neutral-500/15 text-muted shrink-0"

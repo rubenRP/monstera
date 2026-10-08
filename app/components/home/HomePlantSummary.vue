@@ -82,7 +82,7 @@ const stats = computed(() => [
     value: props.todayTaskCount,
     label: t('home.statTodayLabel'),
     active: props.todayTaskCount > 0,
-    classes: 'text-primary bg-primary/10'
+    classes: 'text-primary'
   },
   {
     key: 'overdue',
@@ -90,7 +90,7 @@ const stats = computed(() => [
     value: props.overdueTaskCount,
     label: t('home.statOverdueLabel'),
     active: props.overdueTaskCount > 0,
-    classes: 'text-warning bg-warning/10'
+    classes: 'text-warning'
   },
   {
     key: 'attention',
@@ -98,7 +98,7 @@ const stats = computed(() => [
     value: attentionCount.value,
     label: t('home.statAttentionLabel'),
     active: attentionCount.value > 0,
-    classes: 'text-error bg-error/10'
+    classes: 'text-error'
   }
 ])
 
@@ -149,17 +149,20 @@ const totalLabel = computed(() =>
 </script>
 
 <template>
-  <UCard v-if="totalPlants > 0">
-    <template #header>
+  <UCard
+    v-if="totalPlants > 0"
+    :ui="{ body: 'p-4 sm:p-4' }"
+  >
+    <div class="space-y-3">
       <div class="flex items-center justify-between gap-3">
-        <div class="flex items-center gap-3 min-w-0">
+        <div class="flex items-center gap-2.5 min-w-0">
           <div
-            class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ring-1 ring-inset ring-current/10"
+            class="size-8 rounded-xl flex items-center justify-center shrink-0 ring-1 ring-inset ring-current/10"
             :class="[headline.bg, headline.tone]"
           >
             <UIcon
               :name="headline.icon"
-              class="w-5 h-5"
+              class="size-4"
               :class="headline.tone"
             />
           </div>
@@ -167,7 +170,7 @@ const totalLabel = computed(() =>
             <p class="font-semibold leading-tight truncate">
               {{ headline.text }}
             </p>
-            <p class="text-xs text-muted mt-0.5">
+            <p class="text-xs text-muted">
               {{ totalLabel }}
             </p>
           </div>
@@ -179,37 +182,32 @@ const totalLabel = computed(() =>
           {{ t('home.viewAllPlants') }}
         </NuxtLink>
       </div>
-    </template>
 
-    <div class="space-y-4">
-      <div class="grid grid-cols-3 gap-2">
+      <div class="grid grid-cols-3">
         <div
-          v-for="stat in stats"
+          v-for="(stat, index) in stats"
           :key="stat.key"
-          class="flex flex-col gap-1.5 px-3.5 py-3 rounded-xl border border-default bg-elevated/40 transition-opacity"
-          :class="stat.active ? '' : 'opacity-55'"
+          class="flex flex-col items-center gap-0.5 px-1"
+          :class="[
+            index > 0 ? 'border-l border-default' : '',
+            stat.active ? '' : 'opacity-45'
+          ]"
         >
-          <div
-            class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ring-1 ring-inset ring-current/10"
-            :class="stat.active ? stat.classes : 'bg-elevated text-muted'"
-          >
+          <p class="flex items-center gap-1.5 text-lg font-semibold leading-none tabular-nums">
             <UIcon
               :name="stat.icon"
-              class="w-4 h-4"
+              class="size-4"
+              :class="stat.active ? stat.classes : 'text-muted'"
             />
-          </div>
-          <div class="min-w-0">
-            <p class="text-xl font-bold leading-none tabular-nums">
-              {{ stat.value }}
-            </p>
-            <p class="text-xs text-muted truncate mt-1">
-              {{ stat.label }}
-            </p>
-          </div>
+            {{ stat.value }}
+          </p>
+          <p class="text-xs text-muted truncate max-w-full">
+            {{ stat.label }}
+          </p>
         </div>
       </div>
 
-      <div class="space-y-2.5">
+      <div class="space-y-1.5">
         <div
           v-if="barSegments.length > 1"
           class="flex h-2 rounded-full overflow-hidden bg-accented"
@@ -244,9 +242,9 @@ const totalLabel = computed(() =>
 
       <div
         v-if="attentionCount > 0"
-        class="pt-1 border-t border-default"
+        class="pt-2 border-t border-default"
       >
-        <p class="text-xs font-medium text-muted mb-2 flex items-center gap-1.5">
+        <p class="text-xs font-medium text-muted mb-1.5 flex items-center gap-1.5">
           <UIcon
             name="i-lucide-bell"
             class="w-3.5 h-3.5"

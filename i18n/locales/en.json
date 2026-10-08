@@ -4,6 +4,10 @@
     "description": "Houseplant care — watering, diagnosis and recommendations",
     "pwaDescription": "Houseplant care"
   },
+  "pwa": {
+    "offline": "You are offline. You can look around, but saving changes needs a connection.",
+    "offlineAction": "You are offline. This change was not saved."
+  },
   "nav": {
     "today": "Today",
     "plants": "Plants",
@@ -35,7 +39,10 @@
     "day": "day",
     "years": "years",
     "year": "year",
-    "cm": "cm"
+    "cm": "cm",
+    "photoPicker": "Take or choose a photo",
+    "photoPickerHint": "JPG or PNG",
+    "photoPickerChange": "Change photo"
   },
   "auth": {
     "loginSubtitle": "Sign in with your email",
@@ -63,6 +70,15 @@
       "subtitle": "Watering calendar, AI diagnosis and weather-based recommendations. All in an installable PWA.",
       "cta": "Get started",
       "secondaryCta": "View on GitHub"
+    },
+    "preview": {
+      "overdue": "Overdue",
+      "plantOne": "Monstera",
+      "taskOne": "Water",
+      "siteOne": "Living room",
+      "plantTwo": "Pothos",
+      "taskTwo": "Fertilize",
+      "siteTwo": "Kitchen"
     },
     "features": {
       "title": "What you can do",
@@ -177,6 +193,18 @@
     "noTasksUpcoming": "No pending tasks in the next 7 days.",
     "showUpcomingTasks": "Next 7 days",
     "addPlant": "Add plant",
+    "emptyTitle": "You do not have any plants yet",
+    "emptyDescription": "Add a plant to see today's watering and fertilizing here.",
+    "lastWateredToday": "Last watered today",
+    "lastWateredYesterday": "Last watered yesterday",
+    "lastWateredDays": "Last watered {days} days ago",
+    "lastWateredNever": "Not watered yet",
+    "lastWateredShortToday": "Today",
+    "lastWateredShortYesterday": "Yesterday",
+    "lastWateredShortDays": "{days} days",
+    "lastWateredShortNever": "Never",
+    "overdueShortOne": "1 day",
+    "overdueShortMany": "{days} days",
     "addAdvanceWater": "Water early",
     "wateringPlanUpdated": "Watering plan updated",
     "nextWaterIn": "Next watering in {days} days",
@@ -243,6 +271,8 @@
     "myPlant": "My plant",
     "variety": "Variety",
     "history": "History",
+    "lastWatered": "Last watered",
+    "lastWateredNever": "Not recorded",
     "diagnose": "Diagnose",
     "recommendations": "Recommendations",
     "healthUpdated": "Status updated",

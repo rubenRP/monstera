@@ -12,7 +12,6 @@ const toast = useToast()
 
 const plantName = ref('')
 const symptoms = ref('')
-const imagePreview = ref<string | null>(null)
 const imageBase64 = ref<string | undefined>()
 const loading = ref(false)
 const result = ref<DiagnosisResponse | null>(null)
@@ -29,14 +28,10 @@ onMounted(async () => {
   plantName.value = p.name
 })
 
-function onImage(e: Event) {
-  const file = (e.target as HTMLInputElement).files?.[0]
-  if (!file) return
+function onPhoto(file: File) {
   const reader = new FileReader()
   reader.onload = () => {
-    const data = reader.result as string
-    imagePreview.value = data
-    imageBase64.value = data
+    imageBase64.value = reader.result as string
   }
   reader.readAsDataURL(file)
 }
@@ -96,16 +91,7 @@ async function applySuggestedStatus() {
     </UFormField>
 
     <UFormField :label="t('diagnose.photoOptional')">
-      <input
-        type="file"
-        accept="image/*"
-        @change="onImage"
-      >
-      <img
-        v-if="imagePreview"
-        :src="imagePreview"
-        class="mt-2 max-h-40 rounded-lg"
-      >
+      <AppPhotoPicker @select="onPhoto" />
     </UFormField>
 
     <UButton

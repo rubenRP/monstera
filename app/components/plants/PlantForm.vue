@@ -36,15 +36,10 @@ const form = reactive<PlantFormInput>({
 })
 
 const photoFile = ref<File | null>(null)
-const photoPreview = ref<string | null>(null)
 const errors = ref<string | null>(null)
 
-function onPhotoChange(e: Event) {
-  const input = e.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
+function onPhotoSelect(file: File) {
   photoFile.value = file
-  photoPreview.value = URL.createObjectURL(file)
 }
 
 function handleSubmit() {
@@ -94,17 +89,7 @@ function handleSubmit() {
     />
 
     <UFormField :label="t('plants.photo')">
-      <input
-        type="file"
-        accept="image/*"
-        class="text-sm"
-        @change="onPhotoChange"
-      >
-      <img
-        v-if="photoPreview"
-        :src="photoPreview"
-        class="mt-2 w-24 h-24 object-cover rounded-lg"
-      >
+      <AppPhotoPicker @select="onPhotoSelect" />
     </UFormField>
 
     <section
@@ -155,13 +140,16 @@ function handleSubmit() {
       <UTextarea v-model="form.notes" />
     </UFormField>
 
-    <UButton
-      type="submit"
-      block
-      :loading="loading"
-      color="primary"
-    >
-      {{ t('common.save') }}
-    </UButton>
+    <div class="sticky bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] z-30 -mx-4 border-t border-default/80 bg-default/85 px-4 py-3 backdrop-blur-md md:static md:mx-0 md:border-0 md:bg-transparent md:px-0 md:py-0 md:backdrop-blur-none">
+      <UButton
+        type="submit"
+        block
+        size="lg"
+        :loading="loading"
+        color="primary"
+      >
+        {{ t('common.save') }}
+      </UButton>
+    </div>
   </form>
 </template>

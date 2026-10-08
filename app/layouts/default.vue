@@ -1,15 +1,9 @@
 <script setup lang="ts">
 const route = useRoute()
 const { t } = useI18n()
+const { online } = useOnlineStatus()
 
 const nav = computed(() => [
-  { to: '/', label: t('nav.today'), icon: 'i-lucide-home' },
-  { to: '/plants', label: t('nav.plants'), icon: 'i-lucide-leaf' },
-  { to: '/sites', label: t('nav.sites'), icon: 'i-lucide-map-pin' },
-  { to: '/settings', label: t('nav.settings'), icon: 'i-lucide-settings' }
-])
-
-const mobileNav = computed(() => [
   { to: '/', label: t('nav.today'), icon: 'i-lucide-home' },
   { to: '/plants', label: t('nav.plants'), icon: 'i-lucide-leaf' },
   { to: '/calendar', label: t('nav.calendar'), icon: 'i-lucide-calendar' },
@@ -26,6 +20,13 @@ function isActive(path: string) {
 <template>
   <div class="relative min-h-screen flex flex-col md:flex-row pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-0">
     <AppBackground />
+    <p
+      v-if="!online"
+      role="status"
+      class="sticky top-0 z-50 border-b border-warning/30 bg-warning/15 px-4 py-2 text-center text-sm text-highlighted"
+    >
+      {{ t('pwa.offline') }}
+    </p>
     <aside class="hidden md:flex md:flex-col md:w-56 md:border-r md:border-default/60 md:min-h-screen md:p-4 md:sticky md:top-0 md:backdrop-blur-sm">
       <NuxtLink
         to="/"
@@ -52,18 +53,6 @@ function isActive(path: string) {
           {{ item.label }}
         </NuxtLink>
       </nav>
-      <div class="mt-auto pt-4 px-2">
-        <NuxtLink
-          to="/calendar"
-          class="text-sm text-muted hover:text-primary flex items-center gap-2"
-        >
-          <UIcon
-            name="i-lucide-calendar"
-            class="w-4 h-4"
-          />
-          {{ t('nav.calendar') }}
-        </NuxtLink>
-      </div>
     </aside>
 
     <div class="flex-1 flex flex-col min-w-0">
@@ -95,10 +84,10 @@ function isActive(path: string) {
     >
       <div class="flex pt-2 pb-1 px-1">
         <NuxtLink
-          v-for="item in mobileNav"
+          v-for="item in nav"
           :key="item.to"
           :to="item.to"
-          class="flex flex-1 flex-col items-center gap-0.5 px-1 py-1.5 text-[11px] font-medium rounded-full transition-all"
+          class="flex flex-1 flex-col items-center justify-center gap-1 min-h-11 px-0.5 py-2 text-xs leading-none font-medium rounded-full transition-all"
           :class="isActive(item.to) ? 'text-primary bg-primary/10 ring-1 ring-inset ring-primary/15' : 'text-muted hover:text-default'"
         >
           <UIcon

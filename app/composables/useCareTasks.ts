@@ -5,6 +5,7 @@ import {
 } from '#shared/utils/care/deduplicateTasks'
 import { isSameCalendarDay } from '#shared/utils/care/alignFertilize'
 import { taskOverdueDays } from '#shared/utils/care/taskDue'
+import { assertOnline } from '~/utils/offline'
 
 export function useCareTasks() {
   const supabase = useSupabaseClient()
@@ -26,7 +27,7 @@ export function useCareTasks() {
     if (error) throw error
   }
 
-  const taskSelect = '*, plant:plants(id, name, photo_path, health_status, archived_at, site:sites(id, name))'
+  const taskSelect = '*, plant:plants(id, name, photo_path, health_status, archived_at, last_watered_at, site:sites(id, name))'
 
   function filterActivePlantTasks(tasks: CareTask[]): CareTask[] {
     return tasks.filter(t => !t.plant?.archived_at)
@@ -140,6 +141,7 @@ export function useCareTasks() {
   }
 
   async function completeTask(task: CareTask) {
+    assertOnline()
     await deleteOverlappingPendingTasks(task, task.id)
 
     const now = new Date().toISOString()
@@ -194,6 +196,7 @@ export function useCareTasks() {
   const { requireUserId } = useRequireUserId()
 
   async function createAdvanceTask(plantId: string, type: CareTaskType = 'water') {
+    assertOnline()
     const uid = await requireUserId()
 
     if (await hasPendingTaskDueToday(plantId, type)) {
@@ -216,6 +219,7 @@ export function useCareTasks() {
   }
 
   async function skipTask(task: CareTask, options?: { soilStillWet?: boolean }) {
+    assertOnline()
     await deleteOverlappingPendingTasks(task, task.id)
 
     const now = new Date().toISOString()

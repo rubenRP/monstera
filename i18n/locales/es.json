@@ -4,6 +4,10 @@
     "description": "Cuidado de plantas de casa — riego, diagnóstico y recomendaciones",
     "pwaDescription": "Cuidado de plantas de casa"
   },
+  "pwa": {
+    "offline": "Sin conexión. Puedes mirar la app, pero guardar cambios necesita red.",
+    "offlineAction": "Sin conexión. Este cambio no se ha guardado."
+  },
   "nav": {
     "today": "Hoy",
     "plants": "Plantas",
@@ -35,7 +39,10 @@
     "day": "día",
     "years": "años",
     "year": "año",
-    "cm": "cm"
+    "cm": "cm",
+    "photoPicker": "Haz una foto o elige una",
+    "photoPickerHint": "JPG o PNG",
+    "photoPickerChange": "Cambiar foto"
   },
   "auth": {
     "loginSubtitle": "Inicia sesión con tu email",
@@ -63,6 +70,15 @@
       "subtitle": "Calendario de riego, diagnóstico con IA y recomendaciones según el clima. Todo en una PWA que puedes instalar.",
       "cta": "Empezar",
       "secondaryCta": "Ver en GitHub"
+    },
+    "preview": {
+      "overdue": "Atrasada",
+      "plantOne": "Monstera",
+      "taskOne": "Regar",
+      "siteOne": "Salón",
+      "plantTwo": "Pothos",
+      "taskTwo": "Abonar",
+      "siteTwo": "Cocina"
     },
     "features": {
       "title": "Qué puedes hacer",
@@ -177,6 +193,18 @@
     "noTasksUpcoming": "No hay tareas pendientes en los próximos 7 días.",
     "showUpcomingTasks": "Próximos 7 días",
     "addPlant": "Añadir planta",
+    "emptyTitle": "Aún no tienes plantas",
+    "emptyDescription": "Añade una planta para ver aquí el riego y el abono de hoy.",
+    "lastWateredToday": "Último riego hoy",
+    "lastWateredYesterday": "Último riego ayer",
+    "lastWateredDays": "Último riego hace {days} días",
+    "lastWateredNever": "Sin riego todavía",
+    "lastWateredShortToday": "Hoy",
+    "lastWateredShortYesterday": "Ayer",
+    "lastWateredShortDays": "{days} días",
+    "lastWateredShortNever": "Nunca",
+    "overdueShortOne": "1 día",
+    "overdueShortMany": "{days} días",
     "addAdvanceWater": "Regar por adelantado",
     "wateringPlanUpdated": "Plan de riego actualizado",
     "nextWaterIn": "Próximo riego en {days} días",
@@ -243,6 +271,8 @@
     "myPlant": "Mi planta",
     "variety": "Variedad",
     "history": "Historial",
+    "lastWatered": "Último riego",
+    "lastWateredNever": "Sin registro",
     "diagnose": "Diagnosticar",
     "recommendations": "Recomendaciones",
     "healthUpdated": "Estado actualizado",

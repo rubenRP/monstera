@@ -78,7 +78,7 @@ export interface CareTask {
   status: CareTaskStatus
   skip_reason: CareTaskSkipReason | null
   created_at: string
-  plant?: Pick<Plant, 'id' | 'name' | 'photo_path' | 'health_status' | 'archived_at' | 'site_id'> & {
+  plant?: Pick<Plant, 'id' | 'name' | 'photo_path' | 'health_status' | 'archived_at' | 'site_id' | 'last_watered_at'> & {
     site?: Pick<Site, 'id' | 'name'> | null
   }
 }

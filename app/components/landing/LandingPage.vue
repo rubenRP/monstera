@@ -56,53 +56,53 @@ useHead({
 
       <main class="max-w-5xl mx-auto px-4">
         <!-- Hero -->
-        <section class="pt-16 pb-20 sm:pt-24 sm:pb-28 text-center flex flex-col items-center">
-          <UBadge
-            color="primary"
-            variant="soft"
-            size="lg"
-            class="rounded-full mb-6"
-          >
-            <UIcon
-              name="i-lucide-sparkles"
-              class="size-4 mr-1"
-            />
-            {{ t('landing.hero.badge') }}
-          </UBadge>
-
-          <h1 class="text-4xl sm:text-6xl font-bold tracking-tight text-highlighted max-w-3xl text-balance">
-            {{ t('landing.hero.title') }}
-          </h1>
-
-          <p class="mt-6 text-base sm:text-xl text-muted max-w-2xl text-balance">
-            {{ t('app.description') }}
-          </p>
-          <p class="mt-3 text-sm sm:text-base text-dimmed max-w-xl text-balance">
-            {{ t('landing.hero.subtitle') }}
-          </p>
-
-          <div class="mt-10 flex flex-col sm:flex-row items-center gap-3">
-            <UButton
-              to="/login"
-              size="xl"
-              trailing-icon="i-lucide-arrow-right"
-              class="rounded-full px-7 font-semibold shadow-lg shadow-primary/20 transition-transform hover:-translate-y-0.5"
+        <section class="pt-10 pb-16 sm:pt-16 sm:pb-24 lg:grid lg:grid-cols-2 lg:gap-12 lg:items-center">
+          <div class="flex flex-col items-center text-center lg:items-start lg:text-left">
+            <UBadge
+              color="primary"
+              variant="soft"
+              size="lg"
+              class="rounded-full mb-6"
             >
-              {{ t('landing.hero.cta') }}
-            </UButton>
-            <UButton
-              :href="githubUrl"
-              target="_blank"
-              rel="noopener noreferrer"
-              size="xl"
-              color="neutral"
-              variant="ghost"
-              icon="i-lucide-github"
-              class="rounded-full px-6"
-            >
-              {{ t('landing.hero.secondaryCta') }}
-            </UButton>
+              {{ t('landing.hero.badge') }}
+            </UBadge>
+
+            <h1 class="text-4xl sm:text-5xl font-bold tracking-tight text-highlighted max-w-xl text-balance">
+              {{ t('landing.hero.title') }}
+            </h1>
+
+            <p class="mt-6 text-base sm:text-xl text-muted max-w-xl text-balance">
+              {{ t('app.description') }}
+            </p>
+            <p class="mt-3 text-sm sm:text-base text-dimmed max-w-lg text-balance">
+              {{ t('landing.hero.subtitle') }}
+            </p>
+
+            <div class="mt-8 flex flex-col sm:flex-row items-center gap-3">
+              <UButton
+                to="/login"
+                size="xl"
+                trailing-icon="i-lucide-arrow-right"
+                class="rounded-full px-7 font-semibold shadow-lg shadow-primary/20 transition-transform hover:-translate-y-0.5"
+              >
+                {{ t('landing.hero.cta') }}
+              </UButton>
+              <UButton
+                :href="githubUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                size="xl"
+                color="neutral"
+                variant="ghost"
+                icon="i-lucide-github"
+                class="rounded-full px-6"
+              >
+                {{ t('landing.hero.secondaryCta') }}
+              </UButton>
+            </div>
           </div>
+
+          <LandingPreview class="mt-12 lg:mt-0" />
         </section>
 
         <!-- Features -->
@@ -141,7 +141,7 @@ useHead({
 
         <!-- Open source -->
         <section class="pb-20 sm:pb-28">
-          <div class="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-8 sm:p-12">
+          <div class="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-8 sm:p-12">
             <div
               aria-hidden="true"
               class="pointer-events-none absolute -right-16 -bottom-16 opacity-10"

@@ -1,4 +1,5 @@
 import type { FetchError } from 'ofetch'
+import { OfflineError } from '~/utils/offline'
 
 export function useApiError() {
   const { t } = useI18n()
@@ -18,7 +19,8 @@ export function useApiError() {
       const translated = t(key, params as Record<string, string>)
       if (translated !== key) return translated
     }
-    if (error instanceof Error && error.message) return error.message
+    if (error instanceof OfflineError) return t('pwa.offlineAction')
+    if (error instanceof Error && error.message && error.message !== 'OFFLINE') return error.message
     return t('common.unknownError')
   }
 

@@ -1,19 +1,15 @@
 export default defineNuxtPlugin(() => {
   const user = useSupabaseUser()
-  const { syncAllIfSeasonChanged, syncFertilizeAlignmentOnce } = useAdaptiveWatering()
+  const { syncWateringOnLogin } = useWateringSync()
   const { fetchRecentEvents } = useWateringRecalcEvents()
 
   watch(
     user,
-    (u) => {
-      if (u) {
-        void syncFertilizeAlignmentOnce()
-          .then(() => fetchRecentEvents())
-          .catch(() => {})
-        void syncAllIfSeasonChanged()
-          .then(() => fetchRecentEvents())
-          .catch(() => {})
-      }
+    (current) => {
+      if (!current) return
+      void syncWateringOnLogin()
+        .then(() => fetchRecentEvents())
+        .catch(() => {})
     },
     { immediate: true }
   )

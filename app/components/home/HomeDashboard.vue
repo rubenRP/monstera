@@ -13,13 +13,8 @@ const {
   createAdvanceTask,
   completeTask,
   skipTask,
-  taskLabel,
-  taskIcon,
   requiresCheckInModal,
-  overdueDays,
-  overdueLabel,
-  taskDueLabel,
-  fertilizeWithWater
+  overdueDays
 } = useCareTasks()
 const { submitCheckIn } = usePlantCheckIns()
 const { fetchPlants } = usePlants()
@@ -135,6 +130,12 @@ async function markDone(taskId: string) {
   try {
     await completeTask(task)
     await Promise.all([reloadTasks(), fetchRecentEvents()])
+  } catch (e: unknown) {
+    toast.add({
+      title: t('common.error'),
+      description: apiErrorMessage(e),
+      color: 'error'
+    })
   } finally {
     acting.value = null
   }
@@ -195,9 +196,10 @@ async function onAddAdvanceWater(plantId: string) {
       description: created.plant?.name,
       color: 'success'
     })
-  } catch {
+  } catch (e: unknown) {
     toast.add({
       title: t('common.error'),
+      description: apiErrorMessage(e),
       color: 'error'
     })
   } finally {
@@ -219,6 +221,12 @@ async function confirmSkip(task: CareTask, soilStillWet: boolean) {
         color: 'success'
       })
     }
+  } catch (e: unknown) {
+    toast.add({
+      title: t('common.error'),
+      description: apiErrorMessage(e),
+      color: 'error'
+    })
   } finally {
     acting.value = null
   }
@@ -261,6 +269,26 @@ async function confirmSkip(task: CareTask, soilStillWet: boolean) {
       />
     </div>
 
+    <template v-else-if="!plants.length">
+      <UAlert
+        color="primary"
+        variant="subtle"
+        icon="i-lucide-leaf"
+        :title="t('home.emptyTitle')"
+        :description="t('home.emptyDescription')"
+      >
+        <template #actions>
+          <UButton
+            to="/plants/new"
+            size="sm"
+            icon="i-lucide-plus"
+          >
+            {{ t('home.addPlant') }}
+          </UButton>
+        </template>
+      </UAlert>
+    </template>
+
     <template v-else>
       <div class="flex items-center justify-between gap-3 mb-4">
         <span class="text-sm font-medium">{{ t('home.showUpcomingTasks') }}</span>
@@ -298,137 +326,16 @@ async function confirmSkip(task: CareTask, soilStillWet: boolean) {
         {{ t('home.addAdvanceWater') }}
       </UButton>
 
-      <ul
-        v-if="!tasksLoading && tasks.length"
-        class="space-y-3"
-      >
-        <li
-          v-for="task in tasks"
-          :key="task.id"
-          class="p-4 rounded-2xl border bg-elevated/40 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5"
-          :class="overdueDays(task.due_at) > 0 ? 'border-warning/50' : 'border-default'"
-        >
-          <div class="flex items-start gap-3">
-            <span
-              class="flex size-9 items-center justify-center rounded-xl shrink-0 ring-1 ring-inset"
-              :class="overdueDays(task.due_at) > 0 ? 'bg-warning/10 text-warning ring-warning/15' : 'bg-primary/10 text-primary ring-primary/15'"
-            >
-              <UIcon
-                :name="taskIcon(task.type)"
-                class="w-5 h-5"
-              />
-            </span>
-            <div class="flex-1 min-w-0">
-              <NuxtLink
-                :to="`/plants/${task.plant_id}`"
-                class="font-medium hover:text-primary"
-              >
-                {{ task.plant?.name }}
-              </NuxtLink>
-              <p class="text-sm text-muted">
-                {{ taskLabel(task.type) }}
-                <span v-if="fertilizeWithWater(task, tasks)"> · {{ t('care.fertilizeWithWater') }}</span>
-                <span v-if="task.plant?.site?.name"> · {{ task.plant.site.name }}</span>
-              </p>
-              <p
-                v-if="overdueDays(task.due_at) > 0"
-                class="text-sm text-warning mt-0.5"
-              >
-                {{ overdueLabel(task.due_at) }}
-              </p>
-              <p
-                v-else-if="showUpcoming"
-                class="text-sm text-muted mt-0.5"
-              >
-                {{ taskDueLabel(task.due_at) }}
-              </p>
-            </div>
-            <div class="flex gap-1 shrink-0">
-              <UButton
-                size="xs"
-                color="primary"
-                :loading="acting === task.id"
-                @click="markDone(task.id)"
-              >
-                {{ t('common.done') }}
-              </UButton>
-              <UButton
-                size="xs"
-                variant="ghost"
-                color="neutral"
-                :loading="acting === task.id"
-                @click="onSkipClick(task)"
-              >
-                {{ t('common.skip') }}
-              </UButton>
-            </div>
-          </div>
-        </li>
-      </ul>
-
-      <div
-        v-if="!tasksLoading && !showUpcoming && completedToday.length"
-        class="space-y-3 mt-6"
-      >
-        <h2 class="text-sm font-medium text-muted">
-          {{ t('home.completedToday') }}
-        </h2>
-        <ul class="space-y-3">
-          <li
-            v-for="task in completedToday"
-            :key="task.id"
-            class="p-4 rounded-2xl border shadow-sm"
-            :class="task.status === 'done'
-              ? 'border-success/30 bg-success/5'
-              : 'border-default bg-elevated/30'"
-          >
-            <div class="flex items-start gap-3">
-              <span
-                class="flex size-9 items-center justify-center rounded-xl shrink-0 ring-1 ring-inset"
-                :class="task.status === 'done' ? 'bg-success/10 text-success ring-success/15' : 'bg-elevated text-muted ring-default'"
-              >
-                <UIcon
-                  :name="taskIcon(task.type)"
-                  class="w-5 h-5"
-                />
-              </span>
-              <div class="flex-1 min-w-0">
-                <NuxtLink
-                  :to="`/plants/${task.plant_id}`"
-                  class="font-medium hover:text-primary"
-                >
-                  {{ task.plant?.name }}
-                </NuxtLink>
-                <p class="text-sm text-muted">
-                  {{ taskLabel(task.type) }}
-                  <span v-if="fertilizeWithWater(task, todayTasksInView)"> · {{ t('care.fertilizeWithWater') }}</span>
-                  <span v-if="task.plant?.site?.name"> · {{ task.plant.site.name }}</span>
-                </p>
-              </div>
-              <div class="shrink-0">
-                <UButton
-                  v-if="task.status === 'done'"
-                  size="xs"
-                  color="primary"
-                  icon="i-lucide-check"
-                  disabled
-                >
-                  {{ t('common.done') }}
-                </UButton>
-                <UButton
-                  v-else
-                  size="xs"
-                  variant="ghost"
-                  color="neutral"
-                  disabled
-                >
-                  {{ t('plants.historySkipped') }}
-                </UButton>
-              </div>
-            </div>
-          </li>
-        </ul>
-      </div>
+      <HomeTaskList
+        :tasks="tasks"
+        :completed="completedToday"
+        :context-tasks="todayTasksInView"
+        :show-upcoming="showUpcoming"
+        :acting="acting"
+        :loading="tasksLoading"
+        @done="markDone"
+        @skip="onSkipClick"
+      />
     </template>
 
     <CareSkipWaterModal

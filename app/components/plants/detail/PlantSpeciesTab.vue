@@ -23,17 +23,61 @@ const contentRoot = ref<HTMLElement | null>(null)
 
 const appLocale = computed(() => (locale.value === 'en' ? 'en' : 'es') as 'es' | 'en')
 
-const navItems = computed(() => [
-  { id: 'watering' as const, label: t('species.sectionWatering') },
-  { id: 'light' as const, label: t('species.sectionLight') },
-  { id: 'humidity' as const, label: t('species.sectionHumidity') },
-  { id: 'fertilizing' as const, label: t('species.sectionFertilizing') },
-  { id: 'soil-repotting' as const, label: t('species.sectionSoilRepotting') },
-  { id: 'toxicity' as const, label: t('species.sectionToxicity') },
-  { id: 'characteristics' as const, label: t('species.sectionCharacteristics') },
-  { id: 'temperature' as const, label: t('species.sectionTemperature') },
-  { id: 'pests' as const, label: t('species.sectionPests') }
+const sections = computed(() => [
+  {
+    id: 'watering',
+    label: t('species.sectionWatering'),
+    cards: [{ title: t('species.sectionWatering'), field: 'watering' as const }]
+  },
+  {
+    id: 'light',
+    label: t('species.sectionLight'),
+    cards: [{ title: t('species.sectionLight'), field: 'light' as const }]
+  },
+  {
+    id: 'humidity',
+    label: t('species.sectionHumidity'),
+    cards: [{ title: t('species.sectionHumidity'), field: 'humidity' as const }]
+  },
+  {
+    id: 'fertilizing',
+    label: t('species.sectionFertilizing'),
+    cards: [{ title: t('species.sectionFertilizing'), field: 'fertilizing' as const }]
+  },
+  {
+    id: 'soil-repotting',
+    label: t('species.sectionSoilRepotting'),
+    cards: [
+      { title: t('species.soilTitle'), field: 'soil' as const },
+      { title: t('species.repottingTitle'), field: 'repotting' as const }
+    ]
+  },
+  {
+    id: 'toxicity',
+    label: t('species.sectionToxicity'),
+    cards: [{ title: t('species.sectionToxicity'), field: 'toxicity' as const }]
+  },
+  {
+    id: 'characteristics',
+    label: t('species.sectionCharacteristics'),
+    cards: [{ title: t('species.sectionCharacteristics'), field: 'characteristics' as const }]
+  },
+  {
+    id: 'temperature',
+    label: t('species.sectionTemperature'),
+    cards: [{ title: t('species.sectionTemperature'), field: 'temperature' as const }]
+  },
+  {
+    id: 'pests',
+    label: t('species.sectionPests'),
+    cards: [{ title: t('species.sectionPests'), field: 'pestsAndProblems' as const }]
+  }
 ])
+
+const navItems = computed(() => sections.value.map(section => ({
+  id: section.id,
+  label: section.label
+})))
 
 const sectionIds = computed(() => navItems.value.map(i => i.id))
 
@@ -131,7 +175,7 @@ defineExpose({ load })
         v-if="loading"
         class="space-y-3"
       >
-        <USkeleton class="h-40 w-full rounded-xl" />
+        <USkeleton class="aspect-[4/3] w-full rounded-2xl" />
         <USkeleton
           v-for="i in 4"
           :key="i"
@@ -168,12 +212,12 @@ defineExpose({ load })
       <template v-else-if="profile">
         <div
           v-if="profile.imageUrl"
-          class="rounded-xl overflow-hidden"
+          class="rounded-2xl overflow-hidden"
         >
           <img
             :src="profile.imageUrl"
             :alt="profile.commonName"
-            class="w-full h-48 object-cover"
+            class="w-full aspect-[4/3] object-cover"
           >
         </div>
 
@@ -211,237 +255,18 @@ defineExpose({ load })
           class="space-y-8 pt-2"
         >
           <section
-            id="watering"
+            v-for="section in sections"
+            :id="section.id"
+            :key="section.id"
             class="scroll-mt-28 space-y-3"
           >
-            <PlantsSpeciesPlantSpeciesSectionCard :title="t('species.sectionWatering')">
-              <PlantsSpeciesPlantSpeciesBlockRenderer
-                v-if="sectionBlocks('watering').length"
-                :blocks="sectionBlocks('watering')"
-              />
-              <p
-                v-else-if="sectionFallbackText('watering')"
-                class="text-sm text-toned whitespace-pre-wrap"
-              >
-                {{ sectionFallbackText('watering') }}
-              </p>
-              <p
-                v-else
-                class="text-sm text-muted"
-              >
-                {{ t('species.unavailable') }}
-              </p>
-            </PlantsSpeciesPlantSpeciesSectionCard>
-          </section>
-
-          <section
-            id="light"
-            class="scroll-mt-28 space-y-3"
-          >
-            <PlantsSpeciesPlantSpeciesSectionCard :title="t('species.sectionLight')">
-              <PlantsSpeciesPlantSpeciesBlockRenderer
-                v-if="sectionBlocks('light').length"
-                :blocks="sectionBlocks('light')"
-              />
-              <p
-                v-else-if="sectionFallbackText('light')"
-                class="text-sm text-toned whitespace-pre-wrap"
-              >
-                {{ sectionFallbackText('light') }}
-              </p>
-              <p
-                v-else
-                class="text-sm text-muted"
-              >
-                {{ t('species.unavailable') }}
-              </p>
-            </PlantsSpeciesPlantSpeciesSectionCard>
-          </section>
-
-          <section
-            id="humidity"
-            class="scroll-mt-28 space-y-3"
-          >
-            <PlantsSpeciesPlantSpeciesSectionCard :title="t('species.sectionHumidity')">
-              <PlantsSpeciesPlantSpeciesBlockRenderer
-                v-if="sectionBlocks('humidity').length"
-                :blocks="sectionBlocks('humidity')"
-              />
-              <p
-                v-else-if="sectionFallbackText('humidity')"
-                class="text-sm text-toned whitespace-pre-wrap"
-              >
-                {{ sectionFallbackText('humidity') }}
-              </p>
-              <p
-                v-else
-                class="text-sm text-muted"
-              >
-                {{ t('species.unavailable') }}
-              </p>
-            </PlantsSpeciesPlantSpeciesSectionCard>
-          </section>
-
-          <section
-            id="fertilizing"
-            class="scroll-mt-28 space-y-3"
-          >
-            <PlantsSpeciesPlantSpeciesSectionCard :title="t('species.sectionFertilizing')">
-              <PlantsSpeciesPlantSpeciesBlockRenderer
-                v-if="sectionBlocks('fertilizing').length"
-                :blocks="sectionBlocks('fertilizing')"
-              />
-              <p
-                v-else-if="sectionFallbackText('fertilizing')"
-                class="text-sm text-toned whitespace-pre-wrap"
-              >
-                {{ sectionFallbackText('fertilizing') }}
-              </p>
-              <p
-                v-else
-                class="text-sm text-muted"
-              >
-                {{ t('species.unavailable') }}
-              </p>
-            </PlantsSpeciesPlantSpeciesSectionCard>
-          </section>
-
-          <section
-            id="soil-repotting"
-            class="scroll-mt-28 space-y-3"
-          >
-            <PlantsSpeciesPlantSpeciesSectionCard :title="t('species.soilTitle')">
-              <PlantsSpeciesPlantSpeciesBlockRenderer
-                v-if="sectionBlocks('soil').length"
-                :blocks="sectionBlocks('soil')"
-              />
-              <p
-                v-else-if="sectionFallbackText('soil')"
-                class="text-sm text-toned whitespace-pre-wrap"
-              >
-                {{ sectionFallbackText('soil') }}
-              </p>
-              <p
-                v-else
-                class="text-sm text-muted"
-              >
-                {{ t('species.unavailable') }}
-              </p>
-            </PlantsSpeciesPlantSpeciesSectionCard>
-            <PlantsSpeciesPlantSpeciesSectionCard :title="t('species.repottingTitle')">
-              <PlantsSpeciesPlantSpeciesBlockRenderer
-                v-if="sectionBlocks('repotting').length"
-                :blocks="sectionBlocks('repotting')"
-              />
-              <p
-                v-else-if="sectionFallbackText('repotting')"
-                class="text-sm text-toned whitespace-pre-wrap"
-              >
-                {{ sectionFallbackText('repotting') }}
-              </p>
-              <p
-                v-else
-                class="text-sm text-muted"
-              >
-                {{ t('species.unavailable') }}
-              </p>
-            </PlantsSpeciesPlantSpeciesSectionCard>
-          </section>
-
-          <section
-            id="toxicity"
-            class="scroll-mt-28 space-y-3"
-          >
-            <PlantsSpeciesPlantSpeciesSectionCard :title="t('species.sectionToxicity')">
-              <PlantsSpeciesPlantSpeciesBlockRenderer
-                v-if="sectionBlocks('toxicity').length"
-                :blocks="sectionBlocks('toxicity')"
-              />
-              <p
-                v-else-if="sectionFallbackText('toxicity')"
-                class="text-sm text-toned whitespace-pre-wrap"
-              >
-                {{ sectionFallbackText('toxicity') }}
-              </p>
-              <p
-                v-else
-                class="text-sm text-muted"
-              >
-                {{ t('species.unavailable') }}
-              </p>
-            </PlantsSpeciesPlantSpeciesSectionCard>
-          </section>
-
-          <section
-            id="characteristics"
-            class="scroll-mt-28 space-y-3"
-          >
-            <PlantsSpeciesPlantSpeciesSectionCard :title="t('species.sectionCharacteristics')">
-              <PlantsSpeciesPlantSpeciesBlockRenderer
-                v-if="sectionBlocks('characteristics').length"
-                :blocks="sectionBlocks('characteristics')"
-              />
-              <p
-                v-else-if="sectionFallbackText('characteristics')"
-                class="text-sm text-toned whitespace-pre-wrap"
-              >
-                {{ sectionFallbackText('characteristics') }}
-              </p>
-              <p
-                v-else
-                class="text-sm text-muted"
-              >
-                {{ t('species.unavailable') }}
-              </p>
-            </PlantsSpeciesPlantSpeciesSectionCard>
-          </section>
-
-          <section
-            id="temperature"
-            class="scroll-mt-28 space-y-3"
-          >
-            <PlantsSpeciesPlantSpeciesSectionCard :title="t('species.sectionTemperature')">
-              <PlantsSpeciesPlantSpeciesBlockRenderer
-                v-if="sectionBlocks('temperature').length"
-                :blocks="sectionBlocks('temperature')"
-              />
-              <p
-                v-else-if="sectionFallbackText('temperature')"
-                class="text-sm text-toned whitespace-pre-wrap"
-              >
-                {{ sectionFallbackText('temperature') }}
-              </p>
-              <p
-                v-else
-                class="text-sm text-muted"
-              >
-                {{ t('species.unavailable') }}
-              </p>
-            </PlantsSpeciesPlantSpeciesSectionCard>
-          </section>
-
-          <section
-            id="pests"
-            class="scroll-mt-28 space-y-3"
-          >
-            <PlantsSpeciesPlantSpeciesSectionCard :title="t('species.sectionPests')">
-              <PlantsSpeciesPlantSpeciesBlockRenderer
-                v-if="sectionBlocks('pestsAndProblems').length"
-                :blocks="sectionBlocks('pestsAndProblems')"
-              />
-              <p
-                v-else-if="sectionFallbackText('pestsAndProblems')"
-                class="text-sm text-toned whitespace-pre-wrap"
-              >
-                {{ sectionFallbackText('pestsAndProblems') }}
-              </p>
-              <p
-                v-else
-                class="text-sm text-muted"
-              >
-                {{ t('species.unavailable') }}
-              </p>
-            </PlantsSpeciesPlantSpeciesSectionCard>
+            <PlantsSpeciesPlantSpeciesFieldCard
+              v-for="card in section.cards"
+              :key="card.field"
+              :title="card.title"
+              :blocks="sectionBlocks(card.field)"
+              :fallback="sectionFallbackText(card.field)"
+            />
           </section>
         </div>
 

@@ -100,7 +100,20 @@ onMounted(load)
       :title="listTab === 'archived' ? t('plants.emptyArchivedTitle') : t('plants.emptyTitle')"
       :description="listTab === 'archived' ? t('plants.emptyArchivedDescription') : t('plants.emptyDescription')"
       icon="i-lucide-leaf"
-    />
+    >
+      <template
+        v-if="listTab === 'active'"
+        #actions
+      >
+        <UButton
+          to="/plants/new"
+          size="sm"
+          icon="i-lucide-plus"
+        >
+          {{ t('home.addPlant') }}
+        </UButton>
+      </template>
+    </UAlert>
 
     <ul
       v-else

@@ -17,6 +17,7 @@ const loading = ref(false)
 const saving = ref(false)
 const plant = ref<Plant | null>(null)
 const photoFile = ref<File | null>(null)
+const photoPickerKey = ref(0)
 const errors = ref<string | null>(null)
 
 const healthNote = ref('')
@@ -37,6 +38,7 @@ watch([open, task], async ([isOpen, currentTask]) => {
   if (!isOpen || !currentTask) {
     plant.value = null
     photoFile.value = null
+    photoPickerKey.value += 1
     errors.value = null
     return
   }
@@ -57,10 +59,8 @@ watch([open, task], async ([isOpen, currentTask]) => {
   }
 })
 
-function onPhotoChange(event: Event) {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  photoFile.value = file ?? null
+function onPhotoSelect(file: File) {
+  photoFile.value = file
 }
 
 function onSubmit() {
@@ -159,12 +159,10 @@ defineExpose({ setSaving })
         </UFormField>
 
         <UFormField :label="t('checkIn.photo')">
-          <input
-            type="file"
-            accept="image/*"
-            class="text-sm"
-            @change="onPhotoChange"
-          >
+          <AppPhotoPicker
+            :key="photoPickerKey"
+            @select="onPhotoSelect"
+          />
         </UFormField>
 
         <UAlert

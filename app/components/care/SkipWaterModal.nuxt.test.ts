@@ -17,6 +17,7 @@ describe('SkipWaterModal', () => {
         photo_path: null,
         health_status: 'healthy',
         archived_at: null,
+        last_watered_at: null,
         site_id: null,
         site: null
       }

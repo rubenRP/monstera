@@ -1,5 +1,6 @@
 import type { CareTask, PlantCheckIn } from '#shared/types/database'
 import type { CheckInFormInput } from '#shared/utils/checkIn/schemas'
+import { assertOnline } from '~/utils/offline'
 
 export function usePlantCheckIns() {
   const supabase = useSupabaseClient()
@@ -25,6 +26,7 @@ export function usePlantCheckIns() {
     form: CheckInFormInput,
     photoFile?: File
   ): Promise<PlantCheckIn> {
+    assertOnline()
     const uid = await requireUserId()
     const now = new Date().toISOString()
 

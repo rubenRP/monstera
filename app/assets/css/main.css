@@ -1,3 +1,4 @@
+@import "@fontsource-variable/public-sans/wght.css";
 @import "tailwindcss";
 @import "@nuxt/ui";
 
@@ -7,7 +8,7 @@
  */
 
 @theme static {
-  --font-sans: 'Public Sans', sans-serif;
+  --font-sans: 'Public Sans Variable', sans-serif;
 
   --color-forest: #1E5128;
   --color-sage: #4A8C5C;
@@ -70,8 +71,8 @@
   --ui-bg-accented: #E3DCCB;
   --ui-bg-inverted: #1A2D1A;
 
-  --ui-text-dimmed: #9A958A;
-  --ui-text-muted: #6E6A60;
+  --ui-text-dimmed: #6E6A60;
+  --ui-text-muted: #5C584F;
   --ui-text-toned: #4C4940;
   --ui-text: #2F3A2C;
   --ui-text-highlighted: #1A2D1A;
@@ -91,8 +92,8 @@
   --ui-bg-accented: #303236;
   --ui-bg-inverted: #F5F0E4;
 
-  --ui-text-dimmed: #6B6D72;
-  --ui-text-muted: #9A9CA1;
+  --ui-text-dimmed: #8E9096;
+  --ui-text-muted: #A8AAAF;
   --ui-text-toned: #B9BBC0;
   --ui-text: #D6D8DC;
   --ui-text-highlighted: #FAFAFA;

@@ -90,39 +90,12 @@ export default defineNuxtConfig({
 
   pwa: {
     registerType: 'autoUpdate',
-    manifest: {
-      name: 'Monstera',
-      short_name: 'Monstera',
-      description: 'Houseplant care',
-      theme_color: '#1E5128',
-      background_color: '#F5F0E4',
-      display: 'standalone',
-      lang: 'es',
-      icons: [
-        {
-          src: '/icons/icon-192.png',
-          sizes: '192x192',
-          type: 'image/png',
-          purpose: 'any'
-        },
-        {
-          src: '/icons/icon-512.png',
-          sizes: '512x512',
-          type: 'image/png',
-          purpose: 'any'
-        },
-        {
-          src: '/icons/icon-512.png',
-          sizes: '512x512',
-          type: 'image/png',
-          purpose: 'maskable'
-        }
-      ]
-    },
+    manifest: false,
     workbox: {
       importScripts: ['/sw-push.js'],
       navigateFallback: '/',
-      globPatterns: ['**/*.{js,css,html,png,svg,ico}'],
+      navigateFallbackDenylist: [/^\/api\//],
+      globPatterns: ['**/*.{js,css,html,png,svg,ico,woff2}'],
       runtimeCaching: [
         {
           urlPattern: /^https:\/\/.*\/api\/.*/i,
