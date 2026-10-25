@@ -26,7 +26,11 @@ const applyingHealth = ref(false)
 let abort: AbortController | null = null
 let ticker: ReturnType<typeof setInterval> | null = null
 
-const symptomExamples = computed(() => (tm('diagnose.examples') as unknown[]).map(item => rt(item as never)))
+const symptomExamples = computed(() => {
+  // tm() returns the raw messages; guard while locale messages are (re)loading
+  const raw = tm('diagnose.examples') as unknown
+  return Array.isArray(raw) ? raw.map(item => rt(item as never)) : []
+})
 
 /** Rotating status line while the AI works (it can take up to ~2 minutes). */
 const progressMessage = computed(() => {

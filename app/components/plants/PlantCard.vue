@@ -10,11 +10,14 @@ const props = withDefaults(defineProps<{
   /** due_at of the pending water task, if any */
   nextWaterAt?: string | null
   variant?: 'list' | 'grid'
+  /** Species is known to be toxic to pets */
+  toxicToPets?: boolean
 }>(), {
   photoSrc: null,
   archived: false,
   nextWaterAt: null,
-  variant: 'list'
+  variant: 'list',
+  toxicToPets: false
 })
 
 const { t } = useI18n()
@@ -83,6 +86,17 @@ const showHealthLabel = computed(() => !props.archived && props.plant.health_sta
           class="size-3.5"
         />
         {{ healthLabel(plant.health_status) }}
+      </span>
+      <span
+        v-if="toxicToPets"
+        class="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-warning/20 px-2 py-1 text-xs font-medium text-warning backdrop-blur-md"
+        :title="t('plants.toxicToPets')"
+      >
+        <UIcon
+          name="i-lucide-paw-print"
+          class="size-3.5"
+        />
+        <span class="sr-only">{{ t('plants.toxicToPets') }}</span>
       </span>
     </div>
     <div class="min-w-0 p-3">
@@ -173,6 +187,16 @@ const showHealthLabel = computed(() => !props.archived && props.plant.health_sta
           v-else-if="!archived"
           class="sr-only"
         >{{ healthLabel(plant.health_status) }}</span>
+        <span
+          v-if="toxicToPets"
+          class="inline-flex items-center gap-1 rounded-full bg-warning/15 px-2 py-0.5 font-medium text-warning"
+        >
+          <UIcon
+            name="i-lucide-paw-print"
+            class="size-3.5"
+          />
+          {{ t('plants.toxicShort') }}
+        </span>
         <span
           v-if="plant.site?.name"
           class="inline-flex items-center gap-1 text-muted"

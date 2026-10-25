@@ -529,7 +529,10 @@
     "historyDiagnosis": "Diagnóstico IA",
     "viewPhoto": "Ver foto",
     "showDetails": "Ver detalles",
-    "hideDetails": "Ocultar detalles"
+    "hideDetails": "Ocultar detalles",
+    "toxicToPets": "Precaución con mascotas",
+    "toxicShort": "Mascotas",
+    "toxicToPetsHint": "Según la ficha de la especie: {text}"
   },
   "sites": {
     "title": "Sitios",

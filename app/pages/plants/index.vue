@@ -8,6 +8,8 @@ const { healthOptions } = usePlantEnumLabels()
 const { fetchPlants } = usePlants()
 const { fetchPendingDueByPlant } = useCareTasks()
 const { urlFor: photoFor, ensure: ensurePhotoUrls } = usePlantPhotoUrls()
+const { fetchPetToxicity, toxicFor } = useSpeciesToxicity()
+const toxicity = ref<Map<string, boolean | null>>(new Map())
 const plants = ref<Awaited<ReturnType<typeof fetchPlants>>>([])
 const nextWaterByPlant = ref<Map<string, string>>(new Map())
 const VIEW_STORAGE_KEY = 'monstera_plants_view'
@@ -58,11 +60,13 @@ async function load() {
       archived: listTab.value,
       filterStatus: showHealthFilter.value && filter.value !== 'all' ? filter.value : undefined
     })
-    const [dueMap] = await Promise.all([
+    const [dueMap, toxicMap] = await Promise.all([
       listTab.value === 'active' ? fetchPendingDueByPlant('water') : Promise.resolve(new Map<string, string>()),
+      fetchPetToxicity(plants.value.map(p => p.species)),
       ensurePhotoUrls(plants.value.map(p => p.photo_path))
     ])
     nextWaterByPlant.value = dueMap
+    toxicity.value = toxicMap
   } catch (e: unknown) {
     plants.value = []
     loadError.value = apiErrorMessage(e)
@@ -257,6 +261,7 @@ onMounted(() => {
               :photo-src="photoFor(plant.photo_path)"
               :archived="listTab === 'archived'"
               :next-water-at="nextWaterByPlant.get(plant.id)"
+              :toxic-to-pets="toxicFor(toxicity, plant.species)"
               :variant="viewMode"
             />
           </li>

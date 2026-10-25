@@ -8,6 +8,7 @@ import {
 } from '#shared/utils/plants/growthConditions'
 import { HEALTH_ICONS, HEALTH_ICON_CLASSES } from '#shared/constants/plants'
 import { countPlantCompleteness } from '#shared/utils/plants/plantCompleteness'
+import { petToxicity } from '#shared/utils/species/toxicity'
 
 const { t } = useI18n()
 const { healthLabel } = usePlantEnumLabels()
@@ -32,6 +33,7 @@ const speciesProfile = ref<SpeciesProfile | null>(null)
 const editBase = computed(() => `/plants/${props.plant.id}/edit`)
 
 const completeness = computed(() => countPlantCompleteness(props.plant))
+const toxicToPets = computed(() => petToxicity(speciesProfile.value) === true)
 
 const growthConditions = computed(() => evaluateGrowthConditions({
   siteId: props.plant.site_id,
@@ -97,6 +99,14 @@ const {
 
 <template>
   <div class="space-y-4">
+    <UAlert
+      v-if="toxicToPets"
+      color="warning"
+      variant="subtle"
+      icon="i-lucide-paw-print"
+      :title="t('plants.toxicToPets')"
+      :description="t('plants.toxicToPetsHint', { text: speciesProfile?.toxicity ?? '' })"
+    />
     <UAlert
       v-if="completeness.plantMissingCount > 0"
       color="warning"

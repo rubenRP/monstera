@@ -529,7 +529,10 @@
     "historyDiagnosis": "AI diagnosis",
     "viewPhoto": "View photo",
     "showDetails": "Show details",
-    "hideDetails": "Hide details"
+    "hideDetails": "Hide details",
+    "toxicToPets": "Caution with pets",
+    "toxicShort": "Pets",
+    "toxicToPetsHint": "From the species profile: {text}"
   },
   "sites": {
     "title": "Sites",

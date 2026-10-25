@@ -13,6 +13,9 @@ export interface SpeciesProfile {
   soil: string
   repotting: string
   toxicity: string
+  /** Structured flags from Perenual (null/absent = unknown; older cached profiles lack them) */
+  toxicToPets?: boolean | null
+  toxicToHumans?: boolean | null
   characteristics: string
   temperature: string
   pestsAndProblems: string
