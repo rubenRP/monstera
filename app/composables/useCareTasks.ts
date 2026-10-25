@@ -93,6 +93,17 @@ export function useCareTasks() {
     return fetchPendingTasks({ plantId })
   }
 
+  /** All pending tasks with the plant intervals needed to project future occurrences. */
+  async function fetchPendingTasksWithIntervals() {
+    const { data, error } = await supabase
+      .from('care_tasks')
+      .select('*, plant:plants(id, name, photo_path, health_status, archived_at, last_watered_at, watering_interval_days, fertilizing_interval_days, check_in_interval_days, site:sites(id, name))')
+      .eq('status', 'pending')
+      .order('due_at')
+    if (error) throw error
+    return deduplicateOverlappingTasks(filterActivePlantTasks((data ?? []) as CareTask[]))
+  }
+
   /** due_at of each plant's pending task of `type` (one per plant). */
   async function fetchPendingDueByPlant(type: CareTaskType = 'water') {
     const { data, error } = await supabase
@@ -331,6 +342,7 @@ export function useCareTasks() {
     fetchUpcomingTasks,
     fetchPlantPendingTasks,
     fetchPendingDueByPlant,
+    fetchPendingTasksWithIntervals,
     fetchCareHistory,
     fetchTasksInRange,
     fetchResolvedTasksInRange,

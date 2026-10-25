@@ -772,5 +772,15 @@
     "newPlant": "New plant",
     "advanceWater": "Water early",
     "newSite": "New site"
+  },
+  "calendar": {
+    "today": "Today",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "projected": "Planned",
+    "projectedHint": "\"Planned\" tasks use the current interval and adjust as you complete earlier ones.",
+    "pending": "Pending",
+    "overdue": "Overdue",
+    "dayAria": "{date}: {count} task | {date}: {count} tasks"
   }
 }

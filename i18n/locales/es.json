@@ -772,5 +772,15 @@
     "newPlant": "Nueva planta",
     "advanceWater": "Regar por adelantado",
     "newSite": "Nuevo sitio"
+  },
+  "calendar": {
+    "today": "Hoy",
+    "prevMonth": "Mes anterior",
+    "nextMonth": "Mes siguiente",
+    "projected": "Previsto",
+    "projectedHint": "Las tareas «previstas» se calculan con el intervalo actual y se ajustan cuando completas las anteriores.",
+    "pending": "Pendiente",
+    "overdue": "Atrasada",
+    "dayAria": "{date}: {count} tarea | {date}: {count} tareas"
   }
 }
