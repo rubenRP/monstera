@@ -13,6 +13,7 @@ const {
   createAdvanceTask,
   completeTask,
   skipTask,
+  postponeTask,
   requiresCheckInModal,
   overdueDays,
   taskLabel
@@ -32,6 +33,10 @@ const {
   schedule: scheduleDeferred,
   cancel: cancelDeferred
 } = useDeferredActions()
+const { urlFor: photoFor, ensure: ensurePhotoUrls } = usePlantPhotoUrls()
+const { setCount: setTodayTaskCount } = useTodayTaskCount()
+const route = useRoute()
+const router = useRouter()
 
 const tasks = ref<Awaited<ReturnType<typeof fetchTodayTasks>>>([])
 const summaryTasks = ref<Awaited<ReturnType<typeof fetchTodayTasks>>>([])
@@ -55,10 +60,37 @@ const todayFormatted = computed(() =>
 )
 
 /** Tasks inside the undo window are hidden until committed or restored. */
-const visibleTasks = computed(() => tasks.value.filter(task => !deferredTaskIds.value.has(task.id)))
-const visibleSummaryTasks = computed(() => summaryTasks.value.filter(task => !deferredTaskIds.value.has(task.id)))
+const hiddenTaskIds = computed(() => new Set([...deferredTaskIds.value].flatMap(key => key.split(','))))
+const visibleTasks = computed(() => tasks.value.filter(task => !hiddenTaskIds.value.has(task.id)))
+const visibleSummaryTasks = computed(() => summaryTasks.value.filter(task => !hiddenTaskIds.value.has(task.id)))
 
 const todayTasksInView = computed(() => [...tasks.value, ...completedToday.value])
+
+const viewTabs = computed(() => [
+  { label: t('home.tabToday'), value: 'today' },
+  { label: t('home.showUpcomingTasks'), value: 'upcoming' }
+])
+const view = computed({
+  get: () => (showUpcoming.value ? 'upcoming' : 'today'),
+  set: (value: string) => {
+    showUpcoming.value = value === 'upcoming'
+  }
+})
+
+watch(todayTasksInView, (list) => {
+  void ensurePhotoUrls(list.map(task => task.plant?.photo_path))
+})
+
+watch(visibleSummaryTasks, (list) => {
+  if (!loading.value) setTodayTaskCount(list.length)
+})
+
+/** Quick actions from the global "+" menu land here as ?action=… */
+watch(() => route.query.action, (action) => {
+  if (action !== 'advance-water') return
+  addWaterModalOpen.value = true
+  void router.replace({ query: { ...route.query, action: undefined } })
+}, { immediate: true })
 
 const plantIdsWithWaterInView = computed(
   () => new Set(
@@ -122,6 +154,7 @@ async function initialLoad() {
   try {
     plants.value = await fetchPlants()
     await Promise.all([loadTasks(), fetchRecentEvents()])
+    setTodayTaskCount(visibleSummaryTasks.value.length)
   } catch (e: unknown) {
     loadError.value = apiErrorMessage(e)
   } finally {
@@ -143,23 +176,38 @@ watch(showUpcoming, (value) => {
   if (!loading.value) void reloadTasks()
 })
 
-async function markDone(taskId: string) {
-  const task = tasks.value.find(t => t.id === taskId)
-  if (!task) return
+function markDone(task: CareTask) {
   if (requiresCheckInModal(task.type)) {
     taskToCheckIn.value = task
     checkInModalOpen.value = true
     return
   }
-  deferWithUndo(task, t('home.taskDoneToast', { task: taskLabel(task.type) }), async () => {
+  deferWithUndo([task], t('home.taskDoneToast', { task: taskLabel(task.type) }), async () => {
     await completeTask(task)
-    await Promise.all([reloadTasks(), fetchRecentEvents()])
   })
 }
 
-/** Hides the task now, commits after the undo window; the toast offers "Undo" meanwhile. */
-function deferWithUndo(task: CareTask, title: string, run: () => Promise<void>) {
-  scheduleDeferred(task.id, async () => {
+function onDoneGroup(group: CareTask[]) {
+  if (!group.length) return
+  deferWithUndo(group, t('home.groupDoneToast', { count: group.length }), async () => {
+    // Sequential: each completion reschedules fertilizing for its plant
+    for (const task of group) await completeTask(task)
+  })
+}
+
+function onPostpone(task: CareTask, days: number) {
+  deferWithUndo([task], t('home.postponedToast', { days }, days), async () => {
+    await postponeTask(task, days)
+  })
+}
+
+/**
+ * Hides the tasks now and commits after the undo window; the toast offers "Undo" meanwhile.
+ * All tasks share one deferred action so undo restores the whole group.
+ */
+function deferWithUndo(group: CareTask[], title: string, run: () => Promise<void>) {
+  const key = group.map(task => task.id).join(',')
+  scheduleDeferred(key, async () => {
     try {
       await run()
     } catch (e: unknown) {
@@ -168,13 +216,13 @@ function deferWithUndo(task: CareTask, title: string, run: () => Promise<void>) 
         description: apiErrorMessage(e),
         color: 'error'
       })
-      await reloadTasks()
     }
+    await Promise.all([reloadTasks(), fetchRecentEvents()])
   })
   toast.add({
-    id: `undo-${task.id}`,
+    id: `undo-${key}`,
     title,
-    description: task.plant?.name,
+    description: group.length === 1 ? group[0]!.plant?.name : undefined,
     color: 'success',
     icon: 'i-lucide-check',
     duration: UNDO_WINDOW_MS,
@@ -184,7 +232,7 @@ function deferWithUndo(task: CareTask, title: string, run: () => Promise<void>) 
       color: 'neutral',
       variant: 'outline',
       onClick: () => {
-        cancelDeferred(task.id)
+        cancelDeferred(key)
       }
     }]
   })
@@ -259,9 +307,8 @@ async function onAddAdvanceWater(plantId: string) {
 function confirmSkip(task: CareTask, soilStillWet: boolean) {
   skipWaterModalOpen.value = false
   taskToSkip.value = null
-  deferWithUndo(task, t('home.taskSkippedToast', { task: taskLabel(task.type) }), async () => {
+  deferWithUndo([task], t('home.taskSkippedToast', { task: taskLabel(task.type) }), async () => {
     const newInterval = await skipTask(task, { soilStillWet })
-    await Promise.all([reloadTasks(), fetchRecentEvents()])
     if (soilStillWet && newInterval) {
       toast.add({
         title: t('home.wateringPlanUpdated'),
@@ -336,10 +383,13 @@ function confirmSkip(task: CareTask, soilStillWet: boolean) {
     </template>
 
     <template v-else>
-      <div class="flex items-center justify-between gap-3 mb-4">
-        <span class="text-sm font-medium">{{ t('home.showUpcomingTasks') }}</span>
-        <USwitch v-model="showUpcoming" />
-      </div>
+      <UTabs
+        v-model="view"
+        :items="viewTabs"
+        :content="false"
+        size="sm"
+        class="w-full"
+      />
 
       <div
         v-if="tasksLoading"
@@ -360,18 +410,6 @@ function confirmSkip(task: CareTask, soilStillWet: boolean) {
         :description="showUpcoming ? t('home.noTasksUpcoming') : t('home.noTasksToday')"
       />
 
-      <UButton
-        v-if="!tasksLoading && plants.length"
-        class="mb-3"
-        block
-        variant="soft"
-        icon="i-lucide-droplets"
-        :disabled="!plantsForAdvanceWater.length"
-        @click="() => { addWaterModalOpen = true }"
-      >
-        {{ t('home.addAdvanceWater') }}
-      </UButton>
-
       <HomeTaskList
         :tasks="visibleTasks"
         :completed="completedToday"
@@ -379,8 +417,11 @@ function confirmSkip(task: CareTask, soilStillWet: boolean) {
         :show-upcoming="showUpcoming"
         :acting="acting"
         :loading="tasksLoading"
+        :photo-for="photoFor"
         @done="markDone"
+        @done-group="onDoneGroup"
         @skip="onSkipClick"
+        @postpone="onPostpone"
       />
     </template>
 

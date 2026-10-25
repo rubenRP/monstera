@@ -6,6 +6,7 @@ import {
 import { isSameCalendarDay } from '#shared/utils/care/alignFertilize'
 import { taskOverdueDays } from '#shared/utils/care/taskDue'
 import { replacePendingCareTask } from '#shared/utils/care/pendingTask'
+import { postponedDueAt } from '#shared/utils/care/postpone'
 import { assertOnline } from '~/utils/offline'
 
 export function useCareTasks() {
@@ -248,6 +249,18 @@ export function useCareTasks() {
     await rescheduleCheckIn(task.plant_id, { scheduleFromToday: true })
   }
 
+  /** Moves the task `days` later without touching the watering interval or history. */
+  async function postponeTask(task: CareTask, days: number) {
+    assertOnline()
+    const dueAt = postponedDueAt(task.due_at, days)
+    await replacePendingCareTask(supabase, task.plant_id, task.type, dueAt)
+    if (task.type === 'water') {
+      // Keep "fertilize with water" aligned to the new watering date
+      await rescheduleFertilizing(task.plant_id)
+    }
+    return dueAt
+  }
+
   const { t } = useI18n()
 
   function taskLabel(type: CareTaskType) {
@@ -308,6 +321,7 @@ export function useCareTasks() {
     hasPendingTaskDueToday,
     completeTask,
     skipTask,
+    postponeTask,
     taskLabel,
     taskIcon,
     requiresCheckInModal,

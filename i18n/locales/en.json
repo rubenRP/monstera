@@ -14,7 +14,8 @@
     "sites": "Sites",
     "settings": "Settings",
     "calendar": "Calendar",
-    "mainNav": "Main navigation"
+    "mainNav": "Main navigation",
+    "todayBadgeAria": "{count} tasks for today"
   },
   "common": {
     "back": "Back",
@@ -238,7 +239,15 @@
       "manual_exterior": "Manual exterior recalc",
       "manual_all": "Manual recalc",
       "home_settings_update": "Home settings"
-    }
+    },
+    "tabToday": "Today",
+    "completeAll": "Complete all",
+    "groupDoneToast": "{count} tasks done",
+    "postponeDays": "Postpone {days} day | Postpone {days} days",
+    "postponedToast": "Postponed {days} day | Postponed {days} days",
+    "viewPlant": "View plant",
+    "markDoneAria": "Mark {task} as done: {plant}",
+    "taskOptionsAria": "More options for {plant}"
   },
   "plants": {
     "title": "Plants",
@@ -738,5 +747,11 @@
       "genericDescription": "An unexpected error occurred. Go back home and try again.",
       "goHome": "Back to home"
     }
+  },
+  "quickAdd": {
+    "button": "Add",
+    "newPlant": "New plant",
+    "advanceWater": "Water early",
+    "newSite": "New site"
   }
 }

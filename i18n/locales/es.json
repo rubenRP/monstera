@@ -14,7 +14,8 @@
     "sites": "Sitios",
     "settings": "Ajustes",
     "calendar": "Calendario",
-    "mainNav": "Navegación principal"
+    "mainNav": "Navegación principal",
+    "todayBadgeAria": "{count} tareas para hoy"
   },
   "common": {
     "back": "Atrás",
@@ -238,7 +239,15 @@
       "manual_exterior": "Recálculo manual exterior",
       "manual_all": "Recálculo manual",
       "home_settings_update": "Ajustes del hogar"
-    }
+    },
+    "tabToday": "Hoy",
+    "completeAll": "Completar todo",
+    "groupDoneToast": "{count} tareas hechas",
+    "postponeDays": "Posponer {days} día | Posponer {days} días",
+    "postponedToast": "Pospuesto {days} día | Pospuesto {days} días",
+    "viewPlant": "Ver planta",
+    "markDoneAria": "Marcar {task} como hecho: {plant}",
+    "taskOptionsAria": "Más opciones para {plant}"
   },
   "plants": {
     "title": "Plantas",
@@ -738,5 +747,11 @@
       "genericDescription": "Ha ocurrido un error inesperado. Vuelve al inicio e inténtalo de nuevo.",
       "goHome": "Volver al inicio"
     }
+  },
+  "quickAdd": {
+    "button": "Añadir",
+    "newPlant": "Nueva planta",
+    "advanceWater": "Regar por adelantado",
+    "newSite": "Nuevo sitio"
   }
 }
