@@ -67,7 +67,19 @@
     "safariSessionTitle": "Sesión abierta en Safari",
     "safariSessionHint": "El enlace ha iniciado sesión en Safari, no en la app de la pantalla de inicio. Abre Monstera desde el icono e introduce el código de 6 dígitos del mismo correo.",
     "safariSessionAction": "Ir al inicio de sesión",
-    "notAuthenticated": "No autenticado"
+    "notAuthenticated": "No autenticado",
+    "loginTitle": "Iniciar sesión",
+    "emailPlaceholder": "tu{'@'}email.com",
+    "resendCode": "Reenviar código",
+    "resendIn": "Reenviar en {seconds} s",
+    "backToLanding": "Volver a la portada",
+    "errors": {
+      "rateLimit": "Has pedido demasiados códigos. Espera un minuto e inténtalo de nuevo.",
+      "codeExpired": "El código ha caducado o no es correcto. Pide uno nuevo.",
+      "invalidEmail": "Revisa el email: no parece válido.",
+      "notAllowed": "Este email no tiene acceso a Monstera.",
+      "network": "Sin conexión. Comprueba tu red e inténtalo de nuevo."
+    }
   },
   "landing": {
     "hero": {
@@ -484,7 +496,13 @@
     "ringAria": "Próximo riego: {label}",
     "taskOptionsAria": "Opciones de {task}",
     "moreActionsAria": "Más acciones",
-    "missingCount": "{count} sin datos"
+    "missingCount": "{count} sin datos",
+    "unarchive": "Desarchivar",
+    "unarchived": "Planta recuperada: sus tareas vuelven a programarse",
+    "deleted": "Planta eliminada",
+    "deleteTitle": "¿Eliminar «{name}»?",
+    "deleteConfirmLong": "Se borrarán la planta, su historial de cuidados y sus fotos. No se puede deshacer. Si ya no la tienes, puedes archivarla.",
+    "updateHealthViaCheckIn": "Actualizar con una revisión"
   },
   "sites": {
     "title": "Sitios",
@@ -518,7 +536,19 @@
     "coverLabel": "Cubierta",
     "coverValue": "Con techo / toldo",
     "plantsInSite": "Plantas en este sitio",
-    "addPlant": "Añadir"
+    "addPlant": "Añadir",
+    "orientationShort": {
+      "N": "N",
+      "NE": "NE",
+      "E": "E",
+      "SE": "SE",
+      "S": "S",
+      "SW": "SO",
+      "W": "O",
+      "NW": "NO"
+    },
+    "deleted": "Sitio eliminado",
+    "deleteTitle": "¿Eliminar este sitio?"
   },
   "care": {
     "taskWater": "Riego",

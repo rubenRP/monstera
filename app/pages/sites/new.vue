@@ -2,6 +2,7 @@
 import type { SiteFormInput } from '#shared/utils/sites/schemas'
 
 const { t } = useI18n()
+usePageTitle(() => t('sites.newTitle'))
 const { apiErrorMessage } = useApiError()
 const { createSite } = useSites()
 const loading = ref(false)

@@ -7,6 +7,7 @@ const route = useRoute()
 const id = route.params.id as string
 const { fetchSite, updateSite } = useSites()
 const site = ref<Awaited<ReturnType<typeof fetchSite>> | null>(null)
+usePageTitle(() => t('sites.editTitle'))
 const loading = ref(true)
 const saving = ref(false)
 const toast = useToast()

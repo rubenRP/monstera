@@ -3,6 +3,7 @@ import type { CareTask, CareTaskType } from '#shared/types/database'
 import { projectRecurrences } from '#shared/utils/care/projectRecurrences'
 
 const { t } = useI18n()
+usePageTitle(() => t('care.calendarTitle'))
 const { dateLocale } = useDateLocale()
 const { fetchPendingTasksWithIntervals, fetchResolvedTasksInRange, taskLabel, taskIcon } = useCareTasks()
 const { apiErrorMessage } = useApiError()

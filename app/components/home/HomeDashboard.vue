@@ -3,6 +3,7 @@ import type { CareTask } from '#shared/types/database'
 import { excludePendingResolvedToday } from '#shared/utils/care/resolvedToday'
 
 const { t } = useI18n()
+usePageTitle(() => t('home.title'))
 const { dateLocale } = useDateLocale()
 const UPCOMING_STORAGE_KEY = 'monstera_home_upcoming_tasks'
 

@@ -36,6 +36,14 @@ const emit = defineEmits<{
         >
           {{ t('plants.archiveReasonGifted') }}
         </UButton>
+        <UButton
+          block
+          variant="ghost"
+          color="neutral"
+          @click="open = false"
+        >
+          {{ t('common.cancel') }}
+        </UButton>
       </div>
     </template>
   </UModal>

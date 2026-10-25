@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { HealthStatus, Plant } from '#shared/types/database'
+import type { Plant } from '#shared/types/database'
 import type { SpeciesProfile } from '#shared/types/species'
 import type { WateringScheduleResult } from '#shared/utils/care/adaptiveWatering'
 import {
@@ -17,11 +17,9 @@ const props = defineProps<{
   readOnly?: boolean
 }>()
 
-const healthStatus = defineModel<HealthStatus>('healthStatus', { required: true })
-const healthNote = defineModel<string>('healthNote', { required: true })
-
 const emit = defineEmits<{
-  saveHealth: []
+  /** Health is updated through a check-in so it keeps a history */
+  checkIn: []
 }>()
 
 const { fetchHomeLat, computeScheduleForPlant, countRecentWetSkips, fetchWateringHistoryIntervals, resolveWateringReference } = useAdaptiveWatering()
@@ -217,18 +215,21 @@ const {
             </p>
           </div>
         </div>
-        <template v-if="!readOnly">
-          <PlantsHealthSemaphore
-            v-model="healthStatus"
-            v-model:note="healthNote"
-          />
-          <UButton
-            size="sm"
-            @click="emit('saveHealth')"
-          >
-            {{ t('plants.saveHealth') }}
-          </UButton>
-        </template>
+        <p
+          v-if="plant.health_status_note"
+          class="text-sm text-muted"
+        >
+          {{ plant.health_status_note }}
+        </p>
+        <UButton
+          v-if="!readOnly"
+          size="sm"
+          variant="soft"
+          icon="i-lucide-clipboard-check"
+          @click="emit('checkIn')"
+        >
+          {{ t('plants.updateHealthViaCheckIn') }}
+        </UButton>
       </div>
     </PlantsDetailPlantInfoGridSection>
 

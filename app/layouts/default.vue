@@ -49,13 +49,6 @@ function goBack() {
 <template>
   <div class="relative min-h-screen flex flex-col md:flex-row pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-0">
     <AppBackground />
-    <p
-      v-if="!online"
-      role="status"
-      class="sticky top-0 z-50 border-b border-warning/30 bg-warning/15 px-4 py-2 text-center text-sm text-highlighted"
-    >
-      {{ t('pwa.offline') }}
-    </p>
     <aside class="hidden md:flex md:flex-col md:w-56 md:border-r md:border-default/60 md:min-h-screen md:p-4 md:sticky md:top-0 md:backdrop-blur-sm">
       <NuxtLink
         to="/"
@@ -98,6 +91,17 @@ function goBack() {
     </aside>
 
     <div class="flex-1 flex flex-col min-w-0">
+      <p
+        v-if="!online"
+        role="status"
+        class="order-first border-b border-warning/30 bg-warning/15 px-4 py-2 pt-[max(0.5rem,env(safe-area-inset-top,0px))] text-center text-sm text-highlighted md:pt-2"
+      >
+        <UIcon
+          name="i-lucide-wifi-off"
+          class="mr-1 inline size-4 align-text-bottom"
+        />
+        {{ t('pwa.offline') }}
+      </p>
       <header class="sticky top-0 z-40 border-b border-default/60 bg-default/75 backdrop-blur-lg px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top,0px))] md:hidden">
         <div class="max-w-lg mx-auto flex items-center justify-between">
           <UButton

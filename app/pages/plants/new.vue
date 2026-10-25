@@ -3,6 +3,7 @@ import type { Plant } from '#shared/types/database'
 import type { PlantFormInput } from '#shared/utils/plants/schemas'
 
 const { t } = useI18n()
+usePageTitle(() => t('plants.newTitle'))
 const { apiErrorMessage } = useApiError()
 const route = useRoute()
 const defaultSiteId = (route.query.siteId as string) || null

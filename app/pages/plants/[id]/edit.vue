@@ -7,6 +7,7 @@ const route = useRoute()
 const id = route.params.id as string
 const { fetchPlant, updatePlant } = usePlants()
 const plant = ref<Awaited<ReturnType<typeof fetchPlant>> | null>(null)
+usePageTitle(() => (plant.value ? `${t('plants.editTitle')}: ${plant.value.name}` : t('plants.editTitle')))
 const loading = ref(true)
 const saving = ref(false)
 const toast = useToast()

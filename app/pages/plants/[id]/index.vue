@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { TabsItem } from '@nuxt/ui'
-import type { CareTask, HealthStatus, PlantArchiveReason } from '#shared/types/database'
+import type { CareTask, PlantArchiveReason } from '#shared/types/database'
 
 const { t } = useI18n()
 const { apiErrorMessage } = useApiError()
@@ -8,7 +8,7 @@ const { archiveReasonLabel } = usePlantEnumLabels()
 const { dateLocale } = useDateLocale()
 const route = useRoute()
 const id = route.params.id as string
-const { fetchPlant, updateHealthStatus, deletePlant, archivePlant, movePlantToSite } = usePlants()
+const { fetchPlant, deletePlant, archivePlant, unarchivePlant, movePlantToSite } = usePlants()
 const {
   fetchPlantPendingTasks,
   completeTask,
@@ -30,15 +30,28 @@ const moveSiteLoading = ref(false)
 const taskToSkip = ref<CareTask | null>(null)
 
 const plant = ref<Awaited<ReturnType<typeof fetchPlant>> | null>(null)
+usePageTitle(() => plant.value?.name)
 const { url: photoUrl } = usePlantPhoto(computed(() => plant.value?.photo_path))
 const pendingTasks = ref<Awaited<ReturnType<typeof fetchPlantPendingTasks>>>([])
 const loading = ref(true)
 const loadError = ref<string | null>(null)
 const notFound = ref(false)
 const actingTaskId = ref<string | null>(null)
-const healthStatus = ref<HealthStatus>('healthy')
-const healthNote = ref('')
-const activeTab = ref('mi-planta')
+const router = useRouter()
+const TAB_VALUES = ['mi-planta', 'variedad', 'historial'] as const
+/** Selected tab lives in ?tab= so going back (or reloading) keeps it. */
+const activeTab = computed({
+  get: () => {
+    const tab = route.query.tab
+    return typeof tab === 'string' && (TAB_VALUES as readonly string[]).includes(tab) ? tab : 'mi-planta'
+  },
+  set: (value: string) => {
+    void router.replace({ query: { ...route.query, tab: value === 'mi-planta' ? undefined : value } })
+  }
+})
+const deleteModalOpen = ref(false)
+const deleting = ref(false)
+const unarchiving = ref(false)
 
 const historyTabRef = ref<{ load: () => Promise<void> } | null>(null)
 
@@ -66,7 +79,7 @@ const quickActions = computed(() => [
 ])
 
 const menuItems = computed(() => {
-  const items: Array<{ label: string, icon: string, to?: string, onSelect?: () => void }> = []
+  const items: Array<{ label: string, icon: string, to?: string, color?: 'error', onSelect?: () => void }> = []
   if (!isArchived.value) {
     items.push(
       { label: t('plants.recommendations'), icon: 'i-lucide-cloud-sun', to: `/plants/${id}/recommend` },
@@ -75,10 +88,18 @@ const menuItems = computed(() => {
       { label: t('plants.archive'), icon: 'i-lucide-archive', onSelect: () => { archiveModalOpen.value = true } }
     )
   }
+  if (isArchived.value) {
+    items.push({
+      label: t('plants.unarchive'),
+      icon: 'i-lucide-archive-restore',
+      onSelect: () => { void onUnarchive() }
+    })
+  }
   items.push({
     label: t('common.delete'),
     icon: 'i-lucide-trash',
-    onSelect: onDelete
+    color: 'error' as const,
+    onSelect: () => { deleteModalOpen.value = true }
   })
   return [items]
 })
@@ -99,8 +120,6 @@ async function loadPlant() {
   notFound.value = false
   try {
     plant.value = await fetchPlant(id)
-    healthStatus.value = plant.value.health_status
-    healthNote.value = plant.value.health_status_note ?? ''
     if (!plant.value.archived_at) {
       pendingTasks.value = await fetchPlantPendingTasks(id)
     }
@@ -119,16 +138,11 @@ async function loadPlant() {
 
 onMounted(loadPlant)
 
-async function saveHealth() {
-  if (!plant.value) return
-  try {
-    await updateHealthStatus(plant.value.id, healthStatus.value, healthNote.value)
-    plant.value.health_status = healthStatus.value
-    plant.value.health_status_note = healthNote.value
-    toast.add({ title: t('plants.healthUpdated'), color: 'success' })
-  } catch (e: unknown) {
-    toast.add({ title: t('common.error'), description: apiErrorMessage(e), color: 'error' })
-  }
+function openCheckIn() {
+  const task = pendingByType.value.check_in
+  if (!task) return
+  taskToCheckIn.value = task
+  checkInModalOpen.value = true
 }
 
 async function onCompleteTask(task: CareTask) {
@@ -170,8 +184,6 @@ async function onCheckInSubmit(
     taskToCheckIn.value = null
     pendingTasks.value = await fetchPlantPendingTasks(id)
     plant.value = await fetchPlant(id)
-    healthStatus.value = plant.value.health_status
-    healthNote.value = plant.value.health_status_note ?? ''
     refreshCareHistory()
     toast.add({ title: t('checkIn.saved'), color: 'success' })
   } catch (e: unknown) {
@@ -271,13 +283,31 @@ async function onArchiveConfirm(reason: PlantArchiveReason) {
   }
 }
 
-async function onDelete() {
-  const msg = isArchived.value
-    ? t('plants.deleteConfirmArchived')
-    : t('plants.deleteConfirm')
-  if (!confirm(msg)) return
-  await deletePlant(id)
-  await navigateTo('/plants')
+async function confirmDelete() {
+  deleting.value = true
+  try {
+    await deletePlant(id)
+    deleteModalOpen.value = false
+    toast.add({ title: t('plants.deleted'), color: 'success' })
+    await navigateTo('/plants')
+  } catch (e: unknown) {
+    toast.add({ title: t('common.error'), description: apiErrorMessage(e), color: 'error' })
+  } finally {
+    deleting.value = false
+  }
+}
+
+async function onUnarchive() {
+  unarchiving.value = true
+  try {
+    plant.value = await unarchivePlant(id)
+    pendingTasks.value = await fetchPlantPendingTasks(id)
+    toast.add({ title: t('plants.unarchived'), color: 'success' })
+  } catch (e: unknown) {
+    toast.add({ title: t('common.error'), description: apiErrorMessage(e), color: 'error' })
+  } finally {
+    unarchiving.value = false
+  }
 }
 </script>
 
@@ -330,7 +360,20 @@ async function onDelete() {
       icon="i-lucide-archive"
       :title="t('plants.archivedBanner', { reason: archiveReasonLabel(plant.archive_reason) })"
       :description="t('plants.archivedOn', { date: archivedOnLabel })"
-    />
+    >
+      <template #actions>
+        <UButton
+          size="sm"
+          variant="outline"
+          color="neutral"
+          icon="i-lucide-archive-restore"
+          :loading="unarchiving"
+          @click="onUnarchive"
+        >
+          {{ t('plants.unarchive') }}
+        </UButton>
+      </template>
+    </UAlert>
 
     <div
       v-if="!isArchived"
@@ -389,11 +432,9 @@ async function onDelete() {
     >
       <template #mi-planta>
         <PlantsDetailPlantMyInfoTab
-          v-model:health-status="healthStatus"
-          v-model:health-note="healthNote"
           :plant="plant"
           :read-only="isArchived"
-          @save-health="saveHealth"
+          @check-in="openCheckIn"
         />
       </template>
 
@@ -428,6 +469,15 @@ async function onDelete() {
     <PlantsPlantArchiveModal
       v-model:open="archiveModalOpen"
       @confirm="onArchiveConfirm"
+    />
+
+    <AppConfirmModal
+      v-model:open="deleteModalOpen"
+      :title="t('plants.deleteTitle', { name: plant.name })"
+      :description="isArchived ? t('plants.deleteConfirmArchived') : t('plants.deleteConfirmLong')"
+      :confirm-label="t('common.delete')"
+      :loading="deleting"
+      @confirm="confirmDelete"
     />
 
     <PlantsPlantMoveSiteModal

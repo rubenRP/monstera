@@ -2,6 +2,7 @@
 import type { HealthStatus } from '#shared/types/database'
 
 const { t } = useI18n()
+usePageTitle(() => t('plants.title'))
 const { healthOptions } = usePlantEnumLabels()
 const { fetchPlants } = usePlants()
 const { fetchPendingDueByPlant } = useCareTasks()

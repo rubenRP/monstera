@@ -119,6 +119,19 @@ export function usePlants() {
     if (taskError) throw taskError
   }
 
+  /** Brings an archived plant back and recreates its pending care tasks. */
+  async function unarchivePlant(id: string) {
+    const { data: plant, error } = await supabase
+      .from('plants')
+      .update({ archived_at: null, archive_reason: null, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select(PLANT_SELECT)
+      .single()
+    if (error) throw error
+    await regenerateTasks(id, plant as Plant, 'plant_edit')
+    return plant as Plant
+  }
+
   async function updatePlant(id: string, form: PlantFormInput, photoFile?: File) {
     const { data: existing, error: fetchError } = await supabase
       .from('plants')
@@ -299,6 +312,7 @@ export function usePlants() {
     updatePlant,
     updateHealthStatus,
     archivePlant,
+    unarchivePlant,
     movePlantToSite,
     deletePlant,
     uploadPhoto,

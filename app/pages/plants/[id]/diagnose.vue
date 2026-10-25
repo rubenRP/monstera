@@ -3,6 +3,7 @@ import type { DiagnosisResponse } from '#shared/utils/plants/schemas'
 import type { HealthStatus } from '#shared/types/database'
 
 const { t } = useI18n()
+usePageTitle(() => t('diagnose.title'))
 const { apiErrorMessage } = useApiError()
 const route = useRoute()
 const id = route.params.id as string
