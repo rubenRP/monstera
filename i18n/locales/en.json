@@ -512,7 +512,16 @@
     "noSiteGroup": "No site",
     "noSearchResults": "No results",
     "noSearchResultsHint": "No plant matches \"{query}\".",
-    "clearSearch": "Clear search"
+    "clearSearch": "Clear search",
+    "formErrors": "Check {count} highlighted field | Check the {count} highlighted fields",
+    "speciesPlaceholder": "E.g. Monstera deliciosa",
+    "speciesSearchHint": "Type at least 3 letters to see suggestions.",
+    "removePhoto": "Remove photo",
+    "photoWillBeRemoved": "The photo will be removed when you save.",
+    "fertilizeSuggested": "Suggested for this species",
+    "unsavedTitle": "Discard changes?",
+    "unsavedDescription": "You have unsaved changes to this plant.",
+    "discardChanges": "Discard"
   },
   "sites": {
     "title": "Sites",
@@ -827,7 +836,8 @@
       "symptomsMin": "Describe symptoms with at least 3 characters",
       "imageTooLarge": "The photo is too large. Try a smaller image.",
       "homeLocationRequired": "Set your home location before recalculating",
-      "plantAgeMax": "Age exceeds the maximum for the selected unit"
+      "plantAgeMax": "Age exceeds the maximum for the selected unit",
+      "invalidValue": "Invalid value"
     },
     "page": {
       "notFoundTitle": "Page not found",

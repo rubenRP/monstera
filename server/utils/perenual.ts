@@ -7,7 +7,7 @@ import {
   pickBestPerenualMatch,
   type PerenualSpeciesListItem
 } from '#shared/utils/species/searchPerenual'
-import type { SpeciesProfile } from '#shared/types/species'
+import type { SpeciesProfile, SpeciesSuggestion } from '#shared/types/species'
 import { externalFetchSignal } from '#shared/utils/http/timeout'
 
 const BASE = 'https://perenual.com/api'
@@ -83,6 +83,27 @@ async function searchSpeciesList(
     apiKey
   )
   return search.data ?? []
+}
+
+/** Free-plan responses replace some fields with an "Upgrade Plans…" notice. */
+function cleanPerenualText(value: unknown): string | null {
+  if (typeof value !== 'string' || !value.trim() || /upgrade plan/i.test(value)) return null
+  return value.trim()
+}
+
+/** Autocomplete suggestions for the plant form (single species-list request). */
+export async function searchSpeciesSuggestions(query: string, apiKey: string, limit = 8): Promise<SpeciesSuggestion[]> {
+  const items = await searchSpeciesList(query, apiKey) as Array<PerenualSpeciesListItem & {
+    watering?: unknown
+    default_image?: { thumbnail?: unknown } | null
+  }>
+  return items.slice(0, limit).map(item => ({
+    id: item.id,
+    commonName: cleanPerenualText(item.common_name),
+    scientificName: cleanPerenualText(item.scientific_name?.[0]),
+    watering: cleanPerenualText(item.watering),
+    thumbnail: cleanPerenualText(item.default_image?.thumbnail)
+  })).filter(item => item.commonName || item.scientificName)
 }
 
 async function resolveSpeciesMatch(

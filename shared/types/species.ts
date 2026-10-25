@@ -33,3 +33,13 @@ export interface SpeciesProfileRow {
   created_at: string
   updated_at: string
 }
+
+/** Autocomplete item for the species field (from Perenual species-list). */
+export interface SpeciesSuggestion {
+  id: number
+  commonName: string | null
+  scientificName: string | null
+  /** Perenual watering category: Frequent / Average / Minimum / None */
+  watering: string | null
+  thumbnail: string | null
+}

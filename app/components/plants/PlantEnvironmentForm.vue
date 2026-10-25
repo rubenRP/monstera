@@ -9,6 +9,20 @@ const { placementLabel, orientationLabel, luminosityLabel } = useSiteEnumLabels(
 
 const form = defineModel<PlantFormInput>('form', { required: true })
 
+const props = withDefaults(defineProps<{
+  /** field → i18n key, from PlantForm validation */
+  fieldErrors?: Record<string, string>
+}>(), {
+  fieldErrors: () => ({})
+})
+
+const { validationMessage } = useApiError()
+
+function err(field: string): string | undefined {
+  const key = props.fieldErrors[field]
+  return key ? validationMessage(key) : undefined
+}
+
 const { fetchSites } = useSites()
 const sites = ref<Site[]>([])
 const siteOptions = ref<{ label: string, value: string | null }[]>([])
@@ -59,7 +73,11 @@ const noneOption = computed(() => ({ label: t('common.none'), value: null }))
       <h2 class="text-sm font-semibold text-highlighted">
         {{ t('plants.formSectionPlant') }}
       </h2>
-      <UFormField :label="t('plants.heightLabel')">
+      <UFormField
+        id="field-height_cm"
+        :label="t('plants.heightLabel')"
+        :error="err('height_cm')"
+      >
         <UInput
           :model-value="form.height_cm ?? undefined"
           type="number"
@@ -67,7 +85,11 @@ const noneOption = computed(() => ({ label: t('common.none'), value: null }))
           @update:model-value="form.height_cm = ($event as number | undefined) ?? null"
         />
       </UFormField>
-      <UFormField :label="t('plants.fieldAge')">
+      <UFormField
+        id="field-age_years"
+        :label="t('plants.fieldAge')"
+        :error="err('age_years')"
+      >
         <div class="flex gap-2">
           <UInput
             :model-value="form.age_years ?? undefined"
@@ -101,21 +123,33 @@ const noneOption = computed(() => ({ label: t('common.none'), value: null }))
       <h2 class="text-sm font-semibold text-highlighted">
         {{ t('plants.formSectionPot') }}
       </h2>
-      <UFormField :label="t('plants.potSizeLabel')">
+      <UFormField
+        id="field-pot_size"
+        :label="t('plants.potSizeLabel')"
+        :error="err('pot_size')"
+      >
         <USelect
           :model-value="form.pot_size ?? undefined"
           :items="[noneOption, ...potSizeOptions]"
           @update:model-value="form.pot_size = ($event as typeof form.pot_size) ?? null"
         />
       </UFormField>
-      <UFormField :label="t('plants.potDiameterLabel')">
+      <UFormField
+        id="field-pot_diameter_cm"
+        :label="t('plants.potDiameterLabel')"
+        :error="err('pot_diameter_cm')"
+      >
         <UInput
           :model-value="form.pot_diameter_cm ?? undefined"
           type="number"
           @update:model-value="form.pot_diameter_cm = ($event as number | undefined) ?? null"
         />
       </UFormField>
-      <UFormField :label="t('plants.potMaterialLabel')">
+      <UFormField
+        id="field-pot_material"
+        :label="t('plants.potMaterialLabel')"
+        :error="err('pot_material')"
+      >
         <USelect
           :model-value="form.pot_material ?? undefined"
           :items="[noneOption, ...potMaterialOptions]"
@@ -128,7 +162,11 @@ const noneOption = computed(() => ({ label: t('common.none'), value: null }))
           :label="t('plants.drainageCheckbox')"
         />
       </UFormField>
-      <UFormField :label="t('plants.fieldSubstrate')">
+      <UFormField
+        id="field-substrate_type"
+        :label="t('plants.fieldSubstrate')"
+        :error="err('substrate_type')"
+      >
         <USelect
           :model-value="form.substrate_type ?? undefined"
           :items="[noneOption, ...substrateOptions]"
@@ -153,7 +191,11 @@ const noneOption = computed(() => ({ label: t('common.none'), value: null }))
       <h2 class="text-sm font-semibold text-highlighted">
         {{ t('plants.formSectionLight') }}
       </h2>
-      <UFormField :label="t('plants.fieldSite')">
+      <UFormField
+        id="field-site_id"
+        :label="t('plants.fieldSite')"
+        :error="err('site_id')"
+      >
         <USelect
           :model-value="form.site_id ?? undefined"
           :items="siteOptions"
@@ -223,7 +265,9 @@ const noneOption = computed(() => ({ label: t('common.none'), value: null }))
 
       <UFormField
         v-if="showDistance"
+        id="field-window_distance_cm"
         :label="t('plants.windowDistance')"
+        :error="err('window_distance_cm')"
       >
         <UInput
           :model-value="form.window_distance_cm ?? undefined"

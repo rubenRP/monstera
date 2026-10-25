@@ -10,6 +10,8 @@ const defaultSiteId = (route.query.siteId as string) || null
 
 const { createPlant } = usePlants()
 const loading = ref(false)
+const formRef = ref<{ onSaveFailed: () => void } | null>(null)
+const cancelTo = defaultSiteId ? `/sites/${defaultSiteId}` : '/plants'
 const toast = useToast()
 
 const initialPlant = defaultSiteId
@@ -23,6 +25,7 @@ async function onSubmit(data: PlantFormInput, photo?: File) {
     toast.add({ title: t('plants.created'), color: 'success' })
     await navigateTo(`/plants/${plant.id}`)
   } catch (e: unknown) {
+    formRef.value?.onSaveFailed()
     toast.add({
       title: t('common.error'),
       description: apiErrorMessage(e) || t('plants.saveFailed'),
@@ -40,7 +43,9 @@ async function onSubmit(data: PlantFormInput, photo?: File) {
       {{ t('plants.newTitle') }}
     </h1>
     <PlantsPlantForm
+      ref="formRef"
       :initial="initialPlant"
+      :cancel-to="cancelTo"
       :loading="loading"
       @submit="onSubmit"
     />
