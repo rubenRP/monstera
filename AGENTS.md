@@ -185,7 +185,7 @@ CI runs lint, typecheck, test, and build on every push/PR ([`.github/workflows/c
 - Do not commit `.env` or secrets.
 - RLS on all user tables; `species_profiles` is read-only for `authenticated`.
 - Photos in private bucket `plant-photos`; signed URLs on the client.
-- Push cron (Vercel): `GET /api/cron/send-daily` once daily at 09:00 UTC (`vercel.json`). Auth: `x-vercel-cron`, or `Authorization: Bearer <CRON_SECRET>` / `x-cron-secret` when `CRON_SECRET` is set (Vercel sends Bearer automatically). Manual test: `POST /api/push/send-daily` with the same secret headers.
+- Push cron (Vercel): `GET /api/cron/send-daily` once daily at 09:00 UTC (`vercel.json`). Auth: `Authorization: Bearer <CRON_SECRET>` or `x-cron-secret` (Vercel sends Bearer automatically when `CRON_SECRET` is set); `x-vercel-cron` alone is rejected. Manual test: `POST /api/push/send-daily` with the same secret headers.
 
 ## Cursor rules (detail by area)
 

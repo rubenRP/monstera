@@ -46,7 +46,7 @@ npx supabase db push
 | `PERENUAL_API_KEY` | Species variety tab | Species tab returns 503 |
 | `NUXT_PUBLIC_HOME_LAT` / `NUXT_PUBLIC_HOME_LON` | Default weather location | Defaults to Madrid coordinates |
 | `NUXT_PUBLIC_VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | Web Push | Push disabled |
-| `CRON_SECRET` | Authorize cron endpoints on self-host | Cron returns 403 without Vercel header |
+| `CRON_SECRET` | Authorize cron endpoints (Vercel and self-host) | Cron returns 403 |
 
 Weather and exterior watering recalculation use **Open-Meteo** (free, no configuration).
 
@@ -81,7 +81,7 @@ Deploy on Vercel, a VPS, or any Node 22 host with the same environment variables
 | `GET /api/cron/send-daily` | Daily 09:00 | Push reminders |
 | `GET /api/cron/recalculate-watering` | Sundays, midnight | Exterior watering from weather |
 
-Set `CRON_SECRET` in production. Vercel cron sends `Authorization: Bearer <CRON_SECRET>`; endpoints also accept `x-vercel-cron` or `x-cron-secret`.
+Set `CRON_SECRET` in production. Vercel cron sends `Authorization: Bearer <CRON_SECRET>`; endpoints also accept `x-cron-secret`. The `x-vercel-cron` header alone is not accepted.
 
 ```bash
 npx web-push generate-vapid-keys   # optional, for push

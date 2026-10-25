@@ -63,7 +63,7 @@ flowchart TB
 - **Server**: Secret key for routes that need elevated access; every user-scoped handler validates `Authorization: Bearer <access_token>`.
 - **Storage**: Objects stored under `{userId}/...`; policies restrict read/write to the owner.
 - **Species cache**: `species_profiles` is read-only for authenticated users; writes use the service role on the server.
-- **Cron**: `CRON_SECRET` required on self-host; Vercel sends `x-vercel-cron` or Bearer token.
+- **Cron**: `CRON_SECRET` always required; Vercel sends it as a Bearer token.
 
 ## Domain entities
 
