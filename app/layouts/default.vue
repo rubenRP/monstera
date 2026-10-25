@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import { isTopLevelPath, parentPath } from '#shared/utils/navigation/parentPath'
+
 const route = useRoute()
+const router = useRouter()
 const { t } = useI18n()
 const { online } = useOnlineStatus()
 
@@ -14,6 +17,17 @@ const nav = computed(() => [
 function isActive(path: string) {
   if (path === '/') return route.path === '/'
   return route.path.startsWith(path)
+}
+
+const showBack = computed(() => !isTopLevelPath(route.path))
+
+/** In-app history when available; otherwise the logical parent (standalone PWA has no browser back). */
+function goBack() {
+  if (import.meta.client && window.history.state?.back) {
+    router.back()
+    return
+  }
+  void navigateTo(parentPath(route.path), { replace: true })
 }
 </script>
 
@@ -58,7 +72,17 @@ function isActive(path: string) {
     <div class="flex-1 flex flex-col min-w-0">
       <header class="sticky top-0 z-40 border-b border-default/60 bg-default/75 backdrop-blur-lg px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top,0px))] md:hidden">
         <div class="max-w-lg mx-auto flex items-center justify-between">
+          <UButton
+            v-if="showBack"
+            icon="i-lucide-arrow-left"
+            color="neutral"
+            variant="ghost"
+            class="-ml-2"
+            :label="t('common.back')"
+            @click="goBack"
+          />
           <NuxtLink
+            v-else
             to="/"
             class="flex items-center gap-2 font-bold text-lg text-primary"
           >
@@ -69,7 +93,16 @@ function isActive(path: string) {
         </div>
       </header>
 
-      <header class="hidden md:flex border-b border-default/60 bg-default/60 backdrop-blur-sm px-6 py-3 items-center justify-end">
+      <header class="hidden md:flex border-b border-default/60 bg-default/60 backdrop-blur-sm px-6 py-3 items-center justify-between">
+        <UButton
+          v-if="showBack"
+          icon="i-lucide-arrow-left"
+          color="neutral"
+          variant="ghost"
+          :label="t('common.back')"
+          @click="goBack"
+        />
+        <span v-else />
         <UColorModeButton />
       </header>
 
