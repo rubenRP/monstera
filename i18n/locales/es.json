@@ -900,5 +900,13 @@
     "dayAria": "{date}: {count} tarea | {date}: {count} tareas",
     "filterAll": "Todas",
     "filterAria": "Filtrar por tipo de tarea"
+  },
+  "stats": {
+    "title": "Tu constancia · últimos {days} días",
+    "onTime": "A tiempo",
+    "streak": "Racha",
+    "completed": "Hechas",
+    "mostLate": "Más retrasos:",
+    "allOnTime": "¡Todo a tiempo! Sigue así 🌱"
   }
 }

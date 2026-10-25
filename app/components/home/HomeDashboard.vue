@@ -428,6 +428,11 @@ function confirmSkip(task: CareTask, soilStillWet: boolean) {
         @skip="onSkipClick"
         @postpone="onPostpone"
       />
+
+      <HomeCareStats
+        v-if="!tasksLoading"
+        class="mt-6"
+      />
     </template>
 
     <CareSkipWaterModal

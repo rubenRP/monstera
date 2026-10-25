@@ -93,6 +93,35 @@ export function useCareTasks() {
     return fetchPendingTasks({ plantId })
   }
 
+  /** Completed water/fertilize tasks of the last `days` days, for punctuality stats. */
+  async function fetchCompletedForStats(days = 30) {
+    const since = new Date()
+    since.setDate(since.getDate() - days)
+    const { data, error } = await supabase
+      .from('care_tasks')
+      .select('plant_id, type, due_at, completed_at, plant:plants(name, archived_at)')
+      .eq('status', 'done')
+      .in('type', ['water', 'fertilize'])
+      .gte('completed_at', since.toISOString())
+    if (error) throw error
+    const rows = (data ?? []) as unknown as Array<{
+      plant_id: string
+      type: CareTaskType
+      due_at: string
+      completed_at: string | null
+      plant: { name: string, archived_at: string | null } | null
+    }>
+    return rows
+      .filter(row => row.completed_at && !row.plant?.archived_at)
+      .map(row => ({
+        plant_id: row.plant_id,
+        plantName: row.plant?.name ?? '',
+        type: row.type,
+        due_at: row.due_at,
+        completed_at: row.completed_at!
+      }))
+  }
+
   /** All pending tasks with the plant intervals needed to project future occurrences. */
   async function fetchPendingTasksWithIntervals() {
     const { data, error } = await supabase
@@ -343,6 +372,7 @@ export function useCareTasks() {
     fetchPlantPendingTasks,
     fetchPendingDueByPlant,
     fetchPendingTasksWithIntervals,
+    fetchCompletedForStats,
     fetchCareHistory,
     fetchTasksInRange,
     fetchResolvedTasksInRange,

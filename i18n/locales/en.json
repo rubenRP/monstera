@@ -900,5 +900,13 @@
     "dayAria": "{date}: {count} task | {date}: {count} tasks",
     "filterAll": "All",
     "filterAria": "Filter by task type"
+  },
+  "stats": {
+    "title": "Your consistency · last {days} days",
+    "onTime": "On time",
+    "streak": "Streak",
+    "completed": "Done",
+    "mostLate": "Most often late:",
+    "allOnTime": "Everything on time! Keep it up 🌱"
   }
 }
