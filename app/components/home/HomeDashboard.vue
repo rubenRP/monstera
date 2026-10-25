@@ -349,10 +349,11 @@ function confirmSkip(task: CareTask, soilStillWet: boolean) {
       v-if="loading"
       class="space-y-3"
     >
+      <USkeleton class="h-36 rounded-2xl" />
       <USkeleton
         v-for="i in 3"
         :key="i"
-        class="h-16"
+        class="h-[68px] rounded-2xl"
       />
     </div>
 
@@ -363,23 +364,17 @@ function confirmSkip(task: CareTask, soilStillWet: boolean) {
     />
 
     <template v-else-if="!plants.length">
-      <UAlert
-        color="primary"
-        variant="subtle"
-        icon="i-lucide-leaf"
+      <AppEmptyState
         :title="t('home.emptyTitle')"
         :description="t('home.emptyDescription')"
       >
-        <template #actions>
-          <UButton
-            to="/plants/new"
-            size="sm"
-            icon="i-lucide-plus"
-          >
-            {{ t('home.addPlant') }}
-          </UButton>
-        </template>
-      </UAlert>
+        <UButton
+          to="/plants/new"
+          icon="i-lucide-plus"
+        >
+          {{ t('home.addPlant') }}
+        </UButton>
+      </AppEmptyState>
     </template>
 
     <template v-else>
@@ -393,19 +388,18 @@ function confirmSkip(task: CareTask, soilStillWet: boolean) {
 
       <div
         v-if="tasksLoading"
-        class="space-y-3"
+        class="space-y-2"
       >
         <USkeleton
-          v-for="i in 2"
+          v-for="i in 3"
           :key="i"
-          class="h-16"
+          class="h-[68px] rounded-2xl"
         />
       </div>
 
-      <UAlert
-        v-else-if="!visibleTasks.length && (showUpcoming || !completedToday.length)"
-        color="neutral"
-        icon="i-lucide-check-circle"
+      <AppEmptyState
+        v-else-if="!visibleTasks.length"
+        illustration="done"
         :title="t('home.allCaughtUp')"
         :description="showUpcoming ? t('home.noTasksUpcoming') : t('home.noTasksToday')"
       />
