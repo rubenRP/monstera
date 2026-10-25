@@ -122,7 +122,7 @@ export function usePlants() {
   async function updatePlant(id: string, form: PlantFormInput, photoFile?: File) {
     const { data: existing, error: fetchError } = await supabase
       .from('plants')
-      .select('archived_at')
+      .select('archived_at, species')
       .eq('id', id)
       .single()
     if (fetchError) throw fetchError
@@ -130,8 +130,11 @@ export function usePlants() {
       throw new Error('PLANT_ARCHIVED')
     }
 
+    const speciesChanged = (existing?.species ?? null) !== (form.species || null)
     const payload = {
       ...sanitizePlantPayload(form),
+      // A manual base interval belongs to the previous species
+      ...(speciesChanged ? { watering_base_override_days: null } : {}),
       ...(photoFile ? { photo_path: await uploadPhoto(photoFile, id) } : {})
     }
 
@@ -182,8 +185,23 @@ export function usePlants() {
   }
 
   async function deletePlant(id: string) {
+    const uid = await requireUserId()
     const { error } = await supabase.from('plants').delete().eq('id', id)
     if (error) throw error
+    await removePlantPhotos(uid, id)
+  }
+
+  /** Best effort: the plant row is already gone, so a storage failure must not surface as a delete error. */
+  async function removePlantPhotos(uid: string, plantId: string) {
+    const folder = `${uid}/${plantId}`
+    const bucket = supabase.storage.from('plant-photos')
+    const { data: files, error: listError } = await bucket.list(folder, { limit: 1000 })
+    if (listError || !files?.length) {
+      if (listError) console.warn('[deletePlant] could not list photos', listError)
+      return
+    }
+    const { error: removeError } = await bucket.remove(files.map(f => `${folder}/${f.name}`))
+    if (removeError) console.warn('[deletePlant] could not remove photos', removeError)
   }
 
   async function movePlantToSite(plantId: string, siteId: string | null) {

@@ -124,7 +124,7 @@ Deploy the Nitro output (`.output/`) on any Node 22 host (VPS, Railway, Fly.io, 
 
 [`vercel.json`](../vercel.json) defines two cron jobs. Replicate them on your host with `curl` and `CRON_SECRET`.
 
-**Important:** On self-hosted deployments, the `x-vercel-cron` header is not sent. Set `CRON_SECRET` in production; without it, cron endpoints return **403**.
+**Important:** Set `CRON_SECRET` in production (Vercel and self-hosted); without it, cron endpoints return **403**. The `x-vercel-cron` header alone is not trusted.
 
 | Endpoint | Schedule (UTC) | Purpose |
 |----------|----------------|---------|

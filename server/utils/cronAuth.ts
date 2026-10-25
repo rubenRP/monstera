@@ -1,10 +1,11 @@
 import type { H3Event } from 'h3'
 import { API_ERROR_CODES } from '#shared/utils/i18n/apiErrors'
 
-/** Vercel cron: x-vercel-cron, or Authorization Bearer CRON_SECRET when set. Manual: x-cron-secret. */
+/**
+ * Requires CRON_SECRET: `Authorization: Bearer <secret>` (sent by Vercel cron) or `x-cron-secret`.
+ * The `x-vercel-cron` header alone is not trusted — any client can send it.
+ */
 export function assertCronAuthorized(event: H3Event): void {
-  if (getHeader(event, 'x-vercel-cron')) return
-
   const cronSecret = process.env.CRON_SECRET
   if (cronSecret) {
     const authHeader = getHeader(event, 'authorization')

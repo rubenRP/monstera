@@ -14,7 +14,8 @@ const {
   completeTask,
   skipTask,
   requiresCheckInModal,
-  overdueDays
+  overdueDays,
+  taskLabel
 } = useCareTasks()
 const { submitCheckIn } = usePlantCheckIns()
 const { fetchPlants } = usePlants()
@@ -26,12 +27,18 @@ const {
 } = useWateringRecalcEvents()
 const { apiErrorMessage } = useApiError()
 const toast = useToast()
+const {
+  pendingIds: deferredTaskIds,
+  schedule: scheduleDeferred,
+  cancel: cancelDeferred
+} = useDeferredActions()
 
 const tasks = ref<Awaited<ReturnType<typeof fetchTodayTasks>>>([])
 const summaryTasks = ref<Awaited<ReturnType<typeof fetchTodayTasks>>>([])
 const completedToday = ref<Awaited<ReturnType<typeof fetchTodayCompletedTasks>>>([])
 const plants = ref<Awaited<ReturnType<typeof fetchPlants>>>([])
 const loading = ref(true)
+const loadError = ref<string | null>(null)
 const acting = ref<string | null>(null)
 const skipWaterModalOpen = ref(false)
 const checkInModalOpen = ref(false)
@@ -46,6 +53,10 @@ const tasksLoading = ref(false)
 const todayFormatted = computed(() =>
   new Date().toLocaleDateString(dateLocale.value, { weekday: 'long', day: 'numeric', month: 'long' })
 )
+
+/** Tasks inside the undo window are hidden until committed or restored. */
+const visibleTasks = computed(() => tasks.value.filter(task => !deferredTaskIds.value.has(task.id)))
+const visibleSummaryTasks = computed(() => summaryTasks.value.filter(task => !deferredTaskIds.value.has(task.id)))
 
 const todayTasksInView = computed(() => [...tasks.value, ...completedToday.value])
 
@@ -83,19 +94,38 @@ async function loadTasks() {
 }
 
 const overdueTaskCount = computed(
-  () => summaryTasks.value.filter(task => overdueDays(task.due_at) > 0).length
+  () => visibleSummaryTasks.value.filter(task => overdueDays(task.due_at) > 0).length
 )
 
 const todayTaskCount = computed(
-  () => summaryTasks.value.filter(task => overdueDays(task.due_at) <= 0).length
+  () => visibleSummaryTasks.value.filter(task => overdueDays(task.due_at) <= 0).length
 )
 
 async function reloadTasks() {
   tasksLoading.value = true
   try {
     await loadTasks()
+  } catch (e: unknown) {
+    toast.add({
+      title: t('common.loadErrorTitle'),
+      description: apiErrorMessage(e),
+      color: 'error'
+    })
   } finally {
     tasksLoading.value = false
+  }
+}
+
+async function initialLoad() {
+  loading.value = true
+  loadError.value = null
+  try {
+    plants.value = await fetchPlants()
+    await Promise.all([loadTasks(), fetchRecentEvents()])
+  } catch (e: unknown) {
+    loadError.value = apiErrorMessage(e)
+  } finally {
+    loading.value = false
   }
 }
 
@@ -103,12 +133,7 @@ onMounted(async () => {
   if (import.meta.client) {
     showUpcoming.value = localStorage.getItem(UPCOMING_STORAGE_KEY) === '1'
   }
-  try {
-    plants.value = await fetchPlants()
-    await Promise.all([loadTasks(), fetchRecentEvents()])
-  } finally {
-    loading.value = false
-  }
+  await initialLoad()
 })
 
 watch(showUpcoming, (value) => {
@@ -126,19 +151,43 @@ async function markDone(taskId: string) {
     checkInModalOpen.value = true
     return
   }
-  acting.value = taskId
-  try {
+  deferWithUndo(task, t('home.taskDoneToast', { task: taskLabel(task.type) }), async () => {
     await completeTask(task)
     await Promise.all([reloadTasks(), fetchRecentEvents()])
-  } catch (e: unknown) {
-    toast.add({
-      title: t('common.error'),
-      description: apiErrorMessage(e),
-      color: 'error'
-    })
-  } finally {
-    acting.value = null
-  }
+  })
+}
+
+/** Hides the task now, commits after the undo window; the toast offers "Undo" meanwhile. */
+function deferWithUndo(task: CareTask, title: string, run: () => Promise<void>) {
+  scheduleDeferred(task.id, async () => {
+    try {
+      await run()
+    } catch (e: unknown) {
+      toast.add({
+        title: t('common.error'),
+        description: apiErrorMessage(e),
+        color: 'error'
+      })
+      await reloadTasks()
+    }
+  })
+  toast.add({
+    id: `undo-${task.id}`,
+    title,
+    description: task.plant?.name,
+    color: 'success',
+    icon: 'i-lucide-check',
+    duration: UNDO_WINDOW_MS,
+    actions: [{
+      label: t('common.undo'),
+      icon: 'i-lucide-undo-2',
+      color: 'neutral',
+      variant: 'outline',
+      onClick: () => {
+        cancelDeferred(task.id)
+      }
+    }]
+  })
 }
 
 async function onCheckInSubmit(
@@ -169,13 +218,13 @@ function onSkipClick(task: CareTask) {
     skipWaterModalOpen.value = true
     return
   }
-  void confirmSkip(task, false)
+  confirmSkip(task, false)
 }
 
 function onSkipWaterConfirm(soilStillWet: boolean) {
   const task = taskToSkip.value
   if (!task) return
-  void confirmSkip(task, soilStillWet)
+  confirmSkip(task, soilStillWet)
 }
 
 async function onAddAdvanceWater(plantId: string) {
@@ -207,11 +256,10 @@ async function onAddAdvanceWater(plantId: string) {
   }
 }
 
-async function confirmSkip(task: CareTask, soilStillWet: boolean) {
+function confirmSkip(task: CareTask, soilStillWet: boolean) {
   skipWaterModalOpen.value = false
   taskToSkip.value = null
-  acting.value = task.id
-  try {
+  deferWithUndo(task, t('home.taskSkippedToast', { task: taskLabel(task.type) }), async () => {
     const newInterval = await skipTask(task, { soilStillWet })
     await Promise.all([reloadTasks(), fetchRecentEvents()])
     if (soilStillWet && newInterval) {
@@ -221,15 +269,7 @@ async function confirmSkip(task: CareTask, soilStillWet: boolean) {
         color: 'success'
       })
     }
-  } catch (e: unknown) {
-    toast.add({
-      title: t('common.error'),
-      description: apiErrorMessage(e),
-      color: 'error'
-    })
-  } finally {
-    acting.value = null
-  }
+  })
 }
 </script>
 
@@ -269,6 +309,12 @@ async function confirmSkip(task: CareTask, soilStillWet: boolean) {
       />
     </div>
 
+    <AppLoadError
+      v-else-if="loadError"
+      :description="loadError"
+      @retry="initialLoad"
+    />
+
     <template v-else-if="!plants.length">
       <UAlert
         color="primary"
@@ -307,7 +353,7 @@ async function confirmSkip(task: CareTask, soilStillWet: boolean) {
       </div>
 
       <UAlert
-        v-else-if="!tasks.length && (showUpcoming || !completedToday.length)"
+        v-else-if="!visibleTasks.length && (showUpcoming || !completedToday.length)"
         color="neutral"
         icon="i-lucide-check-circle"
         :title="t('home.allCaughtUp')"
@@ -327,7 +373,7 @@ async function confirmSkip(task: CareTask, soilStillWet: boolean) {
       </UButton>
 
       <HomeTaskList
-        :tasks="tasks"
+        :tasks="visibleTasks"
         :completed="completedToday"
         :context-tasks="todayTasksInView"
         :show-upcoming="showUpcoming"

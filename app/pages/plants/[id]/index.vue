@@ -32,6 +32,8 @@ const plant = ref<Awaited<ReturnType<typeof fetchPlant>> | null>(null)
 const { url: photoUrl } = usePlantPhoto(computed(() => plant.value?.photo_path))
 const pendingTasks = ref<Awaited<ReturnType<typeof fetchPlantPendingTasks>>>([])
 const loading = ref(true)
+const loadError = ref<string | null>(null)
+const notFound = ref(false)
 const actingTaskId = ref<string | null>(null)
 const healthStatus = ref<HealthStatus>('healthy')
 const healthNote = ref('')
@@ -87,7 +89,10 @@ function refreshCareHistory() {
   nextTick(() => historyTabRef.value?.load())
 }
 
-onMounted(async () => {
+async function loadPlant() {
+  loading.value = true
+  loadError.value = null
+  notFound.value = false
   try {
     plant.value = await fetchPlant(id)
     healthStatus.value = plant.value.health_status
@@ -95,10 +100,20 @@ onMounted(async () => {
     if (!plant.value.archived_at) {
       pendingTasks.value = await fetchPlantPendingTasks(id)
     }
+  } catch (e: unknown) {
+    // PGRST116: no rows for .single() (unknown id / other user's plant); 22P02: malformed uuid
+    const code = (e as { code?: string })?.code
+    if (code === 'PGRST116' || code === '22P02') {
+      notFound.value = true
+    } else {
+      loadError.value = apiErrorMessage(e)
+    }
   } finally {
     loading.value = false
   }
-})
+}
+
+onMounted(loadPlant)
 
 async function saveHealth() {
   if (!plant.value) return
@@ -257,6 +272,29 @@ async function onDelete() {
     <USkeleton class="h-48 w-full" />
     <USkeleton class="h-8 w-2/3" />
   </div>
+
+  <AppLoadError
+    v-else-if="loadError"
+    :description="loadError"
+    @retry="loadPlant"
+  />
+
+  <UAlert
+    v-else-if="notFound"
+    icon="i-lucide-sprout"
+    :title="t('plants.notFoundTitle')"
+    :description="t('plants.notFoundDescription')"
+  >
+    <template #actions>
+      <UButton
+        to="/plants"
+        size="sm"
+        icon="i-lucide-leaf"
+      >
+        {{ t('plants.backToList') }}
+      </UButton>
+    </template>
+  </UAlert>
 
   <div
     v-else-if="plant"

@@ -1,4 +1,5 @@
 import type { WeatherMetrics } from './deriveWeatherFactor'
+import { externalFetchSignal } from '../http/timeout'
 
 export async function fetchOpenMeteoMetrics(
   lat: number,
@@ -12,7 +13,15 @@ export async function fetchOpenMeteoMetrics(
     timezone: 'auto',
     forecast_days: String(forecastDays)
   })
-  const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`)
+  let res: Response
+  try {
+    res = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`, {
+      signal: externalFetchSignal()
+    })
+  } catch {
+    // Network error or timeout: callers treat null as "weather unavailable"
+    return null
+  }
   if (!res.ok) return null
   const data = await res.json() as {
     daily?: {

@@ -30,8 +30,6 @@ export function usePlantCheckIns() {
     const uid = await requireUserId()
     const now = new Date().toISOString()
 
-    await deleteOverlappingPendingTasks(task, task.id)
-
     let photoPath: string | null = null
     if (photoFile) {
       photoPath = await uploadPhoto(photoFile, task.plant_id)
@@ -78,6 +76,7 @@ export function usePlantCheckIns() {
       .update({ status: 'done', completed_at: now })
       .eq('id', task.id)
     if (taskError) throw taskError
+    await deleteOverlappingPendingTasks(task, task.id)
 
     await rescheduleCheckIn(task.plant_id)
 

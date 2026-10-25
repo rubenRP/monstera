@@ -1,9 +1,11 @@
 import { Agent, CursorAgentError } from '@cursor/sdk'
 import { API_ERROR_CODES } from '#shared/utils/i18n/apiErrors'
-import { buildRecommendPrompt, extractJsonFromText } from '#shared/utils/cursor/prompts'
+import { buildRecommendPrompt } from '#shared/utils/cursor/prompts'
+import { parseAiJson } from '#shared/utils/cursor/parseAiJson'
 import { recommendRequestSchema, recommendResponseSchema } from '#shared/utils/plants/schemas'
 import type { Plant } from '#shared/types/database'
 import { buildCursorAgentOptions } from '../utils/cursorAgentOptions'
+import { retryAgentForJson } from '../utils/cursorJsonRetry'
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
@@ -80,21 +82,13 @@ export default defineEventHandler(async (event) => {
     throwApiError(502, API_ERROR_CODES.AI_QUERY_FAILED)
   }
 
-  let recommendation = recommendResponseSchema.safeParse(
-    JSON.parse(extractJsonFromText(resultText))
-  )
-  if (!recommendation.success) {
-    const retry = await Agent.prompt(
-      `${promptText}\n\nResponde ÚNICAMENTE con el JSON, sin texto adicional.`,
-      agentOptions
-    )
-    recommendation = recommendResponseSchema.safeParse(
-      JSON.parse(extractJsonFromText(retry.result ?? ''))
-    )
+  let recommendation = parseAiJson(resultText, recommendResponseSchema)
+  if (!recommendation) {
+    recommendation = parseAiJson(await retryAgentForJson(promptText, agentOptions), recommendResponseSchema)
   }
-  if (!recommendation.success) {
+  if (!recommendation) {
     throwApiError(502, API_ERROR_CODES.AI_PARSE_FAILED)
   }
 
-  return { recommendation: recommendation.data, weatherSummary }
+  return { recommendation, weatherSummary }
 })

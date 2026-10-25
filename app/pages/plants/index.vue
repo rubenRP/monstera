@@ -7,6 +7,8 @@ const { fetchPlants } = usePlants()
 const plants = ref<Awaited<ReturnType<typeof fetchPlants>>>([])
 const photoUrls = ref<Record<string, string>>({})
 const loading = ref(true)
+const loadError = ref<string | null>(null)
+const { apiErrorMessage } = useApiError()
 const filter = ref<HealthStatus | 'all'>('all')
 const listTab = ref<'active' | 'archived'>('active')
 
@@ -24,6 +26,7 @@ const showHealthFilter = computed(() => listTab.value === 'active')
 
 async function load() {
   loading.value = true
+  loadError.value = null
   try {
     plants.value = await fetchPlants({
       archived: listTab.value,
@@ -41,6 +44,9 @@ async function load() {
       })
     )
     photoUrls.value = urls
+  } catch (e: unknown) {
+    plants.value = []
+    loadError.value = apiErrorMessage(e)
   } finally {
     loading.value = false
   }
@@ -94,6 +100,12 @@ onMounted(load)
         class="h-16"
       />
     </div>
+
+    <AppLoadError
+      v-else-if="loadError"
+      :description="loadError"
+      @retry="load"
+    />
 
     <UAlert
       v-else-if="!plants.length"
