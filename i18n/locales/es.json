@@ -502,7 +502,17 @@
     "deleted": "Planta eliminada",
     "deleteTitle": "¿Eliminar «{name}»?",
     "deleteConfirmLong": "Se borrarán la planta, su historial de cuidados y sus fotos. No se puede deshacer. Si ya no la tienes, puedes archivarla.",
-    "updateHealthViaCheckIn": "Actualizar con una revisión"
+    "updateHealthViaCheckIn": "Actualizar con una revisión",
+    "searchPlaceholder": "Buscar planta…",
+    "sortAria": "Ordenar plantas",
+    "sortNextWater": "Riego",
+    "sortName": "Nombre",
+    "sortHealth": "Salud",
+    "groupBySite": "Agrupar por sitio",
+    "noSiteGroup": "Sin sitio",
+    "noSearchResults": "Sin resultados",
+    "noSearchResultsHint": "Ninguna planta coincide con «{query}».",
+    "clearSearch": "Borrar búsqueda"
   },
   "sites": {
     "title": "Sitios",

@@ -502,7 +502,17 @@
     "deleted": "Plant deleted",
     "deleteTitle": "Delete \"{name}\"?",
     "deleteConfirmLong": "The plant, its care history and photos will be deleted. This can't be undone. If you no longer have it, you can archive it instead.",
-    "updateHealthViaCheckIn": "Update with a check-in"
+    "updateHealthViaCheckIn": "Update with a check-in",
+    "searchPlaceholder": "Search plants…",
+    "sortAria": "Sort plants",
+    "sortNextWater": "Watering",
+    "sortName": "Name",
+    "sortHealth": "Health",
+    "groupBySite": "Group by site",
+    "noSiteGroup": "No site",
+    "noSearchResults": "No results",
+    "noSearchResultsHint": "No plant matches \"{query}\".",
+    "clearSearch": "Clear search"
   },
   "sites": {
     "title": "Sites",

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HealthStatus } from '#shared/types/database'
+import { filterPlants, groupPlantsBySite, sortPlants, type PlantSortMode } from '#shared/utils/plants/listView'
 
 const { t } = useI18n()
 usePageTitle(() => t('plants.title'))
@@ -10,7 +11,11 @@ const { urlFor: photoFor, ensure: ensurePhotoUrls } = usePlantPhotoUrls()
 const plants = ref<Awaited<ReturnType<typeof fetchPlants>>>([])
 const nextWaterByPlant = ref<Map<string, string>>(new Map())
 const VIEW_STORAGE_KEY = 'monstera_plants_view'
+const PREFS_STORAGE_KEY = 'monstera_plants_prefs'
 const viewMode = ref<'grid' | 'list'>('grid')
+const search = ref('')
+const sortMode = ref<PlantSortMode>('next_water')
+const groupBySite = ref(false)
 const loading = ref(true)
 const loadError = ref<string | null>(null)
 const { apiErrorMessage } = useApiError()
@@ -28,6 +33,22 @@ const filterItems = computed(() => [
 ])
 
 const showHealthFilter = computed(() => listTab.value === 'active')
+
+const sortItems = computed(() => [
+  { label: t('plants.sortNextWater'), value: 'next_water' },
+  { label: t('plants.sortName'), value: 'name' },
+  { label: t('plants.sortHealth'), value: 'health' }
+])
+
+const visiblePlants = computed(() =>
+  sortPlants(filterPlants(plants.value, search.value), sortMode.value, nextWaterByPlant.value)
+)
+
+const groups = computed(() =>
+  groupBySite.value
+    ? groupPlantsBySite(visiblePlants.value)
+    : [{ siteId: 'all', siteName: null, plants: visiblePlants.value }]
+)
 
 async function load() {
   loading.value = true
@@ -56,11 +77,19 @@ watch(viewMode, (mode) => {
     localStorage.setItem(VIEW_STORAGE_KEY, mode)
   } catch { /* private mode */ }
 })
+watch([sortMode, groupBySite], () => {
+  try {
+    localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify({ sort: sortMode.value, group: groupBySite.value }))
+  } catch { /* private mode */ }
+})
 onMounted(() => {
   try {
     const saved = localStorage.getItem(VIEW_STORAGE_KEY)
     if (saved === 'list' || saved === 'grid') viewMode.value = saved
-  } catch { /* private mode */ }
+    const prefs = JSON.parse(localStorage.getItem(PREFS_STORAGE_KEY) ?? '{}') as { sort?: string, group?: boolean }
+    if (prefs.sort === 'next_water' || prefs.sort === 'name' || prefs.sort === 'health') sortMode.value = prefs.sort
+    if (typeof prefs.group === 'boolean') groupBySite.value = prefs.group
+  } catch { /* private mode or bad JSON */ }
   void load()
 })
 </script>
@@ -93,15 +122,16 @@ onMounted(() => {
     />
 
     <div class="flex items-center gap-2">
-      <USelect
-        v-if="showHealthFilter"
-        v-model="filter"
-        :items="filterItems"
+      <UInput
+        v-model="search"
+        icon="i-lucide-search"
+        type="search"
         class="min-w-0 flex-1"
-        :aria-label="t('plants.filterAria')"
+        :placeholder="t('plants.searchPlaceholder')"
+        :aria-label="t('plants.searchPlaceholder')"
       />
       <div
-        class="ml-auto flex shrink-0 rounded-full bg-elevated p-0.5 ring-1 ring-inset ring-default"
+        class="flex shrink-0 rounded-full bg-elevated p-0.5 ring-1 ring-inset ring-default"
         role="group"
         :aria-label="t('plants.viewModeAria')"
       >
@@ -128,6 +158,31 @@ onMounted(() => {
       </div>
     </div>
 
+    <div class="flex items-center gap-2">
+      <USelect
+        v-if="showHealthFilter"
+        v-model="filter"
+        :items="filterItems"
+        class="min-w-0 flex-1"
+        :aria-label="t('plants.filterAria')"
+      />
+      <USelect
+        v-model="sortMode"
+        :items="sortItems"
+        icon="i-lucide-arrow-up-down"
+        class="min-w-0 flex-1"
+        :aria-label="t('plants.sortAria')"
+      />
+      <UButton
+        icon="i-lucide-map-pin"
+        :color="groupBySite ? 'primary' : 'neutral'"
+        :variant="groupBySite ? 'soft' : 'outline'"
+        :aria-label="t('plants.groupBySite')"
+        :aria-pressed="groupBySite"
+        @click="groupBySite = !groupBySite"
+      />
+    </div>
+
     <div
       v-if="loading"
       :class="viewMode === 'grid' ? 'grid grid-cols-2 gap-3 md:grid-cols-3' : 'space-y-2'"
@@ -146,6 +201,20 @@ onMounted(() => {
     />
 
     <AppEmptyState
+      v-else-if="plants.length && !visiblePlants.length"
+      :title="t('plants.noSearchResults')"
+      :description="t('plants.noSearchResultsHint', { query: search })"
+    >
+      <UButton
+        variant="soft"
+        icon="i-lucide-x"
+        @click="search = ''"
+      >
+        {{ t('plants.clearSearch') }}
+      </UButton>
+    </AppEmptyState>
+
+    <AppEmptyState
       v-else-if="!plants.length"
       :title="listTab === 'archived' ? t('plants.emptyArchivedTitle') : t('plants.emptyTitle')"
       :description="listTab === 'archived' ? t('plants.emptyArchivedDescription') : t('plants.emptyDescription')"
@@ -159,22 +228,40 @@ onMounted(() => {
       </UButton>
     </AppEmptyState>
 
-    <ul
+    <div
       v-else
-      :class="viewMode === 'grid' ? 'grid grid-cols-2 gap-3 md:grid-cols-3' : 'space-y-2'"
+      class="space-y-6"
     >
-      <li
-        v-for="plant in plants"
-        :key="plant.id"
+      <section
+        v-for="group in groups"
+        :key="group.siteId ?? 'none'"
       >
-        <PlantsPlantCard
-          :plant="plant"
-          :photo-src="photoFor(plant.photo_path)"
-          :archived="listTab === 'archived'"
-          :next-water-at="nextWaterByPlant.get(plant.id)"
-          :variant="viewMode"
-        />
-      </li>
-    </ul>
+        <h2
+          v-if="groupBySite"
+          class="mb-2 flex items-center gap-1.5 text-sm font-semibold text-highlighted"
+        >
+          <UIcon
+            name="i-lucide-map-pin"
+            class="size-4 text-primary"
+          />
+          {{ group.siteName ?? t('plants.noSiteGroup') }}
+          <span class="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary tabular-nums">{{ group.plants.length }}</span>
+        </h2>
+        <ul :class="viewMode === 'grid' ? 'grid grid-cols-2 gap-3 md:grid-cols-3' : 'space-y-2'">
+          <li
+            v-for="plant in group.plants"
+            :key="plant.id"
+          >
+            <PlantsPlantCard
+              :plant="plant"
+              :photo-src="photoFor(plant.photo_path)"
+              :archived="listTab === 'archived'"
+              :next-water-at="nextWaterByPlant.get(plant.id)"
+              :variant="viewMode"
+            />
+          </li>
+        </ul>
+      </section>
+    </div>
   </div>
 </template>
