@@ -861,6 +861,8 @@
     "projectedHint": "Las tareas «previstas» se calculan con el intervalo actual y se ajustan cuando completas las anteriores.",
     "pending": "Pendiente",
     "overdue": "Atrasada",
-    "dayAria": "{date}: {count} tarea | {date}: {count} tareas"
+    "dayAria": "{date}: {count} tarea | {date}: {count} tareas",
+    "filterAll": "Todas",
+    "filterAria": "Filtrar por tipo de tarea"
   }
 }

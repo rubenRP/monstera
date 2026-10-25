@@ -5,7 +5,8 @@ import { projectRecurrences } from '#shared/utils/care/projectRecurrences'
 const { t } = useI18n()
 usePageTitle(() => t('care.calendarTitle'))
 const { dateLocale } = useDateLocale()
-const { fetchPendingTasksWithIntervals, fetchResolvedTasksInRange, taskLabel, taskIcon } = useCareTasks()
+const { fetchPendingTasksWithIntervals, fetchResolvedTasksInRange, completeTask, taskLabel, taskIcon } = useCareTasks()
+const toast = useToast()
 const { apiErrorMessage } = useApiError()
 const { urlFor: photoFor, ensure: ensurePhotoUrls } = usePlantPhotoUrls()
 
@@ -19,7 +20,11 @@ interface CalendarEntry {
   status: EntryStatus
   /** Pending task shown on today because it is overdue */
   overdue: boolean
+  /** Real pending task (can be completed from here) */
+  task?: CareTask
 }
+
+type TypeFilter = CareTaskType | 'all'
 
 /** Static classes so Tailwind keeps them. */
 const TYPE_DOT: Record<CareTaskType, string> = {
@@ -34,6 +39,13 @@ const resolved = ref<CareTask[]>([])
 const pending = ref<CareTask[]>([])
 const loading = ref(true)
 const loadError = ref<string | null>(null)
+const typeFilter = ref<TypeFilter>('all')
+const completingId = ref<string | null>(null)
+
+const typeFilterItems = computed(() => [
+  { value: 'all' as const, label: t('calendar.filterAll') },
+  ...(['water', 'fertilize', 'check_in'] as CareTaskType[]).map(type => ({ value: type, label: taskLabel(type) }))
+])
 
 function startOfDay(d: Date) {
   const x = new Date(d)
@@ -114,7 +126,8 @@ const entriesByDay = computed(() => {
       plant: task.plant,
       type: task.type,
       status: 'pending',
-      overdue
+      overdue,
+      task
     })
   }
 
@@ -132,7 +145,33 @@ const entriesByDay = computed(() => {
 })
 
 function entriesFor(day: Date) {
-  return entriesByDay.value.get(dayKey(day)) ?? []
+  const entries = entriesByDay.value.get(dayKey(day)) ?? []
+  return typeFilter.value === 'all' ? entries : entries.filter(e => e.type === typeFilter.value)
+}
+
+/**
+ * Water and fertilize due today (or overdue) can be completed inline; future ones are done
+ * from the plant page so a mis-tap here cannot complete next week's watering.
+ * Check-ins need the form on the plant page.
+ */
+function canComplete(entry: CalendarEntry) {
+  return entry.status === 'pending' && !!entry.task && entry.type !== 'check_in'
+    && startOfDay(new Date(entry.task.due_at)).getTime() <= today.value.getTime()
+}
+
+async function completeEntry(entry: CalendarEntry) {
+  if (!entry.task) return
+  completingId.value = entry.id
+  try {
+    await completeTask(entry.task)
+    if (import.meta.client && 'vibrate' in navigator) navigator.vibrate(12)
+    toast.add({ title: t('home.taskDoneToast', { task: taskLabel(entry.type) }), description: entry.plant?.name, color: 'success', icon: 'i-lucide-check' })
+    await load()
+  } catch (e: unknown) {
+    toast.add({ title: t('common.error'), description: apiErrorMessage(e), color: 'error' })
+  } finally {
+    completingId.value = null
+  }
 }
 
 /** One dot per task type present that day (resolved ones faded). */
@@ -225,6 +264,30 @@ onMounted(load)
         @click="goToday"
       >
         {{ t('calendar.today') }}
+      </UButton>
+    </div>
+
+    <div
+      class="flex gap-1.5 overflow-x-auto pb-1"
+      role="group"
+      :aria-label="t('calendar.filterAria')"
+    >
+      <UButton
+        v-for="item in typeFilterItems"
+        :key="item.value"
+        size="xs"
+        class="shrink-0 rounded-full"
+        :color="typeFilter === item.value ? 'primary' : 'neutral'"
+        :variant="typeFilter === item.value ? 'solid' : 'outline'"
+        :aria-pressed="typeFilter === item.value"
+        @click="typeFilter = item.value"
+      >
+        <span
+          v-if="item.value !== 'all'"
+          class="size-2 rounded-full"
+          :class="TYPE_DOT[item.value]"
+        />
+        {{ item.label }}
       </UButton>
     </div>
 
@@ -348,10 +411,11 @@ onMounted(load)
         <li
           v-for="entry in selectedEntries"
           :key="entry.id"
+          class="flex items-center gap-2"
         >
           <NuxtLink
             :to="`/plants/${entry.plantId}`"
-            class="flex items-center gap-3 rounded-xl border bg-elevated/50 p-2.5 transition-colors hover:bg-elevated"
+            class="flex min-w-0 flex-1 items-center gap-3 rounded-xl border bg-elevated/50 p-2.5 transition-colors hover:bg-elevated"
             :class="[
               entry.status === 'projected' ? 'border-dashed border-default' : 'border-default',
               entry.overdue ? 'border-l-4 border-l-warning' : ''
@@ -391,6 +455,16 @@ onMounted(load)
               {{ statusLabel(entry) }}
             </span>
           </NuxtLink>
+          <UButton
+            v-if="canComplete(entry)"
+            icon="i-lucide-check"
+            size="lg"
+            variant="soft"
+            class="shrink-0 rounded-full"
+            :loading="completingId === entry.id"
+            :aria-label="t('home.markDoneAria', { task: taskLabel(entry.type), plant: entry.plant?.name ?? '' })"
+            @click="completeEntry(entry)"
+          />
         </li>
       </ul>
 

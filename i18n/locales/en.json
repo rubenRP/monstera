@@ -861,6 +861,8 @@
     "projectedHint": "\"Planned\" tasks use the current interval and adjust as you complete earlier ones.",
     "pending": "Pending",
     "overdue": "Overdue",
-    "dayAria": "{date}: {count} task | {date}: {count} tasks"
+    "dayAria": "{date}: {count} task | {date}: {count} tasks",
+    "filterAll": "All",
+    "filterAria": "Filter by task type"
   }
 }
