@@ -449,6 +449,8 @@ async function onUnarchive() {
         <PlantsDetailPlantCareHistoryTab
           ref="historyTabRef"
           :plant-id="id"
+          :current-height-cm="plant.height_cm"
+          :height-updated-at="plant.height_updated_at"
         />
       </template>
     </UTabs>

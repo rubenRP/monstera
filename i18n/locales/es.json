@@ -521,7 +521,15 @@
     "fertilizeSuggested": "Sugerido para esta especie",
     "unsavedTitle": "¿Descartar los cambios?",
     "unsavedDescription": "Tienes cambios sin guardar en esta planta.",
-    "discardChanges": "Descartar"
+    "discardChanges": "Descartar",
+    "photoDiary": "Diario de fotos",
+    "growthTitle": "Altura",
+    "growthDate": "Fecha",
+    "growthChartAria": "Gráfico de altura con {count} mediciones",
+    "historyDiagnosis": "Diagnóstico IA",
+    "viewPhoto": "Ver foto",
+    "showDetails": "Ver detalles",
+    "hideDetails": "Ocultar detalles"
   },
   "sites": {
     "title": "Sitios",
