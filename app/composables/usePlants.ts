@@ -185,8 +185,23 @@ export function usePlants() {
   }
 
   async function deletePlant(id: string) {
+    const uid = await requireUserId()
     const { error } = await supabase.from('plants').delete().eq('id', id)
     if (error) throw error
+    await removePlantPhotos(uid, id)
+  }
+
+  /** Best effort: the plant row is already gone, so a storage failure must not surface as a delete error. */
+  async function removePlantPhotos(uid: string, plantId: string) {
+    const folder = `${uid}/${plantId}`
+    const bucket = supabase.storage.from('plant-photos')
+    const { data: files, error: listError } = await bucket.list(folder, { limit: 1000 })
+    if (listError || !files?.length) {
+      if (listError) console.warn('[deletePlant] could not list photos', listError)
+      return
+    }
+    const { error: removeError } = await bucket.remove(files.map(f => `${folder}/${f.name}`))
+    if (removeError) console.warn('[deletePlant] could not remove photos', removeError)
   }
 
   async function movePlantToSite(plantId: string, siteId: string | null) {
