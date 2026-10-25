@@ -5,6 +5,7 @@ import {
   type WeatherMetrics
 } from '#shared/utils/weather/deriveWeatherFactor'
 import { fetchOpenMeteoMetrics } from '#shared/utils/weather/fetchOpenMeteoMetrics'
+import { externalFetchSignal } from '#shared/utils/http/timeout'
 
 export type { WeatherMetrics }
 export { deriveWeatherFactor }
@@ -21,11 +22,18 @@ export async function fetchWeatherSummary(
     timezone: 'auto',
     forecast_days: '5'
   })
-  const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`)
-  if (!res.ok) {
+  let data
+  try {
+    const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`, {
+      signal: externalFetchSignal()
+    })
+    if (!res.ok) {
+      return translate(locale, 'errors.api.weather.unavailable')
+    }
+    data = await res.json()
+  } catch {
     return translate(locale, 'errors.api.weather.unavailable')
   }
-  const data = await res.json()
   const daily = data.daily
   if (!daily?.time?.length) {
     return translate(locale, 'errors.api.weather.noForecast')

@@ -8,6 +8,7 @@ import {
   type PerenualSpeciesListItem
 } from '#shared/utils/species/searchPerenual'
 import type { SpeciesProfile } from '#shared/types/species'
+import { externalFetchSignal } from '#shared/utils/http/timeout'
 
 const BASE = 'https://perenual.com/api'
 
@@ -48,7 +49,16 @@ function isPerenualUpgradeRequired(status: number, body: string): boolean {
 }
 
 async function perenualFetch<T>(path: string, apiKey: string): Promise<T> {
-  const res = await fetch(perenualUrl(path, apiKey))
+  let res: Response
+  try {
+    res = await fetch(perenualUrl(path, apiKey), { signal: externalFetchSignal() })
+  } catch (e) {
+    throw new PerenualApiError(
+      `Perenual API unreachable: ${e instanceof Error ? e.message : String(e)}`,
+      503,
+      ''
+    )
+  }
   const body = await res.text()
   if (!res.ok) {
     throw new PerenualApiError(

@@ -1,9 +1,11 @@
 import { Agent, CursorAgentError } from '@cursor/sdk'
 import { API_ERROR_CODES } from '#shared/utils/i18n/apiErrors'
-import { buildDiagnosePrompt, extractJsonFromText } from '#shared/utils/cursor/prompts'
+import { buildDiagnosePrompt } from '#shared/utils/cursor/prompts'
+import { parseAiJson } from '#shared/utils/cursor/parseAiJson'
 import { diagnoseRequestSchema, diagnosisResponseSchema } from '#shared/utils/plants/schemas'
 import type { Plant } from '#shared/types/database'
 import { buildCursorAgentOptions } from '../utils/cursorAgentOptions'
+import { retryAgentForJson } from '../utils/cursorJsonRetry'
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
@@ -84,23 +86,15 @@ export default defineEventHandler(async (event) => {
     throwApiError(502, API_ERROR_CODES.AI_QUERY_FAILED)
   }
 
-  let diagnosis = diagnosisResponseSchema.safeParse(
-    JSON.parse(extractJsonFromText(resultText))
-  )
-  if (!diagnosis.success) {
-    const retry = await Agent.prompt(
-      `${promptText}\n\nResponde ÚNICAMENTE con el JSON, sin texto adicional.`,
-      agentOptions
-    )
-    diagnosis = diagnosisResponseSchema.safeParse(
-      JSON.parse(extractJsonFromText(retry.result ?? ''))
-    )
+  let diagnosis = parseAiJson(resultText, diagnosisResponseSchema)
+  if (!diagnosis) {
+    diagnosis = parseAiJson(await retryAgentForJson(promptText, agentOptions), diagnosisResponseSchema)
   }
-  if (!diagnosis.success) {
+  if (!diagnosis) {
     throwApiError(502, API_ERROR_CODES.AI_PARSE_FAILED)
   }
 
-  const d = diagnosis.data
+  const d = diagnosis
   const { data: saved, error: saveError } = await supabase
     .from('diagnoses')
     .insert({

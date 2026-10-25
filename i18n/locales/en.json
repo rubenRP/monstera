@@ -717,6 +717,7 @@
       "plantNameRequired": "Name is required",
       "siteNameRequired": "Site name is required",
       "symptomsMin": "Describe symptoms with at least 3 characters",
+      "imageTooLarge": "The photo is too large. Try a smaller image.",
       "homeLocationRequired": "Set your home location before recalculating",
       "plantAgeMax": "Age exceeds the maximum for the selected unit"
     }

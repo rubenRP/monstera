@@ -717,6 +717,7 @@
       "plantNameRequired": "El nombre es obligatorio",
       "siteNameRequired": "El nombre del sitio es obligatorio",
       "symptomsMin": "Describe los síntomas con al menos 3 caracteres",
+      "imageTooLarge": "La foto es demasiado grande. Prueba con una imagen más pequeña.",
       "homeLocationRequired": "Indica la ubicación del hogar antes de recalcular",
       "plantAgeMax": "La edad indicada supera el máximo para la unidad elegida"
     }

@@ -56,7 +56,8 @@ export type ArchivePlantInput = z.infer<typeof archivePlantSchema>
 export const diagnoseRequestSchema = z.object({
   plantId: z.string().uuid(),
   symptoms: z.string().min(3, VALIDATION_KEYS.SYMPTOMS_MIN),
-  imageBase64: z.string().optional(),
+  // ~7.5 MB image once base64-encoded
+  imageBase64: z.string().max(10_000_000, VALIDATION_KEYS.IMAGE_TOO_LARGE).optional(),
   mimeType: z.string().optional().default('image/jpeg')
 })
 
