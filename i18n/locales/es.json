@@ -163,7 +163,34 @@
     "wateringRecalcDone": "Riego exterior recalculado ({count})",
     "wateringRecalcErrors": "Se omitieron {count} por error.",
     "wateringRecalcSkipped": "Se omitieron {count} con riego pendiente vencido.",
-    "wateringRecalcEmpty": "No hay plantas en exterior para recalcular"
+    "wateringRecalcEmpty": "No hay plantas en exterior para recalcular",
+    "pushDisabled": "Notificaciones desactivadas en este dispositivo",
+    "pushTest": "Enviar prueba",
+    "pushTestSent": "Notificación de prueba enviada",
+    "pushTestFailed": "No se pudo enviar la prueba",
+    "disablePush": "Desactivar",
+    "pushDeniedHelp": "Has bloqueado las notificaciones. Actívalas en los ajustes del navegador o del sistema para este sitio.",
+    "pushStatus": {
+      "enabled": "Activadas",
+      "disabled": "Desactivadas",
+      "denied": "Bloqueadas",
+      "unsupported": "No disponibles",
+      "needs-install": "Requiere instalar"
+    },
+    "installTitle": "Instalar la app",
+    "installHint": "Úsala a pantalla completa desde tu pantalla de inicio y recibe recordatorios.",
+    "installAction": "Instalar Monstera",
+    "installIosTitle": "En iPhone, instala la app para recibir avisos",
+    "installIosStep1": "Abre Monstera en Safari.",
+    "installIosStep2": "Pulsa el botón Compartir (cuadrado con flecha).",
+    "installIosStep3": "Elige «Añadir a pantalla de inicio» y abre la app desde ahí.",
+    "geoUnsupported": "Tu navegador no permite obtener la ubicación",
+    "geoFound": "Ubicación detectada",
+    "geoFoundHint": "Pulsa Guardar para aplicarla.",
+    "geoFailed": "No se pudo obtener la ubicación",
+    "geoDenied": "Permiso de ubicación denegado.",
+    "geoUnavailable": "Inténtalo de nuevo o introduce las coordenadas a mano.",
+    "advanced": "Avanzado"
   },
   "home": {
     "title": "Hoy",
@@ -725,7 +752,9 @@
   "push": {
     "title": "Jardinero",
     "bodyOne": "Tienes 1 tarea de cuidado pendiente hoy",
-    "bodyMany": "Tienes {count} tareas de cuidado pendientes hoy"
+    "bodyMany": "Tienes {count} tareas de cuidado pendientes hoy",
+    "testTitle": "Monstera",
+    "testBody": "¡Las notificaciones funcionan! 🌿"
   },
   "errors": {
     "api": {
@@ -749,7 +778,8 @@
       "vapid.notConfigured": "VAPID no configurado",
       "supabase.notConfigured": "Supabase no configurado en el servidor",
       "weather.unavailable": "Datos meteorológicos no disponibles.",
-      "weather.noForecast": "Sin datos de pronóstico."
+      "weather.noForecast": "Sin datos de pronóstico.",
+      "push.noSubscription": "Este dispositivo no tiene notificaciones activas"
     },
     "validation": {
       "plantNameRequired": "El nombre es obligatorio",

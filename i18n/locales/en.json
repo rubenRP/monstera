@@ -163,7 +163,34 @@
     "wateringRecalcDone": "Outdoor watering recalculated ({count})",
     "wateringRecalcErrors": "{count} failed to update.",
     "wateringRecalcSkipped": "{count} skipped with overdue pending water task.",
-    "wateringRecalcEmpty": "No outdoor plants to recalculate"
+    "wateringRecalcEmpty": "No outdoor plants to recalculate",
+    "pushDisabled": "Notifications turned off on this device",
+    "pushTest": "Send test",
+    "pushTestSent": "Test notification sent",
+    "pushTestFailed": "Couldn't send the test",
+    "disablePush": "Turn off",
+    "pushDeniedHelp": "Notifications are blocked. Allow them for this site in your browser or system settings.",
+    "pushStatus": {
+      "enabled": "On",
+      "disabled": "Off",
+      "denied": "Blocked",
+      "unsupported": "Not available",
+      "needs-install": "Install required"
+    },
+    "installTitle": "Install the app",
+    "installHint": "Use it full screen from your home screen and get reminders.",
+    "installAction": "Install Monstera",
+    "installIosTitle": "On iPhone, install the app to get reminders",
+    "installIosStep1": "Open Monstera in Safari.",
+    "installIosStep2": "Tap the Share button (square with an arrow).",
+    "installIosStep3": "Choose \"Add to Home Screen\" and open the app from there.",
+    "geoUnsupported": "Your browser can't provide your location",
+    "geoFound": "Location found",
+    "geoFoundHint": "Tap Save to apply it.",
+    "geoFailed": "Couldn't get your location",
+    "geoDenied": "Location permission denied.",
+    "geoUnavailable": "Try again or enter the coordinates manually.",
+    "advanced": "Advanced"
   },
   "home": {
     "title": "Today",
@@ -725,7 +752,9 @@
   "push": {
     "title": "Gardener",
     "bodyOne": "You have 1 care task due today",
-    "bodyMany": "You have {count} care tasks due today"
+    "bodyMany": "You have {count} care tasks due today",
+    "testTitle": "Monstera",
+    "testBody": "Notifications are working! 🌿"
   },
   "errors": {
     "api": {
@@ -749,7 +778,8 @@
       "vapid.notConfigured": "VAPID not configured",
       "supabase.notConfigured": "Supabase not configured on server",
       "weather.unavailable": "Weather data unavailable.",
-      "weather.noForecast": "No forecast data."
+      "weather.noForecast": "No forecast data.",
+      "push.noSubscription": "This device has no active notifications"
     },
     "validation": {
       "plantNameRequired": "Name is required",
