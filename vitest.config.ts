@@ -1,14 +1,29 @@
-import { defineVitestConfig } from '@nuxt/test-utils/config'
+import { defineConfig } from 'vitest/config'
+import { defineVitestProject } from '@nuxt/test-utils/config'
 import { resolve } from 'node:path'
 
-export default defineVitestConfig({
+export default defineConfig({
   test: {
-    environment: 'node',
-    include: ['shared/**/*.test.ts']
-  },
-  resolve: {
-    alias: {
-      '#shared': resolve(__dirname, 'shared')
-    }
+    projects: [
+      {
+        resolve: {
+          alias: {
+            '#shared': resolve(__dirname, 'shared')
+          }
+        },
+        test: {
+          name: 'node',
+          environment: 'node',
+          include: ['shared/**/*.test.ts']
+        }
+      },
+      await defineVitestProject({
+        test: {
+          name: 'nuxt',
+          environment: 'nuxt',
+          include: ['app/**/*.nuxt.test.ts']
+        }
+      })
+    ]
   }
 })
