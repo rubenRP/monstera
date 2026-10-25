@@ -6,6 +6,9 @@ export interface PushPayload {
   body: string
   url?: string
   tag?: string
+  /** Tasks the notification is about, used by the "done" / "snooze" actions in sw-push.js */
+  taskIds?: string[]
+  actions?: Array<{ action: 'done' | 'snooze', title: string }>
 }
 
 function isExpiredPushSubscription(error: unknown): boolean {

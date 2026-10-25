@@ -826,7 +826,17 @@
     "bodyOne": "Tienes 1 tarea de cuidado pendiente hoy",
     "bodyMany": "Tienes {count} tareas de cuidado pendientes hoy",
     "testTitle": "Monstera",
-    "testBody": "¡Las notificaciones funcionan! 🌿"
+    "testBody": "¡Las notificaciones funcionan! 🌿",
+    "titleOne": "1 tarea para hoy",
+    "titleMany": "{count} tareas para hoy",
+    "lineWater": "💧 Regar: {plants}",
+    "lineFertilize": "🧪 Abonar: {plants}",
+    "lineCheckIn": "📋 Revisar: {plants}",
+    "andMore": "y {count} más",
+    "overdueLine": "⏰ {count} atrasadas",
+    "actionDone": "Hecho",
+    "actionSnooze": "Mañana",
+    "snoozed": "Tareas pospuestas a mañana"
   },
   "errors": {
     "api": {

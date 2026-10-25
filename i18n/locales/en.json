@@ -826,7 +826,17 @@
     "bodyOne": "You have 1 care task due today",
     "bodyMany": "You have {count} care tasks due today",
     "testTitle": "Monstera",
-    "testBody": "Notifications are working! 🌿"
+    "testBody": "Notifications are working! 🌿",
+    "titleOne": "1 task for today",
+    "titleMany": "{count} tasks for today",
+    "lineWater": "💧 Water: {plants}",
+    "lineFertilize": "🧪 Fertilize: {plants}",
+    "lineCheckIn": "📋 Check: {plants}",
+    "andMore": "and {count} more",
+    "overdueLine": "⏰ {count} overdue",
+    "actionDone": "Done",
+    "actionSnooze": "Tomorrow",
+    "snoozed": "Tasks moved to tomorrow"
   },
   "errors": {
     "api": {

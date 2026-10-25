@@ -86,6 +86,15 @@ watch(visibleSummaryTasks, (list) => {
   if (!loading.value) setTodayTaskCount(list.length)
 })
 
+/** "Done" action of the daily notification: /?action=complete&tasks=id1,id2 (with undo). */
+function completeFromNotification() {
+  if (route.query.action !== 'complete') return
+  const ids = new Set(String(route.query.tasks ?? '').split(',').filter(Boolean))
+  void router.replace({ query: { ...route.query, action: undefined, tasks: undefined } })
+  const toComplete = visibleTasks.value.filter(task => ids.has(task.id) && task.type !== 'check_in')
+  if (toComplete.length) onDoneGroup(toComplete)
+}
+
 /** Quick actions from the global "+" menu land here as ?action=… */
 watch(() => route.query.action, (action) => {
   if (action !== 'advance-water') return
@@ -156,6 +165,7 @@ async function initialLoad() {
     plants.value = await fetchPlants()
     await Promise.all([loadTasks(), fetchRecentEvents()])
     setTodayTaskCount(visibleSummaryTasks.value.length)
+    completeFromNotification()
   } catch (e: unknown) {
     loadError.value = apiErrorMessage(e)
   } finally {
