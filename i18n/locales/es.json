@@ -445,7 +445,19 @@
     "filterAria": "Filtrar por estado de salud",
     "viewModeAria": "Modo de vista",
     "viewGrid": "Ver en cuadrícula",
-    "viewList": "Ver en lista"
+    "viewList": "Ver en lista",
+    "quickWater": "Regar",
+    "quickFertilize": "Abonar",
+    "quickCheckIn": "Revisión",
+    "nextWatering": "Próximo riego",
+    "noWaterScheduled": "Sin riego programado",
+    "everyDays": "Cada {days} día | Cada {days} días",
+    "ringNow": "Ahora",
+    "ringDays": "{days} d",
+    "ringAria": "Próximo riego: {label}",
+    "taskOptionsAria": "Opciones de {task}",
+    "moreActionsAria": "Más acciones",
+    "missingCount": "{count} sin datos"
   },
   "sites": {
     "title": "Sitios",

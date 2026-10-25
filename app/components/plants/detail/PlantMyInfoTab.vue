@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CareTask, HealthStatus, Plant } from '#shared/types/database'
+import type { HealthStatus, Plant } from '#shared/types/database'
 import type { SpeciesProfile } from '#shared/types/species'
 import type { WateringScheduleResult } from '#shared/utils/care/adaptiveWatering'
 import {
@@ -14,8 +14,6 @@ const { healthLabel } = usePlantEnumLabels()
 
 const props = defineProps<{
   plant: Plant
-  pendingTasks: CareTask[]
-  actingTaskId: string | null
   readOnly?: boolean
 }>()
 
@@ -24,11 +22,8 @@ const healthNote = defineModel<string>('healthNote', { required: true })
 
 const emit = defineEmits<{
   saveHealth: []
-  completeTask: [taskId: string]
-  skipTask: [task: CareTask]
 }>()
 
-const { taskLabel, taskIcon, overdueDays, overdueLabel, fertilizeWithWater } = useCareTasks()
 const { fetchHomeLat, computeScheduleForPlant, countRecentWetSkips, fetchWateringHistoryIntervals, resolveWateringReference } = useAdaptiveWatering()
 const { snapshot: weatherSnapshot, load: loadWeather } = usePlantHomeWeather()
 const { fetchSpeciesProfile } = useSpeciesProfile()
@@ -91,15 +86,6 @@ watch(() => props.plant, () => {
   void loadWeather()
   void loadSpeciesProfile()
 }, { immediate: true, deep: true })
-
-function taskDueLabel(dueAt: string): string {
-  const overdue = overdueDays(dueAt)
-  if (overdue > 0) return overdueLabel(dueAt)
-  if (overdue === 0) return t('care.dueToday')
-  const days = -overdue
-  if (days === 1) return t('care.dueTomorrow')
-  return t('care.dueInDays', { days })
-}
 
 const plantRef = toRef(props, 'plant')
 const {
@@ -279,62 +265,6 @@ const {
         {{ plant.notes }}
       </p>
     </PlantsSpeciesPlantSpeciesSectionCard>
-
-    <div
-      v-if="!readOnly && pendingTasks.length"
-      class="space-y-2"
-    >
-      <h2 class="font-semibold text-sm">
-        {{ t('care.pendingTasks') }}
-      </h2>
-      <div
-        v-for="task in pendingTasks"
-        :key="task.id"
-        class="flex items-center justify-between p-3 rounded-lg border border-default"
-        :class="overdueDays(task.due_at) > 0 ? 'border-warning/50' : ''"
-      >
-        <div class="flex items-center gap-2 min-w-0">
-          <UIcon
-            :name="taskIcon(task.type)"
-            class="shrink-0"
-            :class="overdueDays(task.due_at) > 0 ? 'text-warning' : 'text-primary'"
-          />
-          <div class="min-w-0">
-            <p class="text-sm font-medium">
-              {{ taskLabel(task.type) }}
-              <span
-                v-if="fertilizeWithWater(task, pendingTasks)"
-                class="font-normal text-muted"
-              > · {{ t('care.fertilizeWithWater') }}</span>
-            </p>
-            <p
-              class="text-xs"
-              :class="overdueDays(task.due_at) > 0 ? 'text-warning' : 'text-muted'"
-            >
-              {{ taskDueLabel(task.due_at) }}
-            </p>
-          </div>
-        </div>
-        <div class="flex gap-1 shrink-0">
-          <UButton
-            size="sm"
-            :loading="actingTaskId === task.id"
-            @click="emit('completeTask', task.id)"
-          >
-            {{ t('common.done') }}
-          </UButton>
-          <UButton
-            size="sm"
-            variant="soft"
-            color="neutral"
-            :disabled="actingTaskId === task.id"
-            @click="emit('skipTask', task)"
-          >
-            {{ t('common.skip') }}
-          </UButton>
-        </div>
-      </div>
-    </div>
 
     <UButton
       v-if="!readOnly"

@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import type { TabsItem } from '@nuxt/ui'
 import type { CareTask, HealthStatus, PlantArchiveReason } from '#shared/types/database'
-import { getHealthBadgeClasses } from '#shared/constants/plants'
 
 const { t } = useI18n()
 const { apiErrorMessage } = useApiError()
-const { healthLabel, archiveReasonLabel } = usePlantEnumLabels()
+const { archiveReasonLabel } = usePlantEnumLabels()
 const { dateLocale } = useDateLocale()
 const route = useRoute()
 const id = route.params.id as string
@@ -14,7 +13,9 @@ const {
   fetchPlantPendingTasks,
   completeTask,
   skipTask,
-  requiresCheckInModal
+  postponeTask,
+  requiresCheckInModal,
+  taskLabel
 } = useCareTasks()
 const { submitCheckIn } = usePlantCheckIns()
 const toast = useToast()
@@ -52,20 +53,23 @@ const archivedOnLabel = computed(() => {
   })
 })
 
-const lastWateredLabel = computed(() => {
-  const iso = plant.value?.last_watered_at
-  if (!iso) return null
-  return new Date(iso).toLocaleDateString(dateLocale.value, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric'
-  })
-})
+const pendingByType = computed(() => ({
+  water: pendingTasks.value.find(task => task.type === 'water') ?? null,
+  fertilize: pendingTasks.value.find(task => task.type === 'fertilize') ?? null,
+  check_in: pendingTasks.value.find(task => task.type === 'check_in') ?? null
+}))
+
+const quickActions = computed(() => [
+  { key: 'water', label: t('plants.quickWater'), icon: 'i-lucide-droplets', task: pendingByType.value.water },
+  { key: 'fertilize', label: t('plants.quickFertilize'), icon: 'i-lucide-flask-conical', task: pendingByType.value.fertilize },
+  { key: 'check_in', label: t('plants.quickCheckIn'), icon: 'i-lucide-clipboard-check', task: pendingByType.value.check_in }
+])
 
 const menuItems = computed(() => {
   const items: Array<{ label: string, icon: string, to?: string, onSelect?: () => void }> = []
   if (!isArchived.value) {
     items.push(
+      { label: t('plants.recommendations'), icon: 'i-lucide-cloud-sun', to: `/plants/${id}/recommend` },
       { label: t('common.edit'), icon: 'i-lucide-pencil', to: `/plants/${id}/edit` },
       { label: t('plants.moveSite'), icon: 'i-lucide-map-pin', onSelect: () => { moveSiteModalOpen.value = true } },
       { label: t('plants.archive'), icon: 'i-lucide-archive', onSelect: () => { archiveModalOpen.value = true } }
@@ -127,20 +131,20 @@ async function saveHealth() {
   }
 }
 
-async function onCompleteTask(taskId: string) {
-  const task = pendingTasks.value.find(t => t.id === taskId)
-  if (!task) return
+async function onCompleteTask(task: CareTask) {
   if (requiresCheckInModal(task.type)) {
     taskToCheckIn.value = task
     checkInModalOpen.value = true
     return
   }
-  actingTaskId.value = taskId
+  actingTaskId.value = task.id
   try {
     await completeTask(task)
     pendingTasks.value = await fetchPlantPendingTasks(id)
     plant.value = await fetchPlant(id)
     refreshCareHistory()
+    if (import.meta.client && 'vibrate' in navigator) navigator.vibrate(12)
+    toast.add({ title: t('home.taskDoneToast', { task: taskLabel(task.type) }), color: 'success', icon: 'i-lucide-check' })
   } catch (e: unknown) {
     toast.add({
       title: t('common.error'),
@@ -215,6 +219,19 @@ async function confirmSkip(task: CareTask, soilStillWet: boolean) {
       description: apiErrorMessage(e),
       color: 'error'
     })
+  } finally {
+    actingTaskId.value = null
+  }
+}
+
+async function onPostpone(task: CareTask, days: number) {
+  actingTaskId.value = task.id
+  try {
+    await postponeTask(task, days)
+    pendingTasks.value = await fetchPlantPendingTasks(id)
+    toast.add({ title: t('home.postponedToast', { days }, days), color: 'success', icon: 'i-lucide-clock' })
+  } catch (e: unknown) {
+    toast.add({ title: t('common.error'), description: apiErrorMessage(e), color: 'error' })
   } finally {
     actingTaskId.value = null
   }
@@ -300,44 +317,11 @@ async function onDelete() {
     v-else-if="plant"
     class="space-y-5"
   >
-    <div class="flex items-start justify-between gap-2">
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center gap-2 flex-wrap">
-          <h1 class="text-2xl font-bold">
-            {{ plant.name }}
-          </h1>
-          <span
-            class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full"
-            :class="getHealthBadgeClasses(plant.health_status)"
-          >
-            {{ healthLabel(plant.health_status) }}
-          </span>
-        </div>
-        <p
-          v-if="plant.species"
-          class="text-muted text-sm mt-0.5"
-        >
-          {{ plant.species }}
-        </p>
-        <p class="mt-1.5 flex items-center gap-1.5 text-sm text-muted">
-          <UIcon
-            name="i-lucide-droplets"
-            class="size-4 shrink-0 text-primary"
-          />
-          <span>{{ t('plants.lastWatered') }}</span>
-          <span class="font-medium text-highlighted">
-            {{ lastWateredLabel ?? t('plants.lastWateredNever') }}
-          </span>
-        </p>
-      </div>
-      <UDropdownMenu :items="menuItems">
-        <UButton
-          icon="i-lucide-more-vertical"
-          variant="ghost"
-          color="neutral"
-        />
-      </UDropdownMenu>
-    </div>
+    <PlantsDetailPlantDetailHero
+      :plant="plant"
+      :photo-src="photoUrl"
+      :menu-items="menuItems"
+    />
 
     <UAlert
       v-if="isArchived && plant.archive_reason"
@@ -348,36 +332,55 @@ async function onDelete() {
       :description="t('plants.archivedOn', { date: archivedOnLabel })"
     />
 
-    <img
-      v-if="photoUrl"
-      :src="photoUrl"
-      :alt="plant.name"
-      class="w-full aspect-[4/3] object-cover rounded-2xl"
-    >
-
     <div
       v-if="!isArchived"
-      class="grid grid-cols-2 gap-2"
+      class="grid grid-cols-4 gap-2"
     >
-      <UButton
+      <button
+        v-for="action in quickActions"
+        :key="action.key"
+        type="button"
+        class="flex flex-col items-center gap-1.5 rounded-2xl border border-default bg-elevated/50 px-1 py-3 text-xs font-medium transition-colors hover:border-primary/40 hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-primary"
+        :disabled="!action.task || actingTaskId === action.task.id"
+        @click="action.task && onCompleteTask(action.task)"
+      >
+        <span class="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <UIcon
+            v-if="!(action.task && actingTaskId === action.task.id)"
+            :name="action.icon"
+            class="size-5"
+          />
+          <UIcon
+            v-else
+            name="i-lucide-loader-circle"
+            class="size-5 animate-spin"
+          />
+        </span>
+        {{ action.label }}
+      </button>
+      <NuxtLink
         :to="`/plants/${id}/diagnose`"
-        block
-        variant="soft"
-        icon="i-lucide-stethoscope"
-        size="sm"
+        class="flex flex-col items-center gap-1.5 rounded-2xl border border-default bg-elevated/50 px-1 py-3 text-xs font-medium transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-2 focus-visible:outline-primary"
       >
+        <span class="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <UIcon
+            name="i-lucide-stethoscope"
+            class="size-5"
+          />
+        </span>
         {{ t('plants.diagnose') }}
-      </UButton>
-      <UButton
-        :to="`/plants/${id}/recommend`"
-        block
-        variant="soft"
-        icon="i-lucide-cloud-sun"
-        size="sm"
-      >
-        {{ t('plants.recommendations') }}
-      </UButton>
+      </NuxtLink>
     </div>
+
+    <PlantsDetailPlantCareStatusCard
+      v-if="!isArchived"
+      :plant="plant"
+      :pending-tasks="pendingTasks"
+      :acting-task-id="actingTaskId"
+      @complete="onCompleteTask"
+      @skip="onSkipClick"
+      @postpone="onPostpone"
+    />
 
     <UTabs
       v-model="activeTab"
@@ -389,12 +392,8 @@ async function onDelete() {
           v-model:health-status="healthStatus"
           v-model:health-note="healthNote"
           :plant="plant"
-          :pending-tasks="pendingTasks"
-          :acting-task-id="actingTaskId"
           :read-only="isArchived"
           @save-health="saveHealth"
-          @complete-task="onCompleteTask"
-          @skip-task="onSkipClick"
         />
       </template>
 

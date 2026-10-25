@@ -445,7 +445,19 @@
     "filterAria": "Filter by health status",
     "viewModeAria": "View mode",
     "viewGrid": "Grid view",
-    "viewList": "List view"
+    "viewList": "List view",
+    "quickWater": "Water",
+    "quickFertilize": "Fertilize",
+    "quickCheckIn": "Check-in",
+    "nextWatering": "Next watering",
+    "noWaterScheduled": "No watering scheduled",
+    "everyDays": "Every {days} day | Every {days} days",
+    "ringNow": "Now",
+    "ringDays": "{days} d",
+    "ringAria": "Next watering: {label}",
+    "taskOptionsAria": "{task} options",
+    "moreActionsAria": "More actions",
+    "missingCount": "{count} missing"
   },
   "sites": {
     "title": "Sites",
