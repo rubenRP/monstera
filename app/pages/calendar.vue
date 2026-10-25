@@ -8,6 +8,8 @@ const { fetchTasksInRange, fetchResolvedTasksInRange, taskLabel, taskIcon } = us
 const weekStart = ref(startOfWeek(new Date()))
 const tasks = ref<CareTask[]>([])
 const loading = ref(true)
+const loadError = ref<string | null>(null)
+const { apiErrorMessage } = useApiError()
 
 function startOfWeek(d: Date) {
   const x = new Date(d)
@@ -49,6 +51,7 @@ const overdueDisplayDay = computed(() => {
 
 async function load() {
   loading.value = true
+  loadError.value = null
   const end = new Date(weekStart.value)
   end.setDate(end.getDate() + 7)
   end.setMilliseconds(-1)
@@ -58,6 +61,9 @@ async function load() {
       fetchResolvedTasksInRange(weekStart.value, end)
     ])
     tasks.value = [...pending, ...resolved]
+  } catch (e: unknown) {
+    tasks.value = []
+    loadError.value = apiErrorMessage(e)
   } finally {
     loading.value = false
   }
@@ -133,6 +139,12 @@ onMounted(load)
     <USkeleton
       v-if="loading"
       class="h-64"
+    />
+
+    <AppLoadError
+      v-else-if="loadError"
+      :description="loadError"
+      @retry="load"
     />
 
     <div

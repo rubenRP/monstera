@@ -30,6 +30,7 @@
     "loading": "Loading…",
     "done": "Done",
     "skip": "Skip",
+    "undo": "Undo",
     "new": "New",
     "optional": "Optional",
     "notIndicated": "Not specified",
@@ -43,7 +44,10 @@
     "cm": "cm",
     "photoPicker": "Take or choose a photo",
     "photoPickerHint": "JPG or PNG",
-    "photoPickerChange": "Change photo"
+    "photoPickerChange": "Change photo",
+    "retry": "Retry",
+    "loadErrorTitle": "Couldn't load",
+    "loadErrorDescription": "Check your connection and try again."
   },
   "auth": {
     "loginSubtitle": "Sign in with your email",
@@ -189,6 +193,8 @@
     "healthHealthy": "{count} healthy",
     "allCaughtUp": "All caught up!",
     "completedToday": "Handled today",
+    "taskDoneToast": "Done: {task}",
+    "taskSkippedToast": "Skipped: {task}",
     "taskPostponed": "Postponed",
     "noTasksToday": "No watering or fertilizing tasks due today.",
     "noTasksUpcoming": "No pending tasks in the next 7 days.",
@@ -420,7 +426,10 @@
       "placement_exposure": "Full outdoor sun may be too harsh for a shade-loving variety",
       "generic_low_light_far": "Low light and far from the window may limit growth",
       "generic_direct_sun": "Direct sun indoors can scorch leaves — consider filtered light"
-    }
+    },
+    "notFoundTitle": "Plant not found",
+    "notFoundDescription": "It may have been deleted.",
+    "backToList": "See my plants"
   },
   "sites": {
     "title": "Sites",
@@ -721,6 +730,13 @@
       "imageTooLarge": "The photo is too large. Try a smaller image.",
       "homeLocationRequired": "Set your home location before recalculating",
       "plantAgeMax": "Age exceeds the maximum for the selected unit"
+    },
+    "page": {
+      "notFoundTitle": "Page not found",
+      "notFoundDescription": "This page doesn't exist or has moved.",
+      "genericTitle": "Something went wrong",
+      "genericDescription": "An unexpected error occurred. Go back home and try again.",
+      "goHome": "Back to home"
     }
   }
 }

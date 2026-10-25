@@ -30,6 +30,7 @@
     "loading": "Cargando…",
     "done": "Hecho",
     "skip": "Omitir",
+    "undo": "Deshacer",
     "new": "Nueva",
     "optional": "Opcional",
     "notIndicated": "No indicado",
@@ -43,7 +44,10 @@
     "cm": "cm",
     "photoPicker": "Haz una foto o elige una",
     "photoPickerHint": "JPG o PNG",
-    "photoPickerChange": "Cambiar foto"
+    "photoPickerChange": "Cambiar foto",
+    "retry": "Reintentar",
+    "loadErrorTitle": "No se pudo cargar",
+    "loadErrorDescription": "Comprueba tu conexión e inténtalo de nuevo."
   },
   "auth": {
     "loginSubtitle": "Inicia sesión con tu email",
@@ -189,6 +193,8 @@
     "healthHealthy": "{count} bien",
     "allCaughtUp": "¡Todo al día!",
     "completedToday": "Resueltas hoy",
+    "taskDoneToast": "Hecho: {task}",
+    "taskSkippedToast": "Omitido: {task}",
     "taskPostponed": "Pospuesto",
     "noTasksToday": "No hay tareas de riego o fertilización pendientes para hoy.",
     "noTasksUpcoming": "No hay tareas pendientes en los próximos 7 días.",
@@ -420,7 +426,10 @@
       "placement_exposure": "El sol exterior pleno puede ser demasiado para una planta de sombra",
       "generic_low_light_far": "Poca luz y lejos de la ventana pueden limitar el crecimiento",
       "generic_direct_sun": "Sol directo en interior puede quemar hojas — valora luz filtrada"
-    }
+    },
+    "notFoundTitle": "Planta no encontrada",
+    "notFoundDescription": "Puede que se haya eliminado.",
+    "backToList": "Ver mis plantas"
   },
   "sites": {
     "title": "Sitios",
@@ -721,6 +730,13 @@
       "imageTooLarge": "La foto es demasiado grande. Prueba con una imagen más pequeña.",
       "homeLocationRequired": "Indica la ubicación del hogar antes de recalcular",
       "plantAgeMax": "La edad indicada supera el máximo para la unidad elegida"
+    },
+    "page": {
+      "notFoundTitle": "Página no encontrada",
+      "notFoundDescription": "Esta página no existe o se ha movido.",
+      "genericTitle": "Algo ha ido mal",
+      "genericDescription": "Ha ocurrido un error inesperado. Vuelve al inicio e inténtalo de nuevo.",
+      "goHome": "Volver al inicio"
     }
   }
 }
