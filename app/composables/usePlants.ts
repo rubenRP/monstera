@@ -122,7 +122,7 @@ export function usePlants() {
   async function updatePlant(id: string, form: PlantFormInput, photoFile?: File) {
     const { data: existing, error: fetchError } = await supabase
       .from('plants')
-      .select('archived_at')
+      .select('archived_at, species')
       .eq('id', id)
       .single()
     if (fetchError) throw fetchError
@@ -130,8 +130,11 @@ export function usePlants() {
       throw new Error('PLANT_ARCHIVED')
     }
 
+    const speciesChanged = (existing?.species ?? null) !== (form.species || null)
     const payload = {
       ...sanitizePlantPayload(form),
+      // A manual base interval belongs to the previous species
+      ...(speciesChanged ? { watering_base_override_days: null } : {}),
       ...(photoFile ? { photo_path: await uploadPhoto(photoFile, id) } : {})
     }
 

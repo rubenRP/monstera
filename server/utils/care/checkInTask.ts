@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { idealCheckInDueAt } from '#shared/utils/care/checkInSchedule'
+import { replacePendingCareTask } from '#shared/utils/care/pendingTask'
 
 type PlantCheckInRow = {
   id: string
@@ -26,20 +27,5 @@ export async function upsertPendingCheckInTask(
     due = new Date()
   }
 
-  const { error: delError } = await supabase
-    .from('care_tasks')
-    .delete()
-    .eq('plant_id', plant.id)
-    .eq('type', 'check_in')
-    .eq('status', 'pending')
-  if (delError) throw delError
-
-  const { error: insError } = await supabase.from('care_tasks').insert({
-    plant_id: plant.id,
-    user_id: plant.user_id,
-    type: 'check_in',
-    due_at: due.toISOString(),
-    status: 'pending'
-  })
-  if (insError) throw insError
+  await replacePendingCareTask(supabase, plant.id, 'check_in', due.toISOString())
 }

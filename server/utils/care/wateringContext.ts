@@ -140,8 +140,9 @@ export async function resolveWateringReferenceForPlant(
   const locale = options.locale ?? 'es'
   const allowCursor = options.allowCursor ?? false
 
-  if (options.overrideDays != null && options.overrideDays >= 1) {
-    return { referenceDays: options.overrideDays, source: 'override' }
+  const overrideDays = options.overrideDays ?? plant.watering_base_override_days
+  if (overrideDays != null && overrideDays >= 1) {
+    return { referenceDays: overrideDays, source: 'override' }
   }
 
   const species = plant.species?.trim()

@@ -16,6 +16,7 @@ import { WATERING_HISTORY_LOOKBACK_DAYS, daysBetweenWateringCompletions } from '
 import { hasOverduePendingWaterTask as queryOverduePendingWaterTask } from '#shared/utils/care/overdueWaterTask'
 import { wasCareTaskResolvedToday } from '#shared/utils/care/resolvedToday'
 import type { WateringRecalcSource } from '#shared/utils/care/wateringRecalcEvent'
+import { replacePendingCareTask } from '#shared/utils/care/pendingTask'
 
 const PLANT_SELECT = '*, site:sites(*)'
 
@@ -208,7 +209,6 @@ export function useAdaptiveWatering() {
       .maybeSingle()
     if (row?.archived_at) return null
 
-    const uid = await requireUserId()
     const before = await fetchWateringSnapshot(plantId)
 
     const scheduleFromToday = options?.scheduleFromToday
@@ -219,22 +219,7 @@ export function useAdaptiveWatering() {
       scheduleFromToday
     })
 
-    const { error: delError } = await supabase
-      .from('care_tasks')
-      .delete()
-      .eq('plant_id', plantId)
-      .eq('type', 'water')
-      .eq('status', 'pending')
-    if (delError) throw delError
-
-    const { error: insError } = await supabase.from('care_tasks').insert({
-      plant_id: plantId,
-      user_id: uid,
-      type: 'water',
-      due_at: schedule.nextDueAt,
-      status: 'pending'
-    })
-    if (insError) throw insError
+    await replacePendingCareTask(supabase, plantId, 'water', schedule.nextDueAt)
 
     if (options?.source) {
       await logWateringRecalcEvent({
@@ -293,7 +278,6 @@ export function useAdaptiveWatering() {
 
     if (!plant) return
 
-    const uid = await requireUserId()
     const waterDueAtResolved = waterDueAt
 
     const ideal = idealFertilizeDueAt(
@@ -306,22 +290,7 @@ export function useAdaptiveWatering() {
       plant.watering_interval_days
     )
 
-    const { error: delError } = await supabase
-      .from('care_tasks')
-      .delete()
-      .eq('plant_id', plantId)
-      .eq('type', 'fertilize')
-      .eq('status', 'pending')
-    if (delError) throw delError
-
-    const { error: insError } = await supabase.from('care_tasks').insert({
-      plant_id: plantId,
-      user_id: uid,
-      type: 'fertilize',
-      due_at: aligned.toISOString(),
-      status: 'pending'
-    })
-    if (insError) throw insError
+    await replacePendingCareTask(supabase, plantId, 'fertilize', aligned.toISOString())
   }
 
   async function rescheduleCheckIn(
@@ -334,8 +303,6 @@ export function useAdaptiveWatering() {
       .eq('id', plantId)
       .maybeSingle()
     if (row?.archived_at) return
-
-    const uid = await requireUserId()
 
     const interval = row?.check_in_interval_days ?? 30
     let due: Date
@@ -356,28 +323,16 @@ export function useAdaptiveWatering() {
       }
     }
 
-    const { error: delError } = await supabase
-      .from('care_tasks')
-      .delete()
-      .eq('plant_id', plantId)
-      .eq('type', 'check_in')
-      .eq('status', 'pending')
-    if (delError) throw delError
-
-    const { error: insError } = await supabase.from('care_tasks').insert({
-      plant_id: plantId,
-      user_id: uid,
-      type: 'check_in',
-      due_at: due.toISOString(),
-      status: 'pending'
-    })
-    if (insError) throw insError
+    await replacePendingCareTask(supabase, plantId, 'check_in', due.toISOString())
   }
 
   async function applySuggestedBaseInterval(plantId: string, baseDays: number): Promise<void> {
     const { error } = await supabase
       .from('plants')
-      .update({ watering_base_interval_days: baseDays })
+      .update({
+        watering_base_interval_days: baseDays,
+        watering_base_override_days: baseDays
+      })
       .eq('id', plantId)
     if (error) throw error
     await rescheduleWatering(plantId, {

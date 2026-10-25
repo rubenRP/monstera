@@ -30,6 +30,7 @@ export function createPlant(overrides: Partial<Plant> = {}): Plant {
     health_status_note: null,
     health_status_updated_at: null,
     watering_base_interval_days: 7,
+    watering_base_override_days: null,
     watering_interval_days: 7,
     fertilizing_interval_days: 30,
     last_watered_at: null,

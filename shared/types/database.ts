@@ -43,6 +43,8 @@ export interface Plant {
   health_status_note: string | null
   health_status_updated_at: string | null
   watering_base_interval_days: number
+  /** User-applied base interval (e.g. AI recommendation); wins over species reference. */
+  watering_base_override_days: number | null
   watering_interval_days: number
   fertilizing_interval_days: number
   last_watered_at: string | null

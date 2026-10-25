@@ -5,6 +5,7 @@ import {
 } from '#shared/utils/care/deduplicateTasks'
 import { isSameCalendarDay } from '#shared/utils/care/alignFertilize'
 import { taskOverdueDays } from '#shared/utils/care/taskDue'
+import { replacePendingCareTask } from '#shared/utils/care/pendingTask'
 import { assertOnline } from '~/utils/offline'
 
 export function useCareTasks() {
@@ -142,7 +143,6 @@ export function useCareTasks() {
 
   async function completeTask(task: CareTask) {
     assertOnline()
-    await deleteOverlappingPendingTasks(task, task.id)
 
     const now = new Date().toISOString()
     const { error: taskError } = await supabase
@@ -150,12 +150,14 @@ export function useCareTasks() {
       .update({ status: 'done', completed_at: now })
       .eq('id', task.id)
     if (taskError) throw taskError
+    await deleteOverlappingPendingTasks(task, task.id)
 
     if (task.type === 'water') {
-      await supabase
+      const { error: plantError } = await supabase
         .from('plants')
         .update({ last_watered_at: now })
         .eq('id', task.plant_id)
+      if (plantError) throw plantError
 
       await rescheduleWatering(task.plant_id, {
         wetSkipCountOverride: 0,
@@ -166,10 +168,11 @@ export function useCareTasks() {
     }
 
     if (task.type === 'fertilize') {
-      await supabase
+      const { error: plantError } = await supabase
         .from('plants')
         .update({ last_fertilized_at: now })
         .eq('id', task.plant_id)
+      if (plantError) throw plantError
 
       await rescheduleFertilizing(task.plant_id)
       return
@@ -193,26 +196,19 @@ export function useCareTasks() {
     return (count ?? 0) > 0
   }
 
-  const { requireUserId } = useRequireUserId()
-
+  /** Moves the plant's pending task of `type` to today (or creates it). */
   async function createAdvanceTask(plantId: string, type: CareTaskType = 'water') {
     assertOnline()
-    const uid = await requireUserId()
 
     if (await hasPendingTaskDueToday(plantId, type)) {
       return null
     }
 
+    const moved = await replacePendingCareTask(supabase, plantId, type, new Date().toISOString())
     const { data, error } = await supabase
       .from('care_tasks')
-      .insert({
-        plant_id: plantId,
-        user_id: uid,
-        type,
-        due_at: new Date().toISOString(),
-        status: 'pending'
-      })
       .select(taskSelect)
+      .eq('id', moved.id)
       .single()
     if (error) throw error
     return data as CareTask
@@ -220,7 +216,6 @@ export function useCareTasks() {
 
   async function skipTask(task: CareTask, options?: { soilStillWet?: boolean }) {
     assertOnline()
-    await deleteOverlappingPendingTasks(task, task.id)
 
     const now = new Date().toISOString()
     const { error } = await supabase
@@ -232,6 +227,7 @@ export function useCareTasks() {
       })
       .eq('id', task.id)
     if (error) throw error
+    await deleteOverlappingPendingTasks(task, task.id)
 
     if (task.type === 'water') {
       const wetCount = await countRecentWetSkips(task.plant_id)

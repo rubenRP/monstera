@@ -33,6 +33,7 @@ export interface Database {
           health_status_note: string | null
           health_status_updated_at: string | null
           watering_base_interval_days: number
+          watering_base_override_days: number | null
           watering_interval_days: number
           fertilizing_interval_days: number
           last_watered_at: string | null
@@ -67,6 +68,7 @@ export interface Database {
           health_status_note?: string | null
           health_status_updated_at?: string | null
           watering_base_interval_days?: number
+          watering_base_override_days?: number | null
           watering_interval_days?: number
           fertilizing_interval_days?: number
           last_watered_at?: string | null
@@ -101,6 +103,7 @@ export interface Database {
           health_status_note?: string | null
           health_status_updated_at?: string | null
           watering_base_interval_days?: number
+          watering_base_override_days?: number | null
           watering_interval_days?: number
           fertilizing_interval_days?: number
           last_watered_at?: string | null

@@ -12,6 +12,7 @@ import { hasOverduePendingWaterTask } from '#shared/utils/care/overdueWaterTask'
 import { loadWaterResolvedTodayPlantIds } from '#shared/utils/care/resolvedToday'
 import { inferPreviousWaterDueAt, type WateringRecalcSource } from '#shared/utils/care/wateringRecalcEvent'
 import type { AppLocale } from '#shared/utils/i18n/locale'
+import { replacePendingCareTask } from '#shared/utils/care/pendingTask'
 import { upsertPendingCheckInTask } from './checkInTask'
 import { fetchWateringHistoryIntervals } from './wateringHistory'
 import {
@@ -120,24 +121,7 @@ export async function runWateringRecalcBatch(
         .eq('id', plant.id)
       if (updateError) throw updateError
 
-      const { error: delWaterError } = await options.supabase
-        .from('care_tasks')
-        .delete()
-        .eq('plant_id', plant.id)
-        .eq('type', 'water')
-        .eq('status', 'pending')
-      if (delWaterError) throw delWaterError
-
-      const { error: insWaterError } = await options.supabase
-        .from('care_tasks')
-        .insert({
-          plant_id: plant.id,
-          user_id: plant.user_id,
-          type: 'water',
-          due_at: schedule.nextDueAt,
-          status: 'pending'
-        })
-      if (insWaterError) throw insWaterError
+      await replacePendingCareTask(options.supabase, plant.id, 'water', schedule.nextDueAt)
 
       await logWateringRecalcEvent(options.supabase, {
         userId: plant.user_id,
@@ -160,24 +144,7 @@ export async function runWateringRecalcBatch(
         schedule.effectiveIntervalDays
       )
 
-      const { error: delFertilizeError } = await options.supabase
-        .from('care_tasks')
-        .delete()
-        .eq('plant_id', plant.id)
-        .eq('type', 'fertilize')
-        .eq('status', 'pending')
-      if (delFertilizeError) throw delFertilizeError
-
-      const { error: insFertilizeError } = await options.supabase
-        .from('care_tasks')
-        .insert({
-          plant_id: plant.id,
-          user_id: plant.user_id,
-          type: 'fertilize',
-          due_at: aligned.toISOString(),
-          status: 'pending'
-        })
-      if (insFertilizeError) throw insFertilizeError
+      await replacePendingCareTask(options.supabase, plant.id, 'fertilize', aligned.toISOString())
 
       await upsertPendingCheckInTask(options.supabase, {
         id: plant.id,

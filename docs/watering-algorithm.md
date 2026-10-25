@@ -1,10 +1,10 @@
 # Watering algorithm
 
-Adaptive watering schedules one pending `water` task per plant. Logic lives in `shared/utils/care/`.
+Adaptive watering schedules one pending `water` task per plant (enforced by a partial unique index; writes go through the `replace_pending_care_task` RPC via `shared/utils/care/pendingTask.ts`). Logic lives in `shared/utils/care/`.
 
 ## Flow
 
-1. **Reference interval** — species profile (Perenual), AI fallback, or 7-day default (`resolveWateringReference.ts`).
+1. **Reference interval** — manual override (`plants.watering_base_override_days`, set when applying an AI recommendation; cleared when the species changes), else species profile (Perenual), AI fallback, or 7-day default (`resolveWateringReference.ts`).
 2. **Environmental interval** — reference × product of factors below (rounded, clamped 1–90 days).
 3. **History blend** — with 3+ completed watering intervals, blend up to 60% toward the median real interval (`wateringHistory.ts`).
 4. **Next due date** — `last_watered_at + effective interval + wet delay`, or today if overdue (`computeNextWateringDue`).
