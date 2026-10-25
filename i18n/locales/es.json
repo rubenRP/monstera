@@ -658,7 +658,22 @@
     "updateHealthTitle": "¿Actualizar estado de la planta?",
     "updateHealthBody": "La IA sugiere cambiar el estado según el diagnóstico.",
     "updateHealth": "Actualizar estado",
-    "keepCurrent": "Mantener actual"
+    "keepCurrent": "Mantener actual",
+    "examples": [
+      "Hojas amarillas",
+      "Puntas marrones",
+      "Hojas caídas",
+      "Manchas en las hojas",
+      "Bichos o telarañas",
+      "Tallo blando"
+    ],
+    "progressPhoto": "Analizando la foto…",
+    "progressReading": "Leyendo los síntomas…",
+    "progressCauses": "Buscando causas probables…",
+    "progressSlow": "Está tardando más de lo normal; puedes esperar o cancelar.",
+    "cancelled": "Diagnóstico cancelado",
+    "suggestedHealth": "La IA sugiere marcar la planta como",
+    "disclaimer": "Orientación generada por IA a partir de tu descripción. Si la planta empeora, consulta en un vivero."
   },
   "recommend": {
     "title": "Recomendaciones",

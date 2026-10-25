@@ -658,7 +658,22 @@
     "updateHealthTitle": "Update plant status?",
     "updateHealthBody": "The AI suggests changing the status based on the diagnosis.",
     "updateHealth": "Update status",
-    "keepCurrent": "Keep current"
+    "keepCurrent": "Keep current",
+    "examples": [
+      "Yellow leaves",
+      "Brown tips",
+      "Dropping leaves",
+      "Spots on leaves",
+      "Bugs or webbing",
+      "Soft stem"
+    ],
+    "progressPhoto": "Analysing the photo…",
+    "progressReading": "Reading the symptoms…",
+    "progressCauses": "Looking for likely causes…",
+    "progressSlow": "This is taking longer than usual; you can wait or cancel.",
+    "cancelled": "Diagnosis cancelled",
+    "suggestedHealth": "The AI suggests marking the plant as",
+    "disclaimer": "AI guidance based on your description. If the plant gets worse, ask at a garden centre."
   },
   "recommend": {
     "title": "Recommendations",

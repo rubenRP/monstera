@@ -12,12 +12,18 @@ export function useAiApi() {
     return { Authorization: `Bearer ${token}`, ...localeHeaders() }
   }
 
-  async function diagnose(plantId: string, symptoms: string, imageBase64?: string) {
+  async function diagnose(
+    plantId: string,
+    symptoms: string,
+    image?: { base64: string, mimeType: string },
+    signal?: AbortSignal
+  ) {
     const headers = await getAuthHeader()
     return $fetch<{ diagnosis: DiagnosisResponse, record: unknown }>('/api/diagnose', {
       method: 'POST',
       headers,
-      body: { plantId, symptoms, imageBase64 }
+      body: { plantId, symptoms, imageBase64: image?.base64, mimeType: image?.mimeType },
+      signal
     })
   }
 
