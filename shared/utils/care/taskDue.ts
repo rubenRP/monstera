@@ -7,7 +7,8 @@ export function taskOverdueDays(dueAt: string, now = new Date()): number {
   const today = new Date(now)
   today.setHours(0, 0, 0, 0)
   const diff = today.getTime() - due.getTime()
-  return Math.floor(diff / (1000 * 60 * 60 * 24))
+  // Both are local midnights, so diff is whole days ± 1 h across a DST change: round, don't floor
+  return Math.round(diff / (1000 * 60 * 60 * 24))
 }
 
 export function formatTaskOverdueLabel(days: number, locale: AppLocale = 'es'): string {

@@ -438,7 +438,14 @@
     },
     "notFoundTitle": "Plant not found",
     "notFoundDescription": "It may have been deleted.",
-    "backToList": "See my plants"
+    "backToList": "See my plants",
+    "waterToday": "Water today",
+    "waterInDays": "Water in {days} day | Water in {days} days",
+    "waterOverdueShort": "Water {days}d overdue",
+    "filterAria": "Filter by health status",
+    "viewModeAria": "View mode",
+    "viewGrid": "Grid view",
+    "viewList": "List view"
   },
   "sites": {
     "title": "Sites",

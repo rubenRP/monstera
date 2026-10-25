@@ -438,7 +438,14 @@
     },
     "notFoundTitle": "Planta no encontrada",
     "notFoundDescription": "Puede que se haya eliminado.",
-    "backToList": "Ver mis plantas"
+    "backToList": "Ver mis plantas",
+    "waterToday": "Regar hoy",
+    "waterInDays": "Regar en {days} día | Regar en {days} días",
+    "waterOverdueShort": "Riego atrasado {days} d",
+    "filterAria": "Filtrar por estado de salud",
+    "viewModeAria": "Modo de vista",
+    "viewGrid": "Ver en cuadrícula",
+    "viewList": "Ver en lista"
   },
   "sites": {
     "title": "Sitios",

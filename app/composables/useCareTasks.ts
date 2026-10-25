@@ -93,6 +93,22 @@ export function useCareTasks() {
     return fetchPendingTasks({ plantId })
   }
 
+  /** due_at of each plant's pending task of `type` (one per plant). */
+  async function fetchPendingDueByPlant(type: CareTaskType = 'water') {
+    const { data, error } = await supabase
+      .from('care_tasks')
+      .select('plant_id, due_at')
+      .eq('status', 'pending')
+      .eq('type', type)
+      .order('due_at')
+    if (error) throw error
+    const map = new Map<string, string>()
+    for (const row of data ?? []) {
+      if (!map.has(row.plant_id)) map.set(row.plant_id, row.due_at)
+    }
+    return map
+  }
+
   async function fetchCareHistory(plantId: string, limit = 50) {
     const { data, error } = await supabase
       .from('care_tasks')
@@ -314,6 +330,7 @@ export function useCareTasks() {
     fetchTodayCompletedTasks,
     fetchUpcomingTasks,
     fetchPlantPendingTasks,
+    fetchPendingDueByPlant,
     fetchCareHistory,
     fetchTasksInRange,
     fetchResolvedTasksInRange,

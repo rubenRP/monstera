@@ -4,8 +4,12 @@ import type { HealthStatus } from '#shared/types/database'
 const { t } = useI18n()
 const { healthOptions } = usePlantEnumLabels()
 const { fetchPlants } = usePlants()
+const { fetchPendingDueByPlant } = useCareTasks()
+const { urlFor: photoFor, ensure: ensurePhotoUrls } = usePlantPhotoUrls()
 const plants = ref<Awaited<ReturnType<typeof fetchPlants>>>([])
-const photoUrls = ref<Record<string, string>>({})
+const nextWaterByPlant = ref<Map<string, string>>(new Map())
+const VIEW_STORAGE_KEY = 'monstera_plants_view'
+const viewMode = ref<'grid' | 'list'>('grid')
 const loading = ref(true)
 const loadError = ref<string | null>(null)
 const { apiErrorMessage } = useApiError()
@@ -32,18 +36,11 @@ async function load() {
       archived: listTab.value,
       filterStatus: showHealthFilter.value && filter.value !== 'all' ? filter.value : undefined
     })
-    const { getSignedPhotoUrl } = usePlants()
-    const urls: Record<string, string> = {}
-    await Promise.all(
-      plants.value.map(async (p) => {
-        if (p.photo_path) {
-          try {
-            urls[p.id] = await getSignedPhotoUrl(p.photo_path)
-          } catch { /* ignore */ }
-        }
-      })
-    )
-    photoUrls.value = urls
+    const [dueMap] = await Promise.all([
+      listTab.value === 'active' ? fetchPendingDueByPlant('water') : Promise.resolve(new Map<string, string>()),
+      ensurePhotoUrls(plants.value.map(p => p.photo_path))
+    ])
+    nextWaterByPlant.value = dueMap
   } catch (e: unknown) {
     plants.value = []
     loadError.value = apiErrorMessage(e)
@@ -53,7 +50,18 @@ async function load() {
 }
 
 watch([filter, listTab], load)
-onMounted(load)
+watch(viewMode, (mode) => {
+  try {
+    localStorage.setItem(VIEW_STORAGE_KEY, mode)
+  } catch { /* private mode */ }
+})
+onMounted(() => {
+  try {
+    const saved = localStorage.getItem(VIEW_STORAGE_KEY)
+    if (saved === 'list' || saved === 'grid') viewMode.value = saved
+  } catch { /* private mode */ }
+  void load()
+})
 </script>
 
 <template>
@@ -83,21 +91,50 @@ onMounted(load)
       class="w-full"
     />
 
-    <USelect
-      v-if="showHealthFilter"
-      v-model="filter"
-      :items="filterItems"
-      class="w-full"
-    />
+    <div class="flex items-center gap-2">
+      <USelect
+        v-if="showHealthFilter"
+        v-model="filter"
+        :items="filterItems"
+        class="min-w-0 flex-1"
+        :aria-label="t('plants.filterAria')"
+      />
+      <div
+        class="ml-auto flex shrink-0 rounded-full bg-elevated p-0.5 ring-1 ring-inset ring-default"
+        role="group"
+        :aria-label="t('plants.viewModeAria')"
+      >
+        <UButton
+          icon="i-lucide-layout-grid"
+          size="sm"
+          :color="viewMode === 'grid' ? 'primary' : 'neutral'"
+          :variant="viewMode === 'grid' ? 'soft' : 'ghost'"
+          class="rounded-full"
+          :aria-label="t('plants.viewGrid')"
+          :aria-pressed="viewMode === 'grid'"
+          @click="viewMode = 'grid'"
+        />
+        <UButton
+          icon="i-lucide-list"
+          size="sm"
+          :color="viewMode === 'list' ? 'primary' : 'neutral'"
+          :variant="viewMode === 'list' ? 'soft' : 'ghost'"
+          class="rounded-full"
+          :aria-label="t('plants.viewList')"
+          :aria-pressed="viewMode === 'list'"
+          @click="viewMode = 'list'"
+        />
+      </div>
+    </div>
 
     <div
       v-if="loading"
-      class="space-y-3"
+      :class="viewMode === 'grid' ? 'grid grid-cols-2 gap-3 md:grid-cols-3' : 'space-y-2'"
     >
       <USkeleton
-        v-for="i in 4"
+        v-for="i in 6"
         :key="i"
-        class="h-16"
+        :class="viewMode === 'grid' ? 'aspect-[4/5] rounded-2xl' : 'h-[74px] rounded-2xl'"
       />
     </div>
 
@@ -129,7 +166,7 @@ onMounted(load)
 
     <ul
       v-else
-      class="space-y-2"
+      :class="viewMode === 'grid' ? 'grid grid-cols-2 gap-3 md:grid-cols-3' : 'space-y-2'"
     >
       <li
         v-for="plant in plants"
@@ -137,8 +174,10 @@ onMounted(load)
       >
         <PlantsPlantCard
           :plant="plant"
-          :photo-src="photoUrls[plant.id]"
+          :photo-src="photoFor(plant.photo_path)"
           :archived="listTab === 'archived'"
+          :next-water-at="nextWaterByPlant.get(plant.id)"
+          :variant="viewMode"
         />
       </li>
     </ul>
