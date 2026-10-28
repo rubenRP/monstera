@@ -37,6 +37,24 @@ describe('useDeferredActions', () => {
     expect(api.pendingIds.value.has('t1')).toBe(false)
   })
 
+  it('keeps the id hidden while the action is running', async () => {
+    const { api } = await mountHarness()
+    let resolveRun!: () => void
+    const run = vi.fn(() => new Promise<void>((resolve) => {
+      resolveRun = resolve
+    }))
+
+    api.schedule('t1', run)
+    await vi.advanceTimersByTimeAsync(UNDO_WINDOW_MS)
+    expect(run).toHaveBeenCalledTimes(1)
+    expect(api.pendingIds.value.has('t1')).toBe(true)
+    expect(api.cancel('t1')).toBe(false)
+
+    resolveRun()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(api.pendingIds.value.has('t1')).toBe(false)
+  })
+
   it('cancel prevents the action (undo)', async () => {
     const { api } = await mountHarness()
     const run = vi.fn().mockResolvedValue(undefined)
