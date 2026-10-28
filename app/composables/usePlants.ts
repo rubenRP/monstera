@@ -1,3 +1,4 @@
+import { compressImage } from '~/utils/compressImage'
 import type { HealthStatus, Plant, PlantArchiveReason } from '#shared/types/database'
 import { HEALTH_STATUS_ORDER } from '#shared/constants/plants'
 import { DEFAULT_WATERING_REFERENCE_DAYS } from '#shared/constants/care'
@@ -55,8 +56,9 @@ export function usePlants() {
     return data as Plant
   }
 
-  async function uploadPhoto(file: File, plantId: string): Promise<string> {
+  async function uploadPhoto(original: File, plantId: string): Promise<string> {
     const uid = await requireUserId()
+    const file = await compressImage(original)
     const ext = file.name.split('.').pop() ?? 'jpg'
     const path = `${uid}/${plantId}/${Date.now()}.${ext}`
     const { error } = await supabase.storage.from('plant-photos').upload(path, file, {
@@ -119,7 +121,25 @@ export function usePlants() {
     if (taskError) throw taskError
   }
 
-  async function updatePlant(id: string, form: PlantFormInput, photoFile?: File) {
+  /** Brings an archived plant back and recreates its pending care tasks. */
+  async function unarchivePlant(id: string) {
+    const { data: plant, error } = await supabase
+      .from('plants')
+      .update({ archived_at: null, archive_reason: null, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select(PLANT_SELECT)
+      .single()
+    if (error) throw error
+    await regenerateTasks(id, plant as Plant, 'plant_edit')
+    return plant as Plant
+  }
+
+  async function updatePlant(
+    id: string,
+    form: PlantFormInput,
+    photoFile?: File,
+    options?: { removePhoto?: boolean }
+  ) {
     const { data: existing, error: fetchError } = await supabase
       .from('plants')
       .select('archived_at, species')
@@ -135,7 +155,9 @@ export function usePlants() {
       ...sanitizePlantPayload(form),
       // A manual base interval belongs to the previous species
       ...(speciesChanged ? { watering_base_override_days: null } : {}),
-      ...(photoFile ? { photo_path: await uploadPhoto(photoFile, id) } : {})
+      ...(photoFile
+        ? { photo_path: await uploadPhoto(photoFile, id) }
+        : options?.removePhoto ? { photo_path: null } : {})
     }
 
     const { data: plant, error } = await supabase
@@ -299,6 +321,7 @@ export function usePlants() {
     updatePlant,
     updateHealthStatus,
     archivePlant,
+    unarchivePlant,
     movePlantToSite,
     deletePlant,
     uploadPhoto,

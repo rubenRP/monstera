@@ -15,6 +15,7 @@ export const API_ERROR_CODES = {
   VALIDATION_FAILED: 'validation.failed',
   PUSH_INVALID_SUBSCRIPTION: 'push.invalidSubscription',
   PUSH_SAVE_FAILED: 'push.saveFailed',
+  PUSH_NO_SUBSCRIPTION: 'push.noSubscription',
   CRON_FORBIDDEN: 'cron.forbidden',
   VAPID_NOT_CONFIGURED: 'vapid.notConfigured',
   SUPABASE_NOT_CONFIGURED: 'supabase.notConfigured',

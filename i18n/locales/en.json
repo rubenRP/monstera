@@ -14,7 +14,8 @@
     "sites": "Sites",
     "settings": "Settings",
     "calendar": "Calendar",
-    "mainNav": "Main navigation"
+    "mainNav": "Main navigation",
+    "todayBadgeAria": "{count} tasks for today"
   },
   "common": {
     "back": "Back",
@@ -66,7 +67,19 @@
     "safariSessionTitle": "Signed in in Safari",
     "safariSessionHint": "The link signed you in in Safari, not in the home screen app. Open Monstera from your icon and enter the 6-digit code from the same email.",
     "safariSessionAction": "Go to sign in",
-    "notAuthenticated": "Not authenticated"
+    "notAuthenticated": "Not authenticated",
+    "loginTitle": "Sign in",
+    "emailPlaceholder": "you{'@'}email.com",
+    "resendCode": "Resend code",
+    "resendIn": "Resend in {seconds}s",
+    "backToLanding": "Back to the home page",
+    "errors": {
+      "rateLimit": "Too many codes requested. Wait a minute and try again.",
+      "codeExpired": "The code has expired or is wrong. Request a new one.",
+      "invalidEmail": "Check the email address: it doesn't look valid.",
+      "notAllowed": "This email doesn't have access to Monstera.",
+      "network": "You're offline. Check your connection and try again."
+    }
   },
   "landing": {
     "hero": {
@@ -162,7 +175,34 @@
     "wateringRecalcDone": "Outdoor watering recalculated ({count})",
     "wateringRecalcErrors": "{count} failed to update.",
     "wateringRecalcSkipped": "{count} skipped with overdue pending water task.",
-    "wateringRecalcEmpty": "No outdoor plants to recalculate"
+    "wateringRecalcEmpty": "No outdoor plants to recalculate",
+    "pushDisabled": "Notifications turned off on this device",
+    "pushTest": "Send test",
+    "pushTestSent": "Test notification sent",
+    "pushTestFailed": "Couldn't send the test",
+    "disablePush": "Turn off",
+    "pushDeniedHelp": "Notifications are blocked. Allow them for this site in your browser or system settings.",
+    "pushStatus": {
+      "enabled": "On",
+      "disabled": "Off",
+      "denied": "Blocked",
+      "unsupported": "Not available",
+      "needs-install": "Install required"
+    },
+    "installTitle": "Install the app",
+    "installHint": "Use it full screen from your home screen and get reminders.",
+    "installAction": "Install Monstera",
+    "installIosTitle": "On iPhone, install the app to get reminders",
+    "installIosStep1": "Open Monstera in Safari.",
+    "installIosStep2": "Tap the Share button (square with an arrow).",
+    "installIosStep3": "Choose \"Add to Home Screen\" and open the app from there.",
+    "geoUnsupported": "Your browser can't provide your location",
+    "geoFound": "Location found",
+    "geoFoundHint": "Tap Save to apply it.",
+    "geoFailed": "Couldn't get your location",
+    "geoDenied": "Location permission denied.",
+    "geoUnavailable": "Try again or enter the coordinates manually.",
+    "advanced": "Advanced"
   },
   "home": {
     "title": "Today",
@@ -238,7 +278,15 @@
       "manual_exterior": "Manual exterior recalc",
       "manual_all": "Manual recalc",
       "home_settings_update": "Home settings"
-    }
+    },
+    "tabToday": "Today",
+    "completeAll": "Complete all",
+    "groupDoneToast": "{count} tasks done",
+    "postponeDays": "Postpone {days} day | Postpone {days} days",
+    "postponedToast": "Postponed {days} day | Postponed {days} days",
+    "viewPlant": "View plant",
+    "markDoneAria": "Mark {task} as done: {plant}",
+    "taskOptionsAria": "More options for {plant}"
   },
   "plants": {
     "title": "Plants",
@@ -429,7 +477,62 @@
     },
     "notFoundTitle": "Plant not found",
     "notFoundDescription": "It may have been deleted.",
-    "backToList": "See my plants"
+    "backToList": "See my plants",
+    "waterToday": "Water today",
+    "waterInDays": "Water in {days} day | Water in {days} days",
+    "waterOverdueShort": "Water {days}d overdue",
+    "filterAria": "Filter by health status",
+    "viewModeAria": "View mode",
+    "viewGrid": "Grid view",
+    "viewList": "List view",
+    "quickWater": "Water",
+    "quickFertilize": "Fertilize",
+    "quickCheckIn": "Check-in",
+    "nextWatering": "Next watering",
+    "noWaterScheduled": "No watering scheduled",
+    "everyDays": "Every {days} day | Every {days} days",
+    "ringNow": "Now",
+    "ringDays": "{days} d",
+    "ringAria": "Next watering: {label}",
+    "taskOptionsAria": "{task} options",
+    "moreActionsAria": "More actions",
+    "missingCount": "{count} missing",
+    "unarchive": "Unarchive",
+    "unarchived": "Plant restored: its tasks are scheduled again",
+    "deleted": "Plant deleted",
+    "deleteTitle": "Delete \"{name}\"?",
+    "deleteConfirmLong": "The plant, its care history and photos will be deleted. This can't be undone. If you no longer have it, you can archive it instead.",
+    "updateHealthViaCheckIn": "Update with a check-in",
+    "searchPlaceholder": "Search plants…",
+    "sortAria": "Sort plants",
+    "sortNextWater": "Watering",
+    "sortName": "Name",
+    "sortHealth": "Health",
+    "groupBySite": "Group by site",
+    "noSiteGroup": "No site",
+    "noSearchResults": "No results",
+    "noSearchResultsHint": "No plant matches \"{query}\".",
+    "clearSearch": "Clear search",
+    "formErrors": "Check {count} highlighted field | Check the {count} highlighted fields",
+    "speciesPlaceholder": "E.g. Monstera deliciosa",
+    "speciesSearchHint": "Type at least 3 letters to see suggestions.",
+    "removePhoto": "Remove photo",
+    "photoWillBeRemoved": "The photo will be removed when you save.",
+    "fertilizeSuggested": "Suggested for this species",
+    "unsavedTitle": "Discard changes?",
+    "unsavedDescription": "You have unsaved changes to this plant.",
+    "discardChanges": "Discard",
+    "photoDiary": "Photo diary",
+    "growthTitle": "Height",
+    "growthDate": "Date",
+    "growthChartAria": "Height chart with {count} measurements",
+    "historyDiagnosis": "AI diagnosis",
+    "viewPhoto": "View photo",
+    "showDetails": "Show details",
+    "hideDetails": "Hide details",
+    "toxicToPets": "Caution with pets",
+    "toxicShort": "Pets",
+    "toxicToPetsHint": "From the species profile: {text}"
   },
   "sites": {
     "title": "Sites",
@@ -463,7 +566,19 @@
     "coverLabel": "Cover",
     "coverValue": "With roof / awning",
     "plantsInSite": "Plants at this site",
-    "addPlant": "Add"
+    "addPlant": "Add",
+    "orientationShort": {
+      "N": "N",
+      "NE": "NE",
+      "E": "E",
+      "SE": "SE",
+      "S": "S",
+      "SW": "SW",
+      "W": "W",
+      "NW": "NW"
+    },
+    "deleted": "Site deleted",
+    "deleteTitle": "Delete this site?"
   },
   "care": {
     "taskWater": "Water",
@@ -554,7 +669,22 @@
     "updateHealthTitle": "Update plant status?",
     "updateHealthBody": "The AI suggests changing the status based on the diagnosis.",
     "updateHealth": "Update status",
-    "keepCurrent": "Keep current"
+    "keepCurrent": "Keep current",
+    "examples": [
+      "Yellow leaves",
+      "Brown tips",
+      "Dropping leaves",
+      "Spots on leaves",
+      "Bugs or webbing",
+      "Soft stem"
+    ],
+    "progressPhoto": "Analysing the photo…",
+    "progressReading": "Reading the symptoms…",
+    "progressCauses": "Looking for likely causes…",
+    "progressSlow": "This is taking longer than usual; you can wait or cancel.",
+    "cancelled": "Diagnosis cancelled",
+    "suggestedHealth": "The AI suggests marking the plant as",
+    "disclaimer": "AI guidance based on your description. If the plant gets worse, ask at a garden centre."
   },
   "recommend": {
     "title": "Recommendations",
@@ -697,7 +827,19 @@
   "push": {
     "title": "Gardener",
     "bodyOne": "You have 1 care task due today",
-    "bodyMany": "You have {count} care tasks due today"
+    "bodyMany": "You have {count} care tasks due today",
+    "testTitle": "Monstera",
+    "testBody": "Notifications are working! 🌿",
+    "titleOne": "1 task for today",
+    "titleMany": "{count} tasks for today",
+    "lineWater": "💧 Water: {plants}",
+    "lineFertilize": "🧪 Fertilize: {plants}",
+    "lineCheckIn": "📋 Check: {plants}",
+    "andMore": "and {count} more",
+    "overdueLine": "⏰ {count} overdue",
+    "actionDone": "Done",
+    "actionSnooze": "Tomorrow",
+    "snoozed": "Tasks moved to tomorrow"
   },
   "errors": {
     "api": {
@@ -721,7 +863,8 @@
       "vapid.notConfigured": "VAPID not configured",
       "supabase.notConfigured": "Supabase not configured on server",
       "weather.unavailable": "Weather data unavailable.",
-      "weather.noForecast": "No forecast data."
+      "weather.noForecast": "No forecast data.",
+      "push.noSubscription": "This device has no active notifications"
     },
     "validation": {
       "plantNameRequired": "Name is required",
@@ -729,7 +872,8 @@
       "symptomsMin": "Describe symptoms with at least 3 characters",
       "imageTooLarge": "The photo is too large. Try a smaller image.",
       "homeLocationRequired": "Set your home location before recalculating",
-      "plantAgeMax": "Age exceeds the maximum for the selected unit"
+      "plantAgeMax": "Age exceeds the maximum for the selected unit",
+      "invalidValue": "Invalid value"
     },
     "page": {
       "notFoundTitle": "Page not found",
@@ -738,5 +882,31 @@
       "genericDescription": "An unexpected error occurred. Go back home and try again.",
       "goHome": "Back to home"
     }
+  },
+  "quickAdd": {
+    "button": "Add",
+    "newPlant": "New plant",
+    "advanceWater": "Water early",
+    "newSite": "New site"
+  },
+  "calendar": {
+    "today": "Today",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "projected": "Planned",
+    "projectedHint": "\"Planned\" tasks use the current interval and adjust as you complete earlier ones.",
+    "pending": "Pending",
+    "overdue": "Overdue",
+    "dayAria": "{date}: {count} task | {date}: {count} tasks",
+    "filterAll": "All",
+    "filterAria": "Filter by task type"
+  },
+  "stats": {
+    "title": "Your consistency · last {days} days",
+    "onTime": "On time",
+    "streak": "Streak",
+    "completed": "Done",
+    "mostLate": "Most often late:",
+    "allOnTime": "Everything on time! Keep it up 🌱"
   }
 }

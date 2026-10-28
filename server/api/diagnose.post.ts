@@ -95,12 +95,16 @@ export default defineEventHandler(async (event) => {
   }
 
   const d = diagnosis
+  const imagePath = imageBase64
+    ? await saveDiagnosisImage(supabase, user.id, plantId, imageBase64, mimeType)
+    : null
   const { data: saved, error: saveError } = await supabase
     .from('diagnoses')
     .insert({
       plant_id: plantId,
       user_id: user.id,
       symptoms,
+      image_path: imagePath,
       ai_summary: d.summary,
       ai_raw: d,
       suggested_health_status: d.suggestedHealthStatus
@@ -114,3 +118,23 @@ export default defineEventHandler(async (event) => {
 
   return { diagnosis: d, record: saved }
 })
+
+/** Keeps the diagnosis photo in the plant's folder (removed with the plant). Best effort: a failed upload must not lose the diagnosis. */
+async function saveDiagnosisImage(
+  supabase: ReturnType<typeof getServiceSupabase>,
+  userId: string,
+  plantId: string,
+  imageBase64: string,
+  mimeType: string | undefined
+): Promise<string | null> {
+  const type = mimeType?.startsWith('image/') ? mimeType : 'image/jpeg'
+  const ext = type.split('/')[1]?.replace('jpeg', 'jpg') ?? 'jpg'
+  const path = `${userId}/${plantId}/diagnosis-${Date.now()}.${ext}`
+  const bytes = Buffer.from(imageBase64.replace(/^data:image\/[\w.+-]+;base64,/, ''), 'base64')
+  const { error } = await supabase.storage.from('plant-photos').upload(path, bytes, { contentType: type })
+  if (error) {
+    console.warn('[diagnose] could not store image:', error.message)
+    return null
+  }
+  return path
+}

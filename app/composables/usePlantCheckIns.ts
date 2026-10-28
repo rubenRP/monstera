@@ -1,4 +1,4 @@
-import type { CareTask, PlantCheckIn } from '#shared/types/database'
+import type { CareTask, Diagnosis, PlantCheckIn } from '#shared/types/database'
 import type { CheckInFormInput } from '#shared/utils/checkIn/schemas'
 import { assertOnline } from '~/utils/offline'
 
@@ -102,16 +102,21 @@ export function usePlantCheckIns() {
 export type CareHistoryEntry
   = | { kind: 'task', at: string, task: CareTask }
     | { kind: 'check_in', at: string, checkIn: PlantCheckIn }
+    | { kind: 'diagnosis', at: string, diagnosis: Diagnosis }
 
 export function mergeCareHistory(
   tasks: CareTask[],
-  checkIns: PlantCheckIn[]
+  checkIns: PlantCheckIn[],
+  diagnoses: Diagnosis[] = []
 ): CareHistoryEntry[] {
+  // A completed check-in task is already represented by its check-in record
+  const checkInTaskIds = new Set(checkIns.map(c => c.care_task_id).filter(Boolean))
   const entries: CareHistoryEntry[] = [
     ...tasks
-      .filter(t => t.completed_at)
+      .filter(t => t.completed_at && !checkInTaskIds.has(t.id))
       .map(t => ({ kind: 'task' as const, at: t.completed_at!, task: t })),
-    ...checkIns.map(c => ({ kind: 'check_in' as const, at: c.created_at, checkIn: c }))
+    ...checkIns.map(c => ({ kind: 'check_in' as const, at: c.created_at, checkIn: c })),
+    ...diagnoses.map(d => ({ kind: 'diagnosis' as const, at: d.created_at, diagnosis: d }))
   ]
   entries.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
   return entries

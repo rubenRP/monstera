@@ -13,6 +13,9 @@ export interface SpeciesProfile {
   soil: string
   repotting: string
   toxicity: string
+  /** Structured flags from Perenual (null/absent = unknown; older cached profiles lack them) */
+  toxicToPets?: boolean | null
+  toxicToHumans?: boolean | null
   characteristics: string
   temperature: string
   pestsAndProblems: string
@@ -32,4 +35,14 @@ export interface SpeciesProfileRow {
   profile: SpeciesProfile
   created_at: string
   updated_at: string
+}
+
+/** Autocomplete item for the species field (from Perenual species-list). */
+export interface SpeciesSuggestion {
+  id: number
+  commonName: string | null
+  scientificName: string | null
+  /** Perenual watering category: Frequent / Average / Minimum / None */
+  watering: string | null
+  thumbnail: string | null
 }

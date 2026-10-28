@@ -13,10 +13,13 @@ const { healthLabel } = usePlantEnumLabels()
 const toast = useToast()
 
 const site = ref<Awaited<ReturnType<typeof fetchSite>> | null>(null)
+usePageTitle(() => site.value?.name)
 const loading = ref(true)
 const moveSiteModalOpen = ref(false)
 const moveSiteLoading = ref(false)
 const plantToMove = ref<Pick<Plant, 'id' | 'name' | 'site_id'> | null>(null)
+const deleteModalOpen = ref(false)
+const deleting = ref(false)
 
 onMounted(async () => {
   try {
@@ -26,10 +29,18 @@ onMounted(async () => {
   }
 })
 
-async function onDelete() {
-  if (!confirm(t('sites.deleteConfirm'))) return
-  await deleteSite(id)
-  await navigateTo('/sites')
+async function confirmDelete() {
+  deleting.value = true
+  try {
+    await deleteSite(id)
+    deleteModalOpen.value = false
+    toast.add({ title: t('sites.deleted'), color: 'success' })
+    await navigateTo('/sites')
+  } catch (e: unknown) {
+    toast.add({ title: t('common.error'), description: apiErrorMessage(e), color: 'error' })
+  } finally {
+    deleting.value = false
+  }
 }
 
 function openMoveModal(plant: NonNullable<NonNullable<typeof site.value>['plants']>[number]) {
@@ -89,13 +100,14 @@ async function onMoveSiteConfirm(siteId: string | null) {
       <UDropdownMenu
         :items="[[
           { label: t('common.edit'), icon: 'i-lucide-pencil', to: `/sites/${id}/edit` },
-          { label: t('common.delete'), icon: 'i-lucide-trash', onSelect: onDelete }
+          { label: t('common.delete'), icon: 'i-lucide-trash', color: 'error', onSelect: () => { deleteModalOpen = true } }
         ]]"
       >
         <UButton
           icon="i-lucide-more-vertical"
           variant="ghost"
           color="neutral"
+          :aria-label="t('plants.moreActionsAria')"
         />
       </UDropdownMenu>
     </div>
@@ -186,6 +198,14 @@ async function onMoveSiteConfirm(siteId: string | null) {
       :plant="plantToMove"
       :loading="moveSiteLoading"
       @confirm="onMoveSiteConfirm"
+    />
+    <AppConfirmModal
+      v-model:open="deleteModalOpen"
+      :title="t('sites.deleteTitle')"
+      :description="t('sites.deleteConfirm')"
+      :confirm-label="t('common.delete')"
+      :loading="deleting"
+      @confirm="confirmDelete"
     />
   </div>
 </template>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CareTask, HealthStatus, Plant } from '#shared/types/database'
+import type { Plant } from '#shared/types/database'
 import type { SpeciesProfile } from '#shared/types/species'
 import type { WateringScheduleResult } from '#shared/utils/care/adaptiveWatering'
 import {
@@ -8,27 +8,21 @@ import {
 } from '#shared/utils/plants/growthConditions'
 import { HEALTH_ICONS, HEALTH_ICON_CLASSES } from '#shared/constants/plants'
 import { countPlantCompleteness } from '#shared/utils/plants/plantCompleteness'
+import { petToxicity } from '#shared/utils/species/toxicity'
 
 const { t } = useI18n()
 const { healthLabel } = usePlantEnumLabels()
 
 const props = defineProps<{
   plant: Plant
-  pendingTasks: CareTask[]
-  actingTaskId: string | null
   readOnly?: boolean
 }>()
 
-const healthStatus = defineModel<HealthStatus>('healthStatus', { required: true })
-const healthNote = defineModel<string>('healthNote', { required: true })
-
 const emit = defineEmits<{
-  saveHealth: []
-  completeTask: [taskId: string]
-  skipTask: [task: CareTask]
+  /** Health is updated through a check-in so it keeps a history */
+  checkIn: []
 }>()
 
-const { taskLabel, taskIcon, overdueDays, overdueLabel, fertilizeWithWater } = useCareTasks()
 const { fetchHomeLat, computeScheduleForPlant, countRecentWetSkips, fetchWateringHistoryIntervals, resolveWateringReference } = useAdaptiveWatering()
 const { snapshot: weatherSnapshot, load: loadWeather } = usePlantHomeWeather()
 const { fetchSpeciesProfile } = useSpeciesProfile()
@@ -39,6 +33,7 @@ const speciesProfile = ref<SpeciesProfile | null>(null)
 const editBase = computed(() => `/plants/${props.plant.id}/edit`)
 
 const completeness = computed(() => countPlantCompleteness(props.plant))
+const toxicToPets = computed(() => petToxicity(speciesProfile.value) === true)
 
 const growthConditions = computed(() => evaluateGrowthConditions({
   siteId: props.plant.site_id,
@@ -92,15 +87,6 @@ watch(() => props.plant, () => {
   void loadSpeciesProfile()
 }, { immediate: true, deep: true })
 
-function taskDueLabel(dueAt: string): string {
-  const overdue = overdueDays(dueAt)
-  if (overdue > 0) return overdueLabel(dueAt)
-  if (overdue === 0) return t('care.dueToday')
-  const days = -overdue
-  if (days === 1) return t('care.dueTomorrow')
-  return t('care.dueInDays', { days })
-}
-
 const plantRef = toRef(props, 'plant')
 const {
   lightItems,
@@ -113,6 +99,14 @@ const {
 
 <template>
   <div class="space-y-4">
+    <UAlert
+      v-if="toxicToPets"
+      color="warning"
+      variant="subtle"
+      icon="i-lucide-paw-print"
+      :title="t('plants.toxicToPets')"
+      :description="t('plants.toxicToPetsHint', { text: speciesProfile?.toxicity ?? '' })"
+    />
     <UAlert
       v-if="completeness.plantMissingCount > 0"
       color="warning"
@@ -231,18 +225,21 @@ const {
             </p>
           </div>
         </div>
-        <template v-if="!readOnly">
-          <PlantsHealthSemaphore
-            v-model="healthStatus"
-            v-model:note="healthNote"
-          />
-          <UButton
-            size="sm"
-            @click="emit('saveHealth')"
-          >
-            {{ t('plants.saveHealth') }}
-          </UButton>
-        </template>
+        <p
+          v-if="plant.health_status_note"
+          class="text-sm text-muted"
+        >
+          {{ plant.health_status_note }}
+        </p>
+        <UButton
+          v-if="!readOnly"
+          size="sm"
+          variant="soft"
+          icon="i-lucide-clipboard-check"
+          @click="emit('checkIn')"
+        >
+          {{ t('plants.updateHealthViaCheckIn') }}
+        </UButton>
       </div>
     </PlantsDetailPlantInfoGridSection>
 
@@ -279,62 +276,6 @@ const {
         {{ plant.notes }}
       </p>
     </PlantsSpeciesPlantSpeciesSectionCard>
-
-    <div
-      v-if="!readOnly && pendingTasks.length"
-      class="space-y-2"
-    >
-      <h2 class="font-semibold text-sm">
-        {{ t('care.pendingTasks') }}
-      </h2>
-      <div
-        v-for="task in pendingTasks"
-        :key="task.id"
-        class="flex items-center justify-between p-3 rounded-lg border border-default"
-        :class="overdueDays(task.due_at) > 0 ? 'border-warning/50' : ''"
-      >
-        <div class="flex items-center gap-2 min-w-0">
-          <UIcon
-            :name="taskIcon(task.type)"
-            class="shrink-0"
-            :class="overdueDays(task.due_at) > 0 ? 'text-warning' : 'text-primary'"
-          />
-          <div class="min-w-0">
-            <p class="text-sm font-medium">
-              {{ taskLabel(task.type) }}
-              <span
-                v-if="fertilizeWithWater(task, pendingTasks)"
-                class="font-normal text-muted"
-              > · {{ t('care.fertilizeWithWater') }}</span>
-            </p>
-            <p
-              class="text-xs"
-              :class="overdueDays(task.due_at) > 0 ? 'text-warning' : 'text-muted'"
-            >
-              {{ taskDueLabel(task.due_at) }}
-            </p>
-          </div>
-        </div>
-        <div class="flex gap-1 shrink-0">
-          <UButton
-            size="sm"
-            :loading="actingTaskId === task.id"
-            @click="emit('completeTask', task.id)"
-          >
-            {{ t('common.done') }}
-          </UButton>
-          <UButton
-            size="sm"
-            variant="soft"
-            color="neutral"
-            :disabled="actingTaskId === task.id"
-            @click="emit('skipTask', task)"
-          >
-            {{ t('common.skip') }}
-          </UButton>
-        </div>
-      </div>
-    </div>
 
     <UButton
       v-if="!readOnly"

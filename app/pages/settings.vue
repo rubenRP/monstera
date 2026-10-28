@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { AppLocale, IndoorHumidityLevel } from '#shared/types/database'
+import { isStandalonePwa } from '~/utils/isStandalonePwa'
+import { isIosDevice, type PushStatus } from '~/composables/usePushNotifications'
 
 const { t, locales, locale, setLocale } = useI18n()
 const supabase = useSupabaseClient()
@@ -8,13 +10,22 @@ const { requireUserId } = useRequireUserId()
 const config = useRuntimeConfig()
 const toast = useToast()
 const { apiErrorMessage } = useApiError()
-const { subscribe } = usePushNotifications()
+const { subscribe, unsubscribe, sendTest, status: readPushStatus } = usePushNotifications()
+const { $pwa } = useNuxtApp()
+
+useHead({ title: () => `${t('settings.title')} · Monstera` })
 
 const homeLat = ref(String(config.public.homeLat))
 const homeLon = ref(String(config.public.homeLon))
 const indoorHumidity = ref<IndoorHumidityLevel>('auto')
 const saving = ref(false)
 const pushLoading = ref(false)
+const pushTesting = ref(false)
+const pushStatus = ref<PushStatus | null>(null)
+const locating = ref(false)
+const advancedOpen = ref(false)
+const isStandalone = ref(false)
+const isIos = ref(false)
 const recalcLoading = ref(false)
 const recalcAllLoading = ref(false)
 
@@ -22,7 +33,18 @@ const localeItems = computed(() =>
   locales.value.map(l => ({ label: l.name, value: l.code }))
 )
 
+async function refreshPushStatus() {
+  try {
+    pushStatus.value = await readPushStatus()
+  } catch {
+    pushStatus.value = 'unsupported'
+  }
+}
+
 onMounted(async () => {
+  isStandalone.value = isStandalonePwa()
+  isIos.value = isIosDevice()
+  void refreshPushStatus()
   let userId: string
   try {
     userId = await requireUserId()
@@ -134,7 +156,37 @@ async function enablePush() {
     })
   } finally {
     pushLoading.value = false
+    await refreshPushStatus()
   }
+}
+
+async function disablePush() {
+  pushLoading.value = true
+  try {
+    await unsubscribe()
+    toast.add({ title: t('settings.pushDisabled'), color: 'neutral' })
+  } catch (e: unknown) {
+    toast.add({ title: t('common.error'), description: apiErrorMessage(e), color: 'error' })
+  } finally {
+    pushLoading.value = false
+    await refreshPushStatus()
+  }
+}
+
+async function testPush() {
+  pushTesting.value = true
+  try {
+    await sendTest()
+    toast.add({ title: t('settings.pushTestSent'), color: 'success' })
+  } catch (e: unknown) {
+    toast.add({ title: t('settings.pushTestFailed'), description: apiErrorMessage(e), color: 'error' })
+  } finally {
+    pushTesting.value = false
+  }
+}
+
+async function installApp() {
+  await $pwa?.install()
 }
 
 async function recalculateAllWatering() {
@@ -219,11 +271,24 @@ async function signOut() {
 }
 
 function useGeolocation() {
-  if (!navigator.geolocation) return
+  if (!navigator.geolocation) {
+    toast.add({ title: t('settings.geoUnsupported'), color: 'error' })
+    return
+  }
+  locating.value = true
   navigator.geolocation.getCurrentPosition((pos) => {
-    homeLat.value = String(pos.coords.latitude)
-    homeLon.value = String(pos.coords.longitude)
-  })
+    homeLat.value = pos.coords.latitude.toFixed(4)
+    homeLon.value = pos.coords.longitude.toFixed(4)
+    locating.value = false
+    toast.add({ title: t('settings.geoFound'), description: t('settings.geoFoundHint'), color: 'success' })
+  }, (err) => {
+    locating.value = false
+    toast.add({
+      title: t('settings.geoFailed'),
+      description: err.code === err.PERMISSION_DENIED ? t('settings.geoDenied') : t('settings.geoUnavailable'),
+      color: 'error'
+    })
+  }, { timeout: 10_000, maximumAge: 60_000 })
 }
 
 async function onLocaleChange(value: string) {
@@ -306,6 +371,7 @@ async function onLocaleChange(value: string) {
         <UButton
           variant="soft"
           icon="i-lucide-map-pin"
+          :loading="locating"
           @click="useGeolocation"
         >
           {{ t('settings.useMyLocation') }}
@@ -322,53 +388,75 @@ async function onLocaleChange(value: string) {
 
     <UCard>
       <template #header>
-        {{ t('settings.wateringRecalcSectionTitle') }}
-      </template>
-      <div class="space-y-4">
-        <div>
-          <p class="text-sm text-muted mb-3">
-            {{ t('settings.wateringRecalcAllHint') }}
-          </p>
-          <UButton
-            :loading="recalcAllLoading"
-            icon="i-lucide-refresh-ccw"
-            @click="recalculateAllWatering"
+        <div class="flex items-center justify-between gap-2">
+          <span>{{ t('settings.notifications') }}</span>
+          <UBadge
+            v-if="pushStatus"
+            :color="pushStatus === 'enabled' ? 'success' : pushStatus === 'denied' ? 'error' : 'neutral'"
+            variant="subtle"
           >
-            {{ t('settings.wateringRecalcAllAction') }}
-          </UButton>
+            {{ t(`settings.pushStatus.${pushStatus}`) }}
+          </UBadge>
         </div>
-        <div class="border-t border-default pt-4">
-          <p class="text-sm text-muted mb-3">
-            {{ t('settings.wateringRecalcHint') }}
-          </p>
-          <UButton
-            :loading="recalcLoading"
-            variant="soft"
-            icon="i-lucide-sun"
-            @click="recalculateExteriorWatering"
-          >
-            {{ t('settings.wateringRecalcAction') }}
-          </UButton>
-        </div>
-      </div>
-    </UCard>
-
-    <UCard>
-      <template #header>
-        {{ t('settings.notifications') }}
       </template>
       <p class="text-sm text-muted mb-3">
         {{ t('settings.notificationsHint') }}
       </p>
+
+      <UAlert
+        v-if="pushStatus === 'needs-install'"
+        class="mb-3"
+        color="info"
+        variant="subtle"
+        icon="i-lucide-smartphone"
+        :title="t('settings.installIosTitle')"
+      >
+        <template #description>
+          <ol class="mt-1 list-decimal space-y-1 pl-4 text-sm">
+            <li>{{ t('settings.installIosStep1') }}</li>
+            <li>{{ t('settings.installIosStep2') }}</li>
+            <li>{{ t('settings.installIosStep3') }}</li>
+          </ol>
+        </template>
+      </UAlert>
+      <UAlert
+        v-else-if="pushStatus === 'denied'"
+        class="mb-3"
+        color="warning"
+        variant="subtle"
+        icon="i-lucide-bell-off"
+        :title="t('settings.pushDeniedHelp')"
+      />
+
       <div class="flex flex-wrap gap-2">
         <UButton
+          v-if="pushStatus !== 'enabled'"
           :loading="pushLoading"
-          :disabled="!config.public.vapidPublicKey"
+          :disabled="!config.public.vapidPublicKey || pushStatus === 'needs-install' || pushStatus === 'unsupported' || pushStatus === 'denied'"
           icon="i-lucide-bell"
           @click="enablePush"
         >
           {{ t('settings.enablePush') }}
         </UButton>
+        <template v-else>
+          <UButton
+            :loading="pushTesting"
+            icon="i-lucide-send"
+            variant="soft"
+            @click="testPush"
+          >
+            {{ t('settings.pushTest') }}
+          </UButton>
+          <UButton
+            :loading="pushLoading"
+            icon="i-lucide-bell-off"
+            variant="ghost"
+            color="neutral"
+            @click="disablePush"
+          >
+            {{ t('settings.disablePush') }}
+          </UButton>
+        </template>
       </div>
       <p
         v-if="!config.public.vapidPublicKey"
@@ -377,5 +465,83 @@ async function onLocaleChange(value: string) {
         {{ t('settings.vapidHint') }}
       </p>
     </UCard>
+
+    <UCard v-if="!isStandalone && ($pwa?.showInstallPrompt || isIos)">
+      <template #header>
+        {{ t('settings.installTitle') }}
+      </template>
+      <p class="text-sm text-muted mb-3">
+        {{ t('settings.installHint') }}
+      </p>
+      <UButton
+        v-if="$pwa?.showInstallPrompt"
+        icon="i-lucide-download"
+        @click="installApp"
+      >
+        {{ t('settings.installAction') }}
+      </UButton>
+      <ol
+        v-else
+        class="list-decimal space-y-1 pl-4 text-sm"
+      >
+        <li>{{ t('settings.installIosStep1') }}</li>
+        <li>{{ t('settings.installIosStep2') }}</li>
+        <li>{{ t('settings.installIosStep3') }}</li>
+      </ol>
+    </UCard>
+
+    <div class="rounded-2xl border border-default bg-elevated/50">
+      <UCollapsible v-model:open="advancedOpen">
+        <button
+          type="button"
+          class="flex w-full items-center gap-3 px-4 py-3.5 text-left"
+        >
+          <UIcon
+            name="i-lucide-sliders-horizontal"
+            class="size-5 text-muted"
+          />
+          <span class="min-w-0 flex-1">
+            <span class="block font-semibold text-highlighted">{{ t('settings.advanced') }}</span>
+            <span class="block text-xs text-muted">{{ t('settings.wateringRecalcSectionTitle') }}</span>
+          </span>
+          <UIcon
+            name="i-lucide-chevron-down"
+            class="size-5 text-muted transition-transform duration-200"
+            :class="advancedOpen ? 'rotate-180' : ''"
+          />
+        </button>
+        <template #content>
+          <div class="px-4 pb-4">
+            <div class="space-y-4">
+              <div>
+                <p class="text-sm text-muted mb-3">
+                  {{ t('settings.wateringRecalcAllHint') }}
+                </p>
+                <UButton
+                  :loading="recalcAllLoading"
+                  icon="i-lucide-refresh-ccw"
+                  @click="recalculateAllWatering"
+                >
+                  {{ t('settings.wateringRecalcAllAction') }}
+                </UButton>
+              </div>
+              <div class="border-t border-default pt-4">
+                <p class="text-sm text-muted mb-3">
+                  {{ t('settings.wateringRecalcHint') }}
+                </p>
+                <UButton
+                  :loading="recalcLoading"
+                  variant="soft"
+                  icon="i-lucide-sun"
+                  @click="recalculateExteriorWatering"
+                >
+                  {{ t('settings.wateringRecalcAction') }}
+                </UButton>
+              </div>
+            </div>
+          </div>
+        </template>
+      </UCollapsible>
+    </div>
   </div>
 </template>

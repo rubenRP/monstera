@@ -7,9 +7,12 @@ const route = useRoute()
 const id = route.params.id as string
 const { fetchPlant, updatePlant } = usePlants()
 const plant = ref<Awaited<ReturnType<typeof fetchPlant>> | null>(null)
+usePageTitle(() => (plant.value ? `${t('plants.editTitle')}: ${plant.value.name}` : t('plants.editTitle')))
 const loading = ref(true)
 const saving = ref(false)
 const toast = useToast()
+const formRef = ref<{ onSaveFailed: () => void } | null>(null)
+const { url: photoUrl } = usePlantPhoto(computed(() => plant.value?.photo_path))
 
 onMounted(async () => {
   plant.value = await fetchPlant(id)
@@ -21,13 +24,14 @@ onMounted(async () => {
   loading.value = false
 })
 
-async function onSubmit(data: PlantFormInput, photo?: File) {
+async function onSubmit(data: PlantFormInput, photo?: File, options?: { removePhoto: boolean }) {
   saving.value = true
   try {
-    await updatePlant(id, data, photo)
+    await updatePlant(id, data, photo, options)
     toast.add({ title: t('plants.updated'), color: 'success' })
     await navigateTo(`/plants/${id}`)
   } catch (e: unknown) {
+    formRef.value?.onSaveFailed()
     toast.add({
       title: t('common.error'),
       description: apiErrorMessage(e),
@@ -50,7 +54,10 @@ async function onSubmit(data: PlantFormInput, photo?: File) {
     />
     <PlantsPlantForm
       v-else-if="plant"
+      ref="formRef"
       :initial="plant"
+      :photo-src="photoUrl"
+      :cancel-to="`/plants/${id}`"
       :loading="saving"
       @submit="onSubmit"
     />

@@ -1,14 +1,29 @@
 <script setup lang="ts">
 import { isStandalonePwa } from '~/utils/isStandalonePwa'
+import { authErrorKey } from '~/utils/authErrors'
 
 definePageMeta({ layout: false })
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const supabase = useSupabaseClient()
+usePageTitle(() => t('auth.loginTitle'))
 
-const emailPlaceholder = computed(() =>
-  locale.value === 'en' ? 'you@email.com' : 'tu@email.com'
-)
+const RESEND_COOLDOWN_S = 60
+const resendIn = ref(0)
+let resendTimer: ReturnType<typeof setInterval> | null = null
+
+function startResendCooldown() {
+  resendIn.value = RESEND_COOLDOWN_S
+  if (resendTimer) clearInterval(resendTimer)
+  resendTimer = setInterval(() => {
+    resendIn.value = Math.max(0, resendIn.value - 1)
+    if (!resendIn.value && resendTimer) clearInterval(resendTimer)
+  }, 1000)
+}
+
+onBeforeUnmount(() => {
+  if (resendTimer) clearInterval(resendTimer)
+})
 const email = ref('')
 const otp = ref('')
 const sent = ref(false)
@@ -32,8 +47,9 @@ async function sendMagicLink() {
     if (err) throw err
     sent.value = true
     otp.value = ''
+    startResendCooldown()
   } catch (e: unknown) {
-    error.value = e instanceof Error ? e.message : t('auth.sendLinkError')
+    error.value = t(authErrorKey(e, 'auth.sendLinkError'))
   } finally {
     loading.value = false
   }
@@ -56,7 +72,7 @@ async function verifyCode() {
     if (err) throw err
     await navigateTo('/')
   } catch (e: unknown) {
-    error.value = e instanceof Error ? e.message : t('auth.verifyCodeError')
+    error.value = t(authErrorKey(e, 'auth.verifyCodeError'))
   } finally {
     verifying.value = false
   }
@@ -104,7 +120,8 @@ function resetForm() {
               v-model="email"
               type="email"
               required
-              :placeholder="emailPlaceholder"
+              autocomplete="email"
+              :placeholder="t('auth.emailPlaceholder')"
             />
           </UFormField>
           <UButton
@@ -150,6 +167,17 @@ function resetForm() {
           </UButton>
           <UButton
             type="button"
+            variant="soft"
+            block
+            icon="i-lucide-mail"
+            :loading="loading"
+            :disabled="resendIn > 0"
+            @click="sendMagicLink"
+          >
+            {{ resendIn > 0 ? t('auth.resendIn', { seconds: resendIn }) : t('auth.resendCode') }}
+          </UButton>
+          <UButton
+            type="button"
             variant="ghost"
             block
             :disabled="loading"
@@ -158,6 +186,18 @@ function resetForm() {
             {{ t('auth.useAnotherEmail') }}
           </UButton>
         </form>
+      </template>
+      <template #footer>
+        <NuxtLink
+          to="/"
+          class="inline-flex items-center gap-1 text-sm text-muted hover:text-primary"
+        >
+          <UIcon
+            name="i-lucide-arrow-left"
+            class="size-4"
+          />
+          {{ t('auth.backToLanding') }}
+        </NuxtLink>
       </template>
     </UCard>
   </div>

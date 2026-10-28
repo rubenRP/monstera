@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const { t } = useI18n()
+usePageTitle(() => t('sites.title'))
 const { fetchSites } = useSites()
 const sites = ref<Awaited<ReturnType<typeof fetchSites>>>([])
 const loading = ref(true)

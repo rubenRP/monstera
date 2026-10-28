@@ -14,7 +14,8 @@
     "sites": "Sitios",
     "settings": "Ajustes",
     "calendar": "Calendario",
-    "mainNav": "Navegación principal"
+    "mainNav": "Navegación principal",
+    "todayBadgeAria": "{count} tareas para hoy"
   },
   "common": {
     "back": "Atrás",
@@ -66,7 +67,19 @@
     "safariSessionTitle": "Sesión abierta en Safari",
     "safariSessionHint": "El enlace ha iniciado sesión en Safari, no en la app de la pantalla de inicio. Abre Monstera desde el icono e introduce el código de 6 dígitos del mismo correo.",
     "safariSessionAction": "Ir al inicio de sesión",
-    "notAuthenticated": "No autenticado"
+    "notAuthenticated": "No autenticado",
+    "loginTitle": "Iniciar sesión",
+    "emailPlaceholder": "tu{'@'}email.com",
+    "resendCode": "Reenviar código",
+    "resendIn": "Reenviar en {seconds} s",
+    "backToLanding": "Volver a la portada",
+    "errors": {
+      "rateLimit": "Has pedido demasiados códigos. Espera un minuto e inténtalo de nuevo.",
+      "codeExpired": "El código ha caducado o no es correcto. Pide uno nuevo.",
+      "invalidEmail": "Revisa el email: no parece válido.",
+      "notAllowed": "Este email no tiene acceso a Monstera.",
+      "network": "Sin conexión. Comprueba tu red e inténtalo de nuevo."
+    }
   },
   "landing": {
     "hero": {
@@ -162,7 +175,34 @@
     "wateringRecalcDone": "Riego exterior recalculado ({count})",
     "wateringRecalcErrors": "Se omitieron {count} por error.",
     "wateringRecalcSkipped": "Se omitieron {count} con riego pendiente vencido.",
-    "wateringRecalcEmpty": "No hay plantas en exterior para recalcular"
+    "wateringRecalcEmpty": "No hay plantas en exterior para recalcular",
+    "pushDisabled": "Notificaciones desactivadas en este dispositivo",
+    "pushTest": "Enviar prueba",
+    "pushTestSent": "Notificación de prueba enviada",
+    "pushTestFailed": "No se pudo enviar la prueba",
+    "disablePush": "Desactivar",
+    "pushDeniedHelp": "Has bloqueado las notificaciones. Actívalas en los ajustes del navegador o del sistema para este sitio.",
+    "pushStatus": {
+      "enabled": "Activadas",
+      "disabled": "Desactivadas",
+      "denied": "Bloqueadas",
+      "unsupported": "No disponibles",
+      "needs-install": "Requiere instalar"
+    },
+    "installTitle": "Instalar la app",
+    "installHint": "Úsala a pantalla completa desde tu pantalla de inicio y recibe recordatorios.",
+    "installAction": "Instalar Monstera",
+    "installIosTitle": "En iPhone, instala la app para recibir avisos",
+    "installIosStep1": "Abre Monstera en Safari.",
+    "installIosStep2": "Pulsa el botón Compartir (cuadrado con flecha).",
+    "installIosStep3": "Elige «Añadir a pantalla de inicio» y abre la app desde ahí.",
+    "geoUnsupported": "Tu navegador no permite obtener la ubicación",
+    "geoFound": "Ubicación detectada",
+    "geoFoundHint": "Pulsa Guardar para aplicarla.",
+    "geoFailed": "No se pudo obtener la ubicación",
+    "geoDenied": "Permiso de ubicación denegado.",
+    "geoUnavailable": "Inténtalo de nuevo o introduce las coordenadas a mano.",
+    "advanced": "Avanzado"
   },
   "home": {
     "title": "Hoy",
@@ -238,7 +278,15 @@
       "manual_exterior": "Recálculo manual exterior",
       "manual_all": "Recálculo manual",
       "home_settings_update": "Ajustes del hogar"
-    }
+    },
+    "tabToday": "Hoy",
+    "completeAll": "Completar todo",
+    "groupDoneToast": "{count} tareas hechas",
+    "postponeDays": "Posponer {days} día | Posponer {days} días",
+    "postponedToast": "Pospuesto {days} día | Pospuesto {days} días",
+    "viewPlant": "Ver planta",
+    "markDoneAria": "Marcar {task} como hecho: {plant}",
+    "taskOptionsAria": "Más opciones para {plant}"
   },
   "plants": {
     "title": "Plantas",
@@ -429,7 +477,62 @@
     },
     "notFoundTitle": "Planta no encontrada",
     "notFoundDescription": "Puede que se haya eliminado.",
-    "backToList": "Ver mis plantas"
+    "backToList": "Ver mis plantas",
+    "waterToday": "Regar hoy",
+    "waterInDays": "Regar en {days} día | Regar en {days} días",
+    "waterOverdueShort": "Riego atrasado {days} d",
+    "filterAria": "Filtrar por estado de salud",
+    "viewModeAria": "Modo de vista",
+    "viewGrid": "Ver en cuadrícula",
+    "viewList": "Ver en lista",
+    "quickWater": "Regar",
+    "quickFertilize": "Abonar",
+    "quickCheckIn": "Revisión",
+    "nextWatering": "Próximo riego",
+    "noWaterScheduled": "Sin riego programado",
+    "everyDays": "Cada {days} día | Cada {days} días",
+    "ringNow": "Ahora",
+    "ringDays": "{days} d",
+    "ringAria": "Próximo riego: {label}",
+    "taskOptionsAria": "Opciones de {task}",
+    "moreActionsAria": "Más acciones",
+    "missingCount": "{count} sin datos",
+    "unarchive": "Desarchivar",
+    "unarchived": "Planta recuperada: sus tareas vuelven a programarse",
+    "deleted": "Planta eliminada",
+    "deleteTitle": "¿Eliminar «{name}»?",
+    "deleteConfirmLong": "Se borrarán la planta, su historial de cuidados y sus fotos. No se puede deshacer. Si ya no la tienes, puedes archivarla.",
+    "updateHealthViaCheckIn": "Actualizar con una revisión",
+    "searchPlaceholder": "Buscar planta…",
+    "sortAria": "Ordenar plantas",
+    "sortNextWater": "Riego",
+    "sortName": "Nombre",
+    "sortHealth": "Salud",
+    "groupBySite": "Agrupar por sitio",
+    "noSiteGroup": "Sin sitio",
+    "noSearchResults": "Sin resultados",
+    "noSearchResultsHint": "Ninguna planta coincide con «{query}».",
+    "clearSearch": "Borrar búsqueda",
+    "formErrors": "Revisa {count} campo marcado | Revisa los {count} campos marcados",
+    "speciesPlaceholder": "Ej. Monstera deliciosa",
+    "speciesSearchHint": "Escribe al menos 3 letras para ver sugerencias.",
+    "removePhoto": "Quitar foto",
+    "photoWillBeRemoved": "La foto se quitará al guardar.",
+    "fertilizeSuggested": "Sugerido para esta especie",
+    "unsavedTitle": "¿Descartar los cambios?",
+    "unsavedDescription": "Tienes cambios sin guardar en esta planta.",
+    "discardChanges": "Descartar",
+    "photoDiary": "Diario de fotos",
+    "growthTitle": "Altura",
+    "growthDate": "Fecha",
+    "growthChartAria": "Gráfico de altura con {count} mediciones",
+    "historyDiagnosis": "Diagnóstico IA",
+    "viewPhoto": "Ver foto",
+    "showDetails": "Ver detalles",
+    "hideDetails": "Ocultar detalles",
+    "toxicToPets": "Precaución con mascotas",
+    "toxicShort": "Mascotas",
+    "toxicToPetsHint": "Según la ficha de la especie: {text}"
   },
   "sites": {
     "title": "Sitios",
@@ -463,7 +566,19 @@
     "coverLabel": "Cubierta",
     "coverValue": "Con techo / toldo",
     "plantsInSite": "Plantas en este sitio",
-    "addPlant": "Añadir"
+    "addPlant": "Añadir",
+    "orientationShort": {
+      "N": "N",
+      "NE": "NE",
+      "E": "E",
+      "SE": "SE",
+      "S": "S",
+      "SW": "SO",
+      "W": "O",
+      "NW": "NO"
+    },
+    "deleted": "Sitio eliminado",
+    "deleteTitle": "¿Eliminar este sitio?"
   },
   "care": {
     "taskWater": "Riego",
@@ -554,7 +669,22 @@
     "updateHealthTitle": "¿Actualizar estado de la planta?",
     "updateHealthBody": "La IA sugiere cambiar el estado según el diagnóstico.",
     "updateHealth": "Actualizar estado",
-    "keepCurrent": "Mantener actual"
+    "keepCurrent": "Mantener actual",
+    "examples": [
+      "Hojas amarillas",
+      "Puntas marrones",
+      "Hojas caídas",
+      "Manchas en las hojas",
+      "Bichos o telarañas",
+      "Tallo blando"
+    ],
+    "progressPhoto": "Analizando la foto…",
+    "progressReading": "Leyendo los síntomas…",
+    "progressCauses": "Buscando causas probables…",
+    "progressSlow": "Está tardando más de lo normal; puedes esperar o cancelar.",
+    "cancelled": "Diagnóstico cancelado",
+    "suggestedHealth": "La IA sugiere marcar la planta como",
+    "disclaimer": "Orientación generada por IA a partir de tu descripción. Si la planta empeora, consulta en un vivero."
   },
   "recommend": {
     "title": "Recomendaciones",
@@ -697,7 +827,19 @@
   "push": {
     "title": "Jardinero",
     "bodyOne": "Tienes 1 tarea de cuidado pendiente hoy",
-    "bodyMany": "Tienes {count} tareas de cuidado pendientes hoy"
+    "bodyMany": "Tienes {count} tareas de cuidado pendientes hoy",
+    "testTitle": "Monstera",
+    "testBody": "¡Las notificaciones funcionan! 🌿",
+    "titleOne": "1 tarea para hoy",
+    "titleMany": "{count} tareas para hoy",
+    "lineWater": "💧 Regar: {plants}",
+    "lineFertilize": "🧪 Abonar: {plants}",
+    "lineCheckIn": "📋 Revisar: {plants}",
+    "andMore": "y {count} más",
+    "overdueLine": "⏰ {count} atrasadas",
+    "actionDone": "Hecho",
+    "actionSnooze": "Mañana",
+    "snoozed": "Tareas pospuestas a mañana"
   },
   "errors": {
     "api": {
@@ -721,7 +863,8 @@
       "vapid.notConfigured": "VAPID no configurado",
       "supabase.notConfigured": "Supabase no configurado en el servidor",
       "weather.unavailable": "Datos meteorológicos no disponibles.",
-      "weather.noForecast": "Sin datos de pronóstico."
+      "weather.noForecast": "Sin datos de pronóstico.",
+      "push.noSubscription": "Este dispositivo no tiene notificaciones activas"
     },
     "validation": {
       "plantNameRequired": "El nombre es obligatorio",
@@ -729,7 +872,8 @@
       "symptomsMin": "Describe los síntomas con al menos 3 caracteres",
       "imageTooLarge": "La foto es demasiado grande. Prueba con una imagen más pequeña.",
       "homeLocationRequired": "Indica la ubicación del hogar antes de recalcular",
-      "plantAgeMax": "La edad indicada supera el máximo para la unidad elegida"
+      "plantAgeMax": "La edad indicada supera el máximo para la unidad elegida",
+      "invalidValue": "Valor no válido"
     },
     "page": {
       "notFoundTitle": "Página no encontrada",
@@ -738,5 +882,31 @@
       "genericDescription": "Ha ocurrido un error inesperado. Vuelve al inicio e inténtalo de nuevo.",
       "goHome": "Volver al inicio"
     }
+  },
+  "quickAdd": {
+    "button": "Añadir",
+    "newPlant": "Nueva planta",
+    "advanceWater": "Regar por adelantado",
+    "newSite": "Nuevo sitio"
+  },
+  "calendar": {
+    "today": "Hoy",
+    "prevMonth": "Mes anterior",
+    "nextMonth": "Mes siguiente",
+    "projected": "Previsto",
+    "projectedHint": "Las tareas «previstas» se calculan con el intervalo actual y se ajustan cuando completas las anteriores.",
+    "pending": "Pendiente",
+    "overdue": "Atrasada",
+    "dayAria": "{date}: {count} tarea | {date}: {count} tareas",
+    "filterAll": "Todas",
+    "filterAria": "Filtrar por tipo de tarea"
+  },
+  "stats": {
+    "title": "Tu constancia · últimos {days} días",
+    "onTime": "A tiempo",
+    "streak": "Racha",
+    "completed": "Hechas",
+    "mostLate": "Más retrasos:",
+    "allOnTime": "¡Todo a tiempo! Sigue así 🌱"
   }
 }

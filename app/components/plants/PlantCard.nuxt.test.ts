@@ -60,4 +60,22 @@ describe('PlantCard', () => {
 
     expect(wrapper.text()).toContain('Gifted')
   })
+
+  it('shows the next watering chip', async () => {
+    const inThreeDays = new Date()
+    inThreeDays.setDate(inThreeDays.getDate() + 3)
+    const wrapper = await mountSuspended(PlantCard, {
+      props: { plant: createPlant(), nextWaterAt: inThreeDays.toISOString() }
+    })
+
+    expect(wrapper.text()).toContain('Water in 3 days')
+  })
+
+  it('shows health as text, not only colour, when the plant needs attention', async () => {
+    const wrapper = await mountSuspended(PlantCard, {
+      props: { plant: createPlant({ health_status: 'sick' }), variant: 'grid' }
+    })
+
+    expect(wrapper.text()).toContain('Sick')
+  })
 })

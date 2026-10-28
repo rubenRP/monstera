@@ -173,6 +173,8 @@ export function mapPerenualProfile(
     soil: joinList(details.soil) || unavailable(locale),
     repotting: formatRepotting(locale, details),
     toxicity: formatToxicity(locale, details),
+    toxicToPets: details.poisonous_to_pets ?? null,
+    toxicToHumans: details.poisonous_to_humans ?? null,
     characteristics: formatCharacteristics(locale, details),
     temperature: formatTemperature(locale, details),
     pestsAndProblems: joinList(details.pest_susceptibility) || unavailable(locale),

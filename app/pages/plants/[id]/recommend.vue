@@ -2,6 +2,7 @@
 import type { RecommendResponse } from '#shared/utils/plants/schemas'
 
 const { t } = useI18n()
+usePageTitle(() => t('recommend.title'))
 const { apiErrorMessage } = useApiError()
 const route = useRoute()
 const id = route.params.id as string

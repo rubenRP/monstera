@@ -6,6 +6,7 @@ import {
 import { isSameCalendarDay } from '#shared/utils/care/alignFertilize'
 import { taskOverdueDays } from '#shared/utils/care/taskDue'
 import { replacePendingCareTask } from '#shared/utils/care/pendingTask'
+import { postponedDueAt } from '#shared/utils/care/postpone'
 import { assertOnline } from '~/utils/offline'
 
 export function useCareTasks() {
@@ -90,6 +91,62 @@ export function useCareTasks() {
 
   async function fetchPlantPendingTasks(plantId: string) {
     return fetchPendingTasks({ plantId })
+  }
+
+  /** Completed water/fertilize tasks of the last `days` days, for punctuality stats. */
+  async function fetchCompletedForStats(days = 30) {
+    const since = new Date()
+    since.setDate(since.getDate() - days)
+    const { data, error } = await supabase
+      .from('care_tasks')
+      .select('plant_id, type, due_at, completed_at, plant:plants(name, archived_at)')
+      .eq('status', 'done')
+      .in('type', ['water', 'fertilize'])
+      .gte('completed_at', since.toISOString())
+    if (error) throw error
+    const rows = (data ?? []) as unknown as Array<{
+      plant_id: string
+      type: CareTaskType
+      due_at: string
+      completed_at: string | null
+      plant: { name: string, archived_at: string | null } | null
+    }>
+    return rows
+      .filter(row => row.completed_at && !row.plant?.archived_at)
+      .map(row => ({
+        plant_id: row.plant_id,
+        plantName: row.plant?.name ?? '',
+        type: row.type,
+        due_at: row.due_at,
+        completed_at: row.completed_at!
+      }))
+  }
+
+  /** All pending tasks with the plant intervals needed to project future occurrences. */
+  async function fetchPendingTasksWithIntervals() {
+    const { data, error } = await supabase
+      .from('care_tasks')
+      .select('*, plant:plants(id, name, photo_path, health_status, archived_at, last_watered_at, watering_interval_days, fertilizing_interval_days, check_in_interval_days, site:sites(id, name))')
+      .eq('status', 'pending')
+      .order('due_at')
+    if (error) throw error
+    return deduplicateOverlappingTasks(filterActivePlantTasks((data ?? []) as CareTask[]))
+  }
+
+  /** due_at of each plant's pending task of `type` (one per plant). */
+  async function fetchPendingDueByPlant(type: CareTaskType = 'water') {
+    const { data, error } = await supabase
+      .from('care_tasks')
+      .select('plant_id, due_at')
+      .eq('status', 'pending')
+      .eq('type', type)
+      .order('due_at')
+    if (error) throw error
+    const map = new Map<string, string>()
+    for (const row of data ?? []) {
+      if (!map.has(row.plant_id)) map.set(row.plant_id, row.due_at)
+    }
+    return map
   }
 
   async function fetchCareHistory(plantId: string, limit = 50) {
@@ -248,6 +305,18 @@ export function useCareTasks() {
     await rescheduleCheckIn(task.plant_id, { scheduleFromToday: true })
   }
 
+  /** Moves the task `days` later without touching the watering interval or history. */
+  async function postponeTask(task: CareTask, days: number) {
+    assertOnline()
+    const dueAt = postponedDueAt(task.due_at, days)
+    await replacePendingCareTask(supabase, task.plant_id, task.type, dueAt)
+    if (task.type === 'water') {
+      // Keep "fertilize with water" aligned to the new watering date
+      await rescheduleFertilizing(task.plant_id)
+    }
+    return dueAt
+  }
+
   const { t } = useI18n()
 
   function taskLabel(type: CareTaskType) {
@@ -301,6 +370,9 @@ export function useCareTasks() {
     fetchTodayCompletedTasks,
     fetchUpcomingTasks,
     fetchPlantPendingTasks,
+    fetchPendingDueByPlant,
+    fetchPendingTasksWithIntervals,
+    fetchCompletedForStats,
     fetchCareHistory,
     fetchTasksInRange,
     fetchResolvedTasksInRange,
@@ -308,6 +380,7 @@ export function useCareTasks() {
     hasPendingTaskDueToday,
     completeTask,
     skipTask,
+    postponeTask,
     taskLabel,
     taskIcon,
     requiresCheckInModal,

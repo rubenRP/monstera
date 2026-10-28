@@ -95,9 +95,11 @@ function handleSubmit() {
             size="sm"
             :variant="form.window_orientation === opt.value ? 'solid' : 'outline'"
             :color="form.window_orientation === opt.value ? 'primary' : 'neutral'"
+            :aria-label="opt.label"
+            :aria-pressed="form.window_orientation === opt.value"
             @click="() => { form.window_orientation = opt.value }"
           >
-            {{ opt.value }}
+            {{ t(`sites.orientationShort.${opt.value}`) }}
           </UButton>
         </div>
         <p class="text-xs text-muted mt-1">
