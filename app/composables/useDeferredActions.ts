@@ -12,10 +12,12 @@ interface PendingAction {
  */
 export function useDeferredActions() {
   const pending = new Map<string, PendingAction>()
+  /** Ids whose action is running: no longer undoable, but still hidden until it settles. */
+  const running = new Set<string>()
   const pendingIds = ref<ReadonlySet<string>>(new Set())
 
   function sync() {
-    pendingIds.value = new Set(pending.keys())
+    pendingIds.value = new Set([...pending.keys(), ...running])
   }
 
   async function execute(id: string) {
@@ -23,8 +25,14 @@ export function useDeferredActions() {
     if (!action) return
     clearTimeout(action.timer)
     pending.delete(id)
+    running.add(id)
     sync()
-    await action.run()
+    try {
+      await action.run()
+    } finally {
+      running.delete(id)
+      sync()
+    }
   }
 
   function schedule(id: string, run: () => Promise<void>, delayMs = UNDO_WINDOW_MS) {
