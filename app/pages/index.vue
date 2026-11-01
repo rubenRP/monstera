@@ -1,29 +1,26 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'blank' })
 
-const user = useSupabaseUser()
-const supabase = useSupabaseClient()
+const user = useAuthUser()
+const { isLoaded } = useAuth()
 
 const LandingPage = defineAsyncComponent(() =>
   import('~/components/landing/LandingPage.vue')
 )
 
-const authReady = ref(false)
+// Render the spinner on the server and until mounted, so hydration always matches.
+const mounted = ref(false)
+onMounted(() => {
+  mounted.value = true
+})
+const authReady = computed(() => mounted.value && isLoaded.value)
 
 function syncLayout() {
-  if (!import.meta.client || !authReady.value) return
+  if (!authReady.value) return
   setPageLayout(user.value ? 'default' : 'blank')
 }
 
-onMounted(async () => {
-  await supabase.auth.getSession()
-  authReady.value = true
-  syncLayout()
-})
-
-watch(user, () => {
-  syncLayout()
-})
+watch([authReady, user], syncLayout, { immediate: true })
 </script>
 
 <template>

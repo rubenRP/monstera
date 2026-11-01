@@ -5,7 +5,9 @@ import { isIosDevice, type PushStatus } from '~/composables/usePushNotifications
 
 const { t, locales, locale, setLocale } = useI18n()
 const supabase = useSupabaseClient()
-const user = useSupabaseUser()
+const { user } = useUser()
+const { signOut: clerkSignOut } = useAuth()
+const { getAccessToken } = useAccessToken()
 const { requireUserId } = useRequireUserId()
 const config = useRuntimeConfig()
 const toast = useToast()
@@ -77,8 +79,7 @@ const indoorHumidityItems = computed(() => [
 ])
 
 async function triggerHomeSettingsRecalc() {
-  const { data } = await supabase.auth.getSession()
-  const token = data.session?.access_token
+  const token = await getAccessToken()
   if (!token) return
 
   const result = await $fetch<{
@@ -192,8 +193,7 @@ async function installApp() {
 async function recalculateAllWatering() {
   recalcAllLoading.value = true
   try {
-    const { data } = await supabase.auth.getSession()
-    const token = data.session?.access_token
+    const token = await getAccessToken()
     if (!token) throw new Error(t('auth.notAuthenticated'))
 
     const result = await $fetch<{
@@ -236,8 +236,7 @@ function buildRecalcToastDescription(errors: number, skipped: number): string | 
 async function recalculateExteriorWatering() {
   recalcLoading.value = true
   try {
-    const { data } = await supabase.auth.getSession()
-    const token = data.session?.access_token
+    const token = await getAccessToken()
     if (!token) throw new Error(t('auth.notAuthenticated'))
 
     const result = await $fetch<{ updated: number, errors: number, plants: number }>(
@@ -266,7 +265,7 @@ async function recalculateExteriorWatering() {
 }
 
 async function signOut() {
-  await supabase.auth.signOut()
+  await clerkSignOut.value()
   await navigateTo('/login')
 }
 
@@ -319,7 +318,7 @@ async function onLocaleChange(value: string) {
         {{ t('settings.account') }}
       </template>
       <p class="text-sm text-muted">
-        {{ user?.email }}
+        {{ user?.primaryEmailAddress?.emailAddress }}
       </p>
       <UButton
         class="mt-3"

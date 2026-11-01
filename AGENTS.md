@@ -14,7 +14,8 @@ Indoor plant care PWA (watering/fertilizing calendar, AI diagnosis, weather reco
 |-------|------------|
 | Frontend | Nuxt 4, Vue 3, Nuxt UI 4, Tailwind 4, `@nuxtjs/i18n` (es/en) |
 | Backend | Nitro (`server/api`, `server/utils`) |
-| Data | Supabase (Postgres + magic link auth + Storage + RLS) |
+| Auth | Clerk (`@clerk/nuxt`, email code) |
+| Data | Supabase (Postgres + Storage + RLS on Clerk JWT) |
 | AI | `@cursor/sdk` on Nitro routes (`/api/diagnose`, `/api/recommend`) |
 | Species | Perenual API + cache in `species_profiles` |
 | PWA | `@vite-pwa/nuxt`, optional Web Push |
@@ -49,7 +50,7 @@ flowchart TB
   subgraph data [Supabase]
     DB[(Postgres + RLS)]
     Storage[(plant-photos)]
-    Auth[Auth magic link]
+    Auth[Clerk JWT validation]
   end
 
   subgraph server [Nitro server/api]
@@ -104,14 +105,14 @@ See also [`docs/watering-algorithm.md`](docs/watering-algorithm.md) for adaptive
 ### Composables (`app/composables/use*.ts`)
 
 - Export `function useXxx()` returning async methods and helpers.
-- Data access: `useSupabaseClient()` + `useSupabaseUser()` (respects RLS).
+- Data access: `useSupabaseClient()` (sends the Clerk token, respects RLS) + `useAuthUser()` / `useRequireUserId()` for the Clerk user id; `useAccessToken()` for `/api/*` calls.
 - Throw Supabase `error`; do not swallow exceptions.
 
 ### Server routes (`server/api/**`)
 
 - Secrets only via `useRuntimeConfig()` (`cursorApiKey`, `supabaseServiceKey`, `perenualApiKey`).
 - Elevated client: `getServiceSupabase()` in [`server/utils/supabase.ts`](server/utils/supabase.ts).
-- Routes touching user data: validate `Authorization: Bearer <access_token>` with `supabase.auth.getUser(token)` and filter by `user_id`.
+- Routes touching user data: `const user = requireAuthUser(event)` ([`server/utils/auth.ts`](server/utils/auth.ts), Clerk validates the Bearer token) and filter by `user.id` → `user_id`. RLS policies use `auth.jwt() ->> 'sub'`, never `auth.uid()` (Clerk ids are not UUIDs).
 - Validate body with Zod (`safeParse` → `createError` 400).
 - AI: prompts in [`shared/utils/cursor/prompts.ts`](shared/utils/cursor/prompts.ts); client wrapper in [`app/composables/useAiApi.ts`](app/composables/useAiApi.ts).
 
@@ -143,6 +144,7 @@ See also [`docs/watering-algorithm.md`](docs/watering-algorithm.md) for adaptive
 
 See [`.env.example`](.env.example). Critical rules:
 
+- **`NUXT_PUBLIC_CLERK_PUBLISHABLE_KEY`** (client) / **`NUXT_CLERK_SECRET_KEY`** (server only).
 - **`SUPABASE_KEY`** / **`NUXT_PUBLIC_SUPABASE_KEY`**: publishable (client). **`NUXT_SUPABASE_SECRET_KEY`**: server only, never in the bundle.
 - **Do not** add a `SUPABASE_DB` variable — it breaks `supabase db push`.
 - `CURSOR_API_KEY`, `PERENUAL_API_KEY` are server-only (`runtimeConfig`).

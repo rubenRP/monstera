@@ -24,15 +24,7 @@ export default defineEventHandler(async (event) => {
   const { plantId, symptoms, imageBase64, mimeType } = parsed.data
   const supabase = getServiceSupabase()
 
-  const authHeader = getHeader(event, 'authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    throwApiError(401, API_ERROR_CODES.AUTH_UNAUTHORIZED)
-  }
-  const token = authHeader.slice(7)
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-  if (authError || !user) {
-    throwApiError(401, API_ERROR_CODES.AUTH_INVALID_SESSION)
-  }
+  const user = requireAuthUser(event)
 
   const { data: plant, error: plantError } = await supabase
     .from('plants')

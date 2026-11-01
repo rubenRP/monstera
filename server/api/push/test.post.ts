@@ -3,15 +3,8 @@ import { translate } from '#shared/utils/i18n/translate'
 import { sendPushToUser } from '../../utils/push/sendToUser'
 
 export default defineEventHandler(async (event) => {
-  const authHeader = getHeader(event, 'authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    throwApiError(401, API_ERROR_CODES.AUTH_UNAUTHORIZED)
-  }
+  const user = requireAuthUser(event)
   const supabase = getServiceSupabase()
-  const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.slice(7))
-  if (authError || !user) {
-    throwApiError(401, API_ERROR_CODES.AUTH_INVALID_SESSION)
-  }
 
   const vapid = getVapidKeysFromConfig()
   const locale = getRequestLocale(event)

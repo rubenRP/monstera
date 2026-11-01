@@ -1,6 +1,6 @@
 # Contributing to Monstera
 
-Thanks for your interest in contributing. This project is an indoor plant care PWA built with Nuxt 4, Supabase, and optional AI integrations.
+Thanks for your interest in contributing. This project is an indoor plant care PWA built with Nuxt 4, Clerk, Supabase, and optional AI integrations.
 
 ## Getting started
 

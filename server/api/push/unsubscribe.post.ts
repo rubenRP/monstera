@@ -9,15 +9,8 @@ export default defineEventHandler(async (event) => {
     throwApiError(400, API_ERROR_CODES.PUSH_INVALID_SUBSCRIPTION)
   }
 
-  const authHeader = getHeader(event, 'authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    throwApiError(401, API_ERROR_CODES.AUTH_UNAUTHORIZED)
-  }
+  const user = requireAuthUser(event)
   const supabase = getServiceSupabase()
-  const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.slice(7))
-  if (authError || !user) {
-    throwApiError(401, API_ERROR_CODES.AUTH_INVALID_SESSION)
-  }
 
   const { error } = await supabase
     .from('push_subscriptions')

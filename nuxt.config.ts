@@ -5,7 +5,7 @@ export default defineNuxtConfig({
   modules: [
     '@nuxt/eslint',
     '@nuxt/ui',
-    '@nuxtjs/supabase',
+    '@clerk/nuxt',
     '@vite-pwa/nuxt',
     '@nuxtjs/i18n'
   ],
@@ -36,6 +36,14 @@ export default defineNuxtConfig({
       || '',
     vapidPrivateKey: process.env.VAPID_PRIVATE_KEY || '',
     public: {
+      supabaseUrl:
+        process.env.SUPABASE_URL
+        || process.env.NUXT_PUBLIC_SUPABASE_URL
+        || '',
+      supabaseKey:
+        process.env.SUPABASE_KEY
+        || process.env.NUXT_PUBLIC_SUPABASE_KEY
+        || '',
       vapidPublicKey: process.env.NUXT_PUBLIC_VAPID_PUBLIC_KEY || '',
       homeLat: process.env.NUXT_PUBLIC_HOME_LAT || '40.4168',
       homeLon: process.env.NUXT_PUBLIC_HOME_LON || '-3.7038',
@@ -62,6 +70,15 @@ export default defineNuxtConfig({
         maxDuration: 120
       }
     }
+  },
+
+  clerk: {
+    signInUrl: '/login',
+    signInFallbackRedirectUrl: '/',
+    signInForceRedirectUrl: '/',
+    signUpUrl: '/login',
+    signUpFallbackRedirectUrl: '/',
+    signUpForceRedirectUrl: '/'
   },
 
   eslint: {
@@ -105,15 +122,6 @@ export default defineNuxtConfig({
     },
     client: {
       installPrompt: true
-    }
-  },
-
-  supabase: {
-    redirect: true,
-    redirectOptions: {
-      login: '/login',
-      callback: '/confirm',
-      exclude: ['/', '/login', '/confirm']
     }
   }
 })

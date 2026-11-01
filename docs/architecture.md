@@ -9,7 +9,7 @@ High-level overview for operators and contributors. For implementation patterns,
 | Frontend | Nuxt 4, Vue 3, Nuxt UI | PWA UI, i18n (es/en) |
 | API | Nitro (`server/api`) | AI routes, species, push, cron |
 | Database | Supabase Postgres | Plants, sites, care tasks, diagnoses |
-| Auth | Supabase magic link | Per-user sessions |
+| Auth | Clerk (email code) | Per-user sessions; Supabase validates Clerk's JWT |
 | Storage | Supabase `plant-photos` bucket | Private plant photos (RLS by user folder) |
 | Weather | Open-Meteo | Recommendations and exterior watering cron |
 | AI | Cursor API (`@cursor/sdk`) | Diagnosis and recommendations (optional) |
@@ -28,7 +28,7 @@ flowchart TB
   subgraph supabase [Supabase]
     DB[(Postgres + RLS)]
     Storage[(plant-photos)]
-    Auth[Magic link auth]
+    Auth[Clerk JWT validation]
   end
 
   subgraph nitro [Nitro server]
@@ -59,8 +59,8 @@ flowchart TB
 
 ## Security model
 
-- **Client**: Supabase publishable key only; all user tables protected by RLS (`auth.uid() = user_id`).
-- **Server**: Secret key for routes that need elevated access; every user-scoped handler validates `Authorization: Bearer <access_token>`.
+- **Client**: Supabase publishable key only; all user tables protected by RLS (`auth.jwt() ->> 'sub' = user_id`, the Clerk user id).
+- **Server**: Secret key for routes that need elevated access; every user-scoped handler calls `requireAuthUser(event)` (Clerk validates `Authorization: Bearer <session token>`) and filters by `user_id`.
 - **Storage**: Objects stored under `{userId}/...`; policies restrict read/write to the owner.
 - **Species cache**: `species_profiles` is read-only for authenticated users; writes use the service role on the server.
 - **Cron**: `CRON_SECRET` always required; Vercel sends it as a Bearer token.

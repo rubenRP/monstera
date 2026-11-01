@@ -1,5 +1,5 @@
 export default defineNuxtPlugin(() => {
-  const user = useSupabaseUser()
+  const user = useAuthUser()
   const { syncWateringOnLogin } = useWateringSync()
   const { fetchRecentEvents } = useWateringRecalcEvents()
 
