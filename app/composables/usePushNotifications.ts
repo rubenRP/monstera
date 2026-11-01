@@ -11,7 +11,7 @@ export function isIosDevice(): boolean {
 
 export function usePushNotifications() {
   const config = useRuntimeConfig()
-  const supabase = useSupabaseClient()
+  const { getAccessToken } = useAccessToken()
   const { t } = useI18n()
   const { localeHeaders } = useI18nHeaders()
 
@@ -20,8 +20,7 @@ export function usePushNotifications() {
   }
 
   async function authHeaders() {
-    const { data: { session } } = await supabase.auth.getSession()
-    const token = session?.access_token
+    const token = await getAccessToken()
     if (!token) throw new Error(t('settings.pushSessionExpired'))
     return { Authorization: `Bearer ${token}` }
   }

@@ -3,22 +3,19 @@ export function isValidUserId(id: unknown): id is string {
 }
 
 export function useRequireUserId() {
-  const supabase = useSupabaseClient()
-  const user = useSupabaseUser()
-
-  function userIdFromRef(): string | undefined {
-    const u = user.value as { id?: string, sub?: string } | null
-    if (!u) return undefined
-    const id = u.id ?? u.sub
-    return isValidUserId(id) ? id : undefined
-  }
+  const { userId, isLoaded } = useAuth()
 
   async function requireUserId(): Promise<string> {
-    const fromRef = userIdFromRef()
-    if (fromRef) return fromRef
-
-    const { data: { session } } = await supabase.auth.getSession()
-    const uid = session?.user?.id
+    if (!isLoaded.value) {
+      await new Promise<void>((resolve) => {
+        const stop = watch(isLoaded, (loaded) => {
+          if (!loaded) return
+          stop()
+          resolve()
+        }, { immediate: true })
+      })
+    }
+    const uid = userId.value
     if (!isValidUserId(uid)) {
       throw new Error('No autenticado')
     }

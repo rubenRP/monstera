@@ -10,15 +10,7 @@ const CACHE_TTL_MS = 24 * 60 * 60 * 1000
 const cache = new Map<string, { at: number, items: SpeciesSuggestion[] }>()
 
 export default defineEventHandler(async (event) => {
-  const authHeader = getHeader(event, 'authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    throwApiError(401, API_ERROR_CODES.AUTH_UNAUTHORIZED)
-  }
-  const supabase = getServiceSupabase()
-  const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.slice(7))
-  if (authError || !user) {
-    throwApiError(401, API_ERROR_CODES.AUTH_INVALID_SESSION)
-  }
+  requireAuthUser(event)
 
   const parsed = querySchema.safeParse(getQuery(event))
   if (!parsed.success) {

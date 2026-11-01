@@ -22,6 +22,6 @@ You should receive a response within a few business days. We will coordinate dis
 - Set **`CRON_SECRET`** in production. Cron endpoints (`/api/cron/*`) accept `Authorization: Bearer <CRON_SECRET>` or `x-cron-secret`. Without it (and without Vercel's `x-vercel-cron` header), requests are rejected — but always configure the secret on self-hosted instances.
 - Never expose **`NUXT_SUPABASE_SECRET_KEY`** (service role) to the client or commit it to version control.
 - Use Supabase **RLS** on all user tables; do not bypass with the secret key on the client.
-- Rotate Supabase, Cursor, Perenual, VAPID, and cron secrets if they may have been leaked.
+- Rotate Clerk, Supabase, Cursor, Perenual, VAPID, and cron secrets if they may have been leaked.
 
 See [docs/self-hosting.md](docs/self-hosting.md) for deployment hardening.

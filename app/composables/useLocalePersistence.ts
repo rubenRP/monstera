@@ -8,7 +8,7 @@ export function useLocalePersistence() {
   if (!import.meta.client) return
 
   const supabase = useSupabaseClient()
-  const user = useSupabaseUser()
+  const user = useAuthUser()
   const { locale, setLocale } = useI18n()
   const syncing = ref(false)
   const applyingRemoteLocale = ref(false)

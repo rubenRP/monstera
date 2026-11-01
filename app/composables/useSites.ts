@@ -5,7 +5,7 @@ const SITE_SELECT = '*, plants(id, name, health_status, photo_path, archived_at)
 
 export function useSites() {
   const supabase = useSupabaseClient()
-  const user = useSupabaseUser()
+  const user = useAuthUser()
 
   async function fetchSites() {
     const { data, error } = await supabase

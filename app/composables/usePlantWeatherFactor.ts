@@ -4,7 +4,7 @@ import { fetchOpenMeteoMetrics } from '#shared/utils/weather/fetchOpenMeteoMetri
 
 export function usePlantWeatherFactor() {
   const supabase = useSupabaseClient()
-  const user = useSupabaseUser()
+  const user = useAuthUser()
 
   async function fetchHomeSettings(): Promise<{
     lat: number

@@ -52,34 +52,9 @@
   },
   "auth": {
     "loginSubtitle": "Sign in with your email",
-    "email": "Email",
-    "sendMagicLink": "Send sign-in code",
-    "checkEmail": "Check your email",
-    "magicLinkSent": "We sent you a link and a 6-digit code.",
-    "magicLinkSentPwa": "We sent you a 6-digit code. Enter it here — on iPhone the email link opens Safari and does not sign you into the installed app.",
-    "otpLabel": "6-digit code",
-    "verifyCode": "Sign in",
-    "verifyCodeError": "Invalid or expired code",
-    "otpInvalid": "Enter the 6-digit code from your email",
-    "useAnotherEmail": "Use another email",
-    "sendLinkError": "Failed to send the link",
-    "confirmingSession": "Confirming session…",
-    "safariSessionTitle": "Signed in in Safari",
-    "safariSessionHint": "The link signed you in in Safari, not in the home screen app. Open Monstera from your icon and enter the 6-digit code from the same email.",
-    "safariSessionAction": "Go to sign in",
     "notAuthenticated": "Not authenticated",
     "loginTitle": "Sign in",
-    "emailPlaceholder": "you{'@'}email.com",
-    "resendCode": "Resend code",
-    "resendIn": "Resend in {seconds}s",
-    "backToLanding": "Back to the home page",
-    "errors": {
-      "rateLimit": "Too many codes requested. Wait a minute and try again.",
-      "codeExpired": "The code has expired or is wrong. Request a new one.",
-      "invalidEmail": "Check the email address: it doesn't look valid.",
-      "notAllowed": "This email doesn't have access to Monstera.",
-      "network": "You're offline. Check your connection and try again."
-    }
+    "backToLanding": "Back to the home page"
   },
   "landing": {
     "hero": {

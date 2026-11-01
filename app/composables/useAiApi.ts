@@ -1,13 +1,12 @@
 import type { DiagnosisResponse, RecommendResponse } from '#shared/utils/plants/schemas'
 
 export function useAiApi() {
-  const supabase = useSupabaseClient()
+  const { getAccessToken } = useAccessToken()
   const { localeHeaders } = useI18nHeaders()
   const { t } = useI18n()
 
   async function getAuthHeader(): Promise<Record<string, string>> {
-    const { data } = await supabase.auth.getSession()
-    const token = data.session?.access_token
+    const token = await getAccessToken()
     if (!token) throw new Error(t('auth.notAuthenticated'))
     return { Authorization: `Bearer ${token}`, ...localeHeaders() }
   }

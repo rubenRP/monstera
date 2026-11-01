@@ -22,6 +22,7 @@ const PLANT_SELECT = '*, site:sites(*)'
 
 export function useAdaptiveWatering() {
   const supabase = useSupabaseClient()
+  const { getAccessToken } = useAccessToken()
   const { requireUserId } = useRequireUserId()
   const { fetchWateringSnapshot, logWateringRecalcEvent } = useWateringRecalcEvents()
   const { localeHeaders } = useI18nHeaders()
@@ -95,8 +96,7 @@ export function useAdaptiveWatering() {
     plantId: string,
     allowCursor = true
   ): Promise<WateringReferenceResult> {
-    const { data: session } = await supabase.auth.getSession()
-    const token = session.session?.access_token
+    const token = await getAccessToken()
     if (!token) throw new Error('Not authenticated')
 
     return $fetch<WateringReferenceResult>('/api/watering/resolve-reference', {

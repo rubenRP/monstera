@@ -5,7 +5,7 @@ const MIN_QUERY = 3
 
 /** Debounced Perenual suggestions for the species field; silent when the service is unavailable. */
 export function useSpeciesSearch(query: Ref<string | null | undefined>) {
-  const supabase = useSupabaseClient()
+  const { getAccessToken } = useAccessToken()
   const suggestions = ref<SpeciesSuggestion[]>([])
   const searching = ref(false)
   let timer: ReturnType<typeof setTimeout> | null = null
@@ -17,8 +17,7 @@ export function useSpeciesSearch(query: Ref<string | null | undefined>) {
     const id = ++requestId
     searching.value = true
     try {
-      const { data } = await supabase.auth.getSession()
-      const token = data.session?.access_token
+      const token = await getAccessToken()
       if (!token) return
       const res = await $fetch<{ items: SpeciesSuggestion[] }>('/api/species/search', {
         query: { q },

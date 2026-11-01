@@ -6,7 +6,8 @@ Guide for running your own Monstera instance with a Supabase project and a Node.
 
 - **Node.js 22** (matches CI)
 - A [Supabase](https://supabase.com) project (hosted is recommended)
-- HTTPS domain for production (required for PWA and magic-link auth)
+- A [Clerk](https://clerk.com) application (login)
+- HTTPS domain for production (required for PWA)
 - Optional: system cron or another scheduler for background jobs
 
 ## Architecture
@@ -42,18 +43,25 @@ npx supabase db push
 
 Migrations create all tables, RLS policies, and the private `plant-photos` storage bucket. No manual dashboard steps are needed for schema or storage.
 
-### Auth (production)
+### Auth (Clerk)
 
-In **Authentication → URL configuration**:
+Login is handled by [Clerk](https://clerk.com). Supabase only validates Clerk's session token (third-party auth), and RLS reads the Clerk user id from the JWT `sub` claim.
 
-| Setting | Example |
-|---------|---------|
-| **Site URL** | `https://your-domain.example` |
-| **Redirect URLs** | `https://your-domain.example/confirm`, `http://localhost:3000/**` |
+1. Create a Clerk application and enable **Email** sign-in with *Email verification code*.
+2. Clerk dashboard → **Integrations → Supabase** → activate (adds the `role: authenticated` claim to session tokens).
+3. Supabase dashboard → **Authentication → Sign In / Up → Third-Party Auth → Add → Clerk**, using your Clerk domain. For local `supabase start`, enable `[auth.third_party.clerk]` in `supabase/config.toml`.
+4. Add your production domain to the allowed origins of the Clerk application and use the production keys (`pk_live_…`, `sk_live_…`).
 
-Magic links use the template in [`supabase/templates/magic_link.html`](../supabase/templates/magic_link.html).
+Emails (verification codes) are sent by Clerk: no SMTP setup in Supabase is needed.
 
-For production email delivery, configure **SMTP** under **Project Settings → Authentication**. For local development, `supabase start` provides [Inbucket](http://localhost:54324) to capture emails.
+### Migrating an existing Supabase Auth user
+
+`db push` converts every `user_id` column to `TEXT`; existing rows keep their old UUID. After signing in once with Clerk, reassign them (and move the photos in Storage):
+
+```bash
+node --env-file=.env scripts/migrate-user-to-clerk.mjs --clerk-id user_xxx          # dry run
+node --env-file=.env scripts/migrate-user-to-clerk.mjs --clerk-id user_xxx --apply  # migrate
+```
 
 ### Demo plant data
 
@@ -71,7 +79,10 @@ Copy [`.env.example`](../.env.example) to `.env` and fill in values from **Proje
 | `SUPABASE_KEY` | **Publishable** (anon) | Client; respects RLS |
 | `NUXT_SUPABASE_SECRET_KEY` | **Secret** (service_role) | Server routes only |
 
-> Never expose the **Secret** key in the frontend or commit it to Git.  
+| `NUXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | — | Clerk publishable key (client) |
+| `NUXT_CLERK_SECRET_KEY` | — | Clerk secret key (server only) |
+
+> Never expose the **Secret** keys in the frontend or commit them to Git.  
 > Aliases `NUXT_PUBLIC_SUPABASE_URL` / `NUXT_PUBLIC_SUPABASE_KEY` / `SUPABASE_SECRET_KEY` are also supported.
 
 ### Optional — AI and species

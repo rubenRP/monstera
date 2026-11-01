@@ -52,34 +52,9 @@
   },
   "auth": {
     "loginSubtitle": "Inicia sesión con tu email",
-    "email": "Email",
-    "sendMagicLink": "Enviar código de acceso",
-    "checkEmail": "Revisa tu correo",
-    "magicLinkSent": "Te hemos enviado un enlace y un código de 6 dígitos.",
-    "magicLinkSentPwa": "Te hemos enviado un código de 6 dígitos. Introdúcelo aquí: en iPhone el enlace del correo abre Safari y no inicia sesión en la app instalada.",
-    "otpLabel": "Código de 6 dígitos",
-    "verifyCode": "Entrar",
-    "verifyCodeError": "Código incorrecto o caducado",
-    "otpInvalid": "Introduce el código de 6 dígitos del correo",
-    "useAnotherEmail": "Usar otro email",
-    "sendLinkError": "Error al enviar el enlace",
-    "confirmingSession": "Confirmando sesión…",
-    "safariSessionTitle": "Sesión abierta en Safari",
-    "safariSessionHint": "El enlace ha iniciado sesión en Safari, no en la app de la pantalla de inicio. Abre Monstera desde el icono e introduce el código de 6 dígitos del mismo correo.",
-    "safariSessionAction": "Ir al inicio de sesión",
     "notAuthenticated": "No autenticado",
     "loginTitle": "Iniciar sesión",
-    "emailPlaceholder": "tu{'@'}email.com",
-    "resendCode": "Reenviar código",
-    "resendIn": "Reenviar en {seconds} s",
-    "backToLanding": "Volver a la portada",
-    "errors": {
-      "rateLimit": "Has pedido demasiados códigos. Espera un minuto e inténtalo de nuevo.",
-      "codeExpired": "El código ha caducado o no es correcto. Pide uno nuevo.",
-      "invalidEmail": "Revisa el email: no parece válido.",
-      "notAllowed": "Este email no tiene acceso a Monstera.",
-      "network": "Sin conexión. Comprueba tu red e inténtalo de nuevo."
-    }
+    "backToLanding": "Volver a la portada"
   },
   "landing": {
     "hero": {
