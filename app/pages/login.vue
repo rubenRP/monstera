@@ -32,9 +32,12 @@ const appearance = computed(() => {
   }
 })
 
-// Keep Clerk's own UI texts in the app language (needs the Clerk instance, so client + loaded only).
-watch([isLoaded, locale], ([loaded, current]) => {
-  if (!import.meta.client || !loaded) return
+// Keep Clerk's own UI texts in the app language. On a cold load `isLoaded` can already be true
+// (SSR auth state) before `window.Clerk` exists, and `updateClerkOptions` throws
+// "Missing Clerk instance" then, which turned /login into a 500. Wait for the instance too.
+const clerk = useClerk()
+watch([isLoaded, clerk, locale], ([loaded, , current]) => {
+  if (!import.meta.client || !loaded || !window.Clerk) return
   updateClerkOptions({ localization: current === 'en' ? enUS : esES })
 }, { immediate: true })
 
