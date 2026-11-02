@@ -25,6 +25,7 @@ async function onSubmit(data: PlantFormInput, photo?: File) {
     toast.add({ title: t('plants.created'), color: 'success' })
     await navigateTo(`/plants/${plant.id}`)
   } catch (e: unknown) {
+    console.error('[plants/new] createPlant failed', e)
     formRef.value?.onSaveFailed()
     toast.add({
       title: t('common.error'),

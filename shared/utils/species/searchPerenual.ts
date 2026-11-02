@@ -45,11 +45,34 @@ export function scorePerenualMatch(item: PerenualSpeciesListItem, speciesQuery: 
   return score
 }
 
+/**
+ * For a binomial query ("ficus nitida") the species itself must match. Sharing only the genus
+ * is not enough: searching "ficus" returns Ficus carica, which must not stand in for
+ * Ficus nitida (different care, light and toxicity data).
+ */
+function matchesSpecies(item: PerenualSpeciesListItem, speciesQuery: string): boolean {
+  const q = speciesQuery.trim().toLowerCase().replace(/\s+/g, ' ')
+  const binomial = q.split(' ').slice(0, 2).join(' ')
+  const scientific = (item.scientific_name ?? []).join(' ').toLowerCase()
+  const common = (item.common_name ?? '').toLowerCase()
+  return scientific.includes(binomial) || common.includes(q)
+}
+
 export function pickBestPerenualMatch(
   items: PerenualSpeciesListItem[],
   speciesQuery: string
 ): PerenualSpeciesListItem | null {
   if (!items.length) return null
+
+  const isBinomial = speciesQuery.trim().split(/\s+/).filter(Boolean).length >= 2
+  if (isBinomial) {
+    const species = items
+      .filter(item => matchesSpecies(item, speciesQuery))
+      .map(item => ({ item, score: scorePerenualMatch(item, speciesQuery) }))
+      .sort((a, b) => b.score - a.score)
+    // No species-level match: let the caller try the next query, then fall back to generating the profile.
+    return species[0]?.item ?? null
+  }
 
   const scored = items
     .map(item => ({ item, score: scorePerenualMatch(item, speciesQuery) }))
@@ -58,15 +81,6 @@ export function pickBestPerenualMatch(
 
   if (scored.length) return scored[0]!.item
 
-  const qWords = speciesQuery.trim().toLowerCase().split(/\s+/).filter(Boolean)
-  if (qWords.length >= 2 && items.length) {
-    const genusMatch = items.find((item) => {
-      const genus = (item.genus ?? '').toLowerCase()
-      const scientific = (item.scientific_name ?? []).join(' ').toLowerCase()
-      return genus === qWords[0] || scientific.startsWith(`${qWords[0]} `)
-    })
-    if (genusMatch) return genusMatch
-  }
-
+  // Single-word query (genus or common name): the first result is a reasonable fallback.
   return items[0] ?? null
 }

@@ -87,7 +87,8 @@ export function usePlants() {
       .insert({ ...payload, user_id: uid })
       .select(PLANT_SELECT)
       .single()
-    if (error || !data) throw error
+    if (error) throw error
+    if (!data) throw new Error('El servidor no devolvió la planta creada')
     const plant = data as Plant
 
     if (photoFile) {

@@ -21,6 +21,9 @@ export function useApiError() {
     }
     if (error instanceof OfflineError) return t('pwa.offlineAction')
     if (error instanceof Error && error.message && error.message !== 'OFFLINE') return error.message
+    // Non-Error objects (e.g. plain error payloads) can still carry a useful message
+    const message = (error as { message?: unknown } | null)?.message
+    if (typeof message === 'string' && message && message !== 'OFFLINE') return message
     return t('common.unknownError')
   }
 
