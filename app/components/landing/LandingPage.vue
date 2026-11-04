@@ -87,14 +87,14 @@ useHead({
               {{ t('landing.hero.subtitle') }}
             </p>
 
-            <div class="mt-8 flex flex-col sm:flex-row items-center gap-3">
+            <div class="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
               <UButton
                 :href="selfHostingDocsUrl"
                 target="_blank"
                 rel="noopener noreferrer"
                 size="xl"
                 trailing-icon="i-lucide-arrow-right"
-                class="rounded-full px-7 font-semibold shadow-lg shadow-primary/20 transition-transform hover:-translate-y-0.5"
+                class="rounded-full px-7 font-semibold whitespace-nowrap shadow-lg shadow-primary/20 transition-transform hover:-translate-y-0.5"
               >
                 {{ t('landing.hero.cta') }}
               </UButton>
@@ -106,7 +106,7 @@ useHead({
                 color="neutral"
                 variant="ghost"
                 icon="i-lucide-github"
-                class="rounded-full px-6"
+                class="rounded-full px-6 whitespace-nowrap"
               >
                 {{ t('landing.hero.secondaryCta') }}
               </UButton>
@@ -208,10 +208,9 @@ useHead({
         <!-- Final CTA -->
         <footer class="pb-16 text-center">
           <div class="mx-auto max-w-xl space-y-6">
-            <AppLogo
-              size="lg"
-              class="mx-auto"
-            />
+            <div class="flex justify-center">
+              <AppLogo size="lg" />
+            </div>
             <UButton
               :href="selfHostingDocsUrl"
               target="_blank"
