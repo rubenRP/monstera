@@ -35,6 +35,7 @@ const appearance = computed(() => {
 // Keep Clerk's own UI texts in the app language. On a cold load `isLoaded` can already be true
 // (SSR auth state) before `window.Clerk` exists, and `updateClerkOptions` throws
 // "Missing Clerk instance" then, which turned /login into a 500. Wait for the instance too.
+const showLanding = useRuntimeConfig().public.showLanding as boolean
 const clerk = useClerk()
 watch([isLoaded, clerk, locale], ([loaded, , current]) => {
   if (!import.meta.client || !loaded || !window.Clerk) return
@@ -78,7 +79,10 @@ watch([isLoaded, isSignedIn], ([loaded, signedIn]) => {
         </template>
       </ClientOnly>
 
-      <div class="text-center">
+      <div
+        v-if="showLanding"
+        class="text-center"
+      >
         <NuxtLink
           to="/"
           class="inline-flex items-center gap-1 text-sm text-muted hover:text-primary"

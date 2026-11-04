@@ -47,6 +47,10 @@ export default defineNuxtConfig({
       vapidPublicKey: process.env.NUXT_PUBLIC_VAPID_PUBLIC_KEY || '',
       homeLat: process.env.NUXT_PUBLIC_HOME_LAT || '40.4168',
       homeLon: process.env.NUXT_PUBLIC_HOME_LON || '-3.7038',
+      // Set NUXT_PUBLIC_SHOW_LANDING=false to send signed-out visitors straight to /login.
+      showLanding: !['false', '0', 'off'].includes(
+        (process.env.NUXT_PUBLIC_SHOW_LANDING || '').trim().toLowerCase()
+      ),
       githubUrl:
         process.env.NUXT_PUBLIC_GITHUB_URL
         || 'https://github.com/rubenrp/monstera'

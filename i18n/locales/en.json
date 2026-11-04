@@ -57,11 +57,12 @@
     "backToLanding": "Back to the home page"
   },
   "landing": {
+    "signIn": "Sign in",
     "hero": {
       "badge": "AI-powered plant care",
       "title": "Care for your plants with ease",
       "subtitle": "Watering calendar, AI diagnosis and weather-based recommendations. All in an installable PWA.",
-      "cta": "Get started",
+      "cta": "Install your own instance",
       "secondaryCta": "View on GitHub"
     },
     "preview": {
@@ -107,7 +108,7 @@
       "github": "View on GitHub"
     },
     "footer": {
-      "cta": "Create account or sign in"
+      "cta": "Deploy your own Monstera"
     }
   },
   "settings": {

@@ -50,6 +50,15 @@ useHead({
               @update:model-value="onLocaleChange"
             />
             <UColorModeButton />
+            <UButton
+              to="/login"
+              size="sm"
+              color="neutral"
+              variant="ghost"
+              icon="i-lucide-log-in"
+            >
+              {{ t('landing.signIn') }}
+            </UButton>
           </div>
         </div>
       </header>
@@ -80,7 +89,9 @@ useHead({
 
             <div class="mt-8 flex flex-col sm:flex-row items-center gap-3">
               <UButton
-                to="/login"
+                :href="selfHostingDocsUrl"
+                target="_blank"
+                rel="noopener noreferrer"
                 size="xl"
                 trailing-icon="i-lucide-arrow-right"
                 class="rounded-full px-7 font-semibold shadow-lg shadow-primary/20 transition-transform hover:-translate-y-0.5"
@@ -202,7 +213,9 @@ useHead({
               class="mx-auto"
             />
             <UButton
-              to="/login"
+              :href="selfHostingDocsUrl"
+              target="_blank"
+              rel="noopener noreferrer"
               size="lg"
               trailing-icon="i-lucide-arrow-right"
               class="rounded-full px-7 font-semibold"
