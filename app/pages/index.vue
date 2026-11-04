@@ -7,6 +7,7 @@ definePageMeta({ layout: false })
 const user = useAuthUser()
 const { isLoaded } = useAuth()
 const nuxtApp = useNuxtApp()
+const showLanding = useRuntimeConfig().public.showLanding as boolean
 
 const LandingPage = defineAsyncComponent(() =>
   import('~/components/landing/LandingPage.vue')
@@ -25,7 +26,7 @@ const layoutName = computed(() => (authReady.value && user.value ? 'default' : '
 <template>
   <NuxtLayout :name="layoutName">
     <div
-      v-if="!authReady"
+      v-if="!authReady || (!user && !showLanding)"
       class="min-h-screen flex items-center justify-center bg-default"
     >
       <UIcon

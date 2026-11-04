@@ -103,6 +103,12 @@ Plant care, calendar, photos, and sites work with Supabase alone.
 
 [Open-Meteo](https://open-meteo.com/) is used for weather and exterior watering recalculation. No API key is required.
 
+### Optional — landing page
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `NUXT_PUBLIC_SHOW_LANDING` | `true` | Set to `false` to hide the public landing page: signed-out visitors at `/` are redirected to `/login` and the "back to landing" link is removed |
+
 ### Optional — Web Push
 
 ```bash

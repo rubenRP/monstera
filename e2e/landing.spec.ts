@@ -5,6 +5,6 @@ test.describe('Landing (public)', () => {
     await page.goto('/')
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
     await expect(page.getByRole('link', { name: /GitHub/i })).toBeVisible()
-    await expect(page.getByRole('link', { name: /Empezar|Get started/i })).toBeVisible()
+    await expect(page.getByRole('link', { name: /Iniciar sesión|Sign in/i })).toBeVisible()
   })
 })

@@ -57,11 +57,12 @@
     "backToLanding": "Volver a la portada"
   },
   "landing": {
+    "signIn": "Iniciar sesión",
     "hero": {
       "badge": "Cuidado de plantas con IA",
       "title": "Cuida tus plantas con calma",
       "subtitle": "Calendario de riego, diagnóstico con IA y recomendaciones según el clima. Todo en una PWA que puedes instalar.",
-      "cta": "Empezar",
+      "cta": "Instala tu propia instancia",
       "secondaryCta": "Ver en GitHub"
     },
     "preview": {
@@ -107,7 +108,7 @@
       "github": "Ver en GitHub"
     },
     "footer": {
-      "cta": "Crear cuenta o iniciar sesión"
+      "cta": "Despliega tu propio Monstera"
     }
   },
   "settings": {
