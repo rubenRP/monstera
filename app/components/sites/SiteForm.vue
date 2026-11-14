@@ -74,6 +74,7 @@ function handleSubmit() {
     >
       <UInput
         v-model="form.name"
+        class="w-full"
         :placeholder="t('sites.namePlaceholder')"
       />
     </UFormField>
@@ -81,6 +82,7 @@ function handleSubmit() {
     <UFormField :label="t('sites.placementType')">
       <USelect
         v-model="form.placement"
+        class="w-full"
         :items="placementOptions"
       />
     </UFormField>
@@ -110,6 +112,7 @@ function handleSubmit() {
       <UFormField :label="t('sites.luminosity')">
         <USelect
           v-model="form.luminosity"
+          class="w-full"
           :items="[noneOption, ...luminosityOptions]"
         />
       </UFormField>
@@ -125,6 +128,7 @@ function handleSubmit() {
     <UFormField :label="t('sites.notes')">
       <UTextarea
         v-model="form.notes"
+        class="w-full"
         :placeholder="t('sites.notesPlaceholder')"
       />
     </UFormField>
