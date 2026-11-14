@@ -80,6 +80,7 @@ const noneOption = computed(() => ({ label: t('common.none'), value: null }))
       >
         <UInput
           :model-value="form.height_cm ?? undefined"
+          class="w-full"
           type="number"
           :placeholder="t('plants.heightPlaceholder')"
           @update:model-value="form.height_cm = ($event as number | undefined) ?? null"
@@ -130,6 +131,8 @@ const noneOption = computed(() => ({ label: t('common.none'), value: null }))
       >
         <USelect
           :model-value="form.pot_size ?? undefined"
+          class="w-full"
+          :placeholder="t('common.none')"
           :items="[noneOption, ...potSizeOptions]"
           @update:model-value="form.pot_size = ($event as typeof form.pot_size) ?? null"
         />
@@ -141,6 +144,7 @@ const noneOption = computed(() => ({ label: t('common.none'), value: null }))
       >
         <UInput
           :model-value="form.pot_diameter_cm ?? undefined"
+          class="w-full"
           type="number"
           @update:model-value="form.pot_diameter_cm = ($event as number | undefined) ?? null"
         />
@@ -152,6 +156,8 @@ const noneOption = computed(() => ({ label: t('common.none'), value: null }))
       >
         <USelect
           :model-value="form.pot_material ?? undefined"
+          class="w-full"
+          :placeholder="t('common.none')"
           :items="[noneOption, ...potMaterialOptions]"
           @update:model-value="form.pot_material = ($event as typeof form.pot_material) ?? null"
         />
@@ -169,6 +175,8 @@ const noneOption = computed(() => ({ label: t('common.none'), value: null }))
       >
         <USelect
           :model-value="form.substrate_type ?? undefined"
+          class="w-full"
+          :placeholder="t('common.none')"
           :items="[noneOption, ...substrateOptions]"
           @update:model-value="form.substrate_type = ($event as typeof form.substrate_type) ?? null"
         />
@@ -179,6 +187,7 @@ const noneOption = computed(() => ({ label: t('common.none'), value: null }))
       >
         <UTextarea
           :model-value="form.substrate_notes ?? undefined"
+          class="w-full"
           @update:model-value="form.substrate_notes = ($event as string | undefined) ?? null"
         />
       </UFormField>
@@ -198,6 +207,7 @@ const noneOption = computed(() => ({ label: t('common.none'), value: null }))
       >
         <USelect
           :model-value="form.site_id ?? undefined"
+          class="w-full"
           :items="siteOptions"
           :loading="loadingSites"
           :placeholder="t('plants.selectSite')"
@@ -271,6 +281,7 @@ const noneOption = computed(() => ({ label: t('common.none'), value: null }))
       >
         <UInput
           :model-value="form.window_distance_cm ?? undefined"
+          class="w-full"
           type="number"
           min="0"
           max="500"
